@@ -1,5 +1,6 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
+import { useState, useRef, useEffect } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -18,10 +19,11 @@ const buttonVariants = cva(
     "rounded-full border border-transparent bg-clip-padding font-semibold whitespace-nowrap",
     "outline-none transition-[background-color,color,box-shadow,transform,opacity] duration-150 ease-out",
     "focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-    "active:scale-[0.97] motion-reduce:active:scale-100 motion-reduce:transition-none",
+    "motion-reduce:transition-none",
     "disabled:pointer-events-none disabled:opacity-40",
     "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
     "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
+    "overflow-hidden",
   ],
   {
     variants: {
@@ -29,13 +31,13 @@ const buttonVariants = cva(
         default: "bg-primary text-primary-foreground hover:bg-amama-deep-hover",
         brand: "bg-amama text-amama-foreground hover:bg-amama/85",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_7%)]",
+          "bg-secondary text-secondary-foreground hover:bg-[color:theme(colors.muted)]",
         outline:
           "border border-border bg-transparent text-foreground hover:bg-muted",
         ghost: "text-foreground hover:bg-muted",
         destructive:
-          "bg-destructive text-white hover:bg-[color-mix(in_oklch,var(--destructive),black_12%)] focus-visible:ring-destructive/30",
-        link: "h-auto rounded-none px-0 font-semibold text-foreground underline underline-offset-4 hover:text-muted-foreground active:scale-100",
+          "bg-destructive text-white hover:bg-[color:theme(colors.destructive.hover)] focus-visible:ring-destructive/30",
+        link: "h-auto rounded-none px-0 font-semibold text-foreground underline underline-offset-4 hover:text-muted-foreground",
       },
       size: {
         /** 44px — the smallest comfortable touch target (Apple HIG). */
@@ -58,18 +60,71 @@ const buttonVariants = cva(
   }
 )
 
+interface Ripple {
+  id: number
+  x: number
+  y: number
+  size: number
+}
+
 function Button({
   className,
   variant = "default",
   size = "default",
+  children,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  const [ripples, setRipples] = useState<Ripple[]>([])
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const rippleIdRef = useRef(0)
+
+  const createRipple = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const button = buttonRef.current
+    if (!button) return
+
+    const rect = button.getBoundingClientRect()
+    const size = Math.max(rect.width, rect.height)
+    const x = event.clientX - rect.left - size / 2
+    const y = event.clientY - rect.top - size / 2
+
+    const id = rippleIdRef.current++
+    setRipples((prev) => [...prev, { id, x, y, size }])
+
+    // Remove ripple after animation completes
+    setTimeout(() => {
+      setRipples((prev) => prev.filter((ripple) => ripple.id !== id))
+    }, 600)
+  }
+
+  // Clean up ripples on unmount
+  useEffect(() => {
+    return () => {
+      setRipples([])
+    }
+  }, [])
+
   return (
     <ButtonPrimitive
+      ref={buttonRef}
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      onClick={createRipple}
       {...props}
-    />
+    >
+      {children}
+      {ripples.map((ripple) => (
+        <span
+          key={ripple.id}
+          className="absolute pointer-events-none rounded-full bg-white/30 animate-ripple"
+          style={{
+            left: ripple.x,
+            top: ripple.y,
+            width: ripple.size,
+            height: ripple.size,
+          }}
+        />
+      ))}
+    </ButtonPrimitive>
   )
 }
 

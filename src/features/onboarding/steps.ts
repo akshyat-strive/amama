@@ -1,4 +1,4 @@
-import type { AccountType, OnboardingRole } from "@/features/onboarding/types"
+import type { EntityType, OnboardingRole } from "@/features/onboarding/types"
 
 export type StepDefinition = {
   slug: string
@@ -7,16 +7,23 @@ export type StepDefinition = {
   title: string
 }
 
+// Country comes first, ahead of even the account step — which documents and
+// fields make sense later (GST vs. VAT, a land title vs. a trade licence)
+// all turn on where someone is trading from, so we ask it before anything
+// else rather than burying it mid-flow.
 const buyerSteps: StepDefinition[] = [
+  { slug: "country", href: "/buyer/onboarding/country", title: "Your country" },
   { slug: "account", href: "/buyer/onboarding/account", title: "Your account" },
   { slug: "birthday", href: "/buyer/onboarding/birthday", title: "Date of birth" },
   { slug: "company", href: "/buyer/onboarding/company", title: "Your company" },
   { slug: "sourcing", href: "/buyer/onboarding/sourcing", title: "What you source" },
   { slug: "volume", href: "/buyer/onboarding/volume", title: "Trade terms" },
+  { slug: "documents", href: "/buyer/onboarding/documents", title: "Documents" },
   { slug: "done", href: "/buyer/onboarding/done", title: "All set" },
 ]
 
 const sellerSteps: StepDefinition[] = [
+  { slug: "country", href: "/seller/onboarding/country", title: "Your country" },
   { slug: "account", href: "/seller/onboarding/account", title: "Your account" },
   { slug: "birthday", href: "/seller/onboarding/birthday", title: "Date of birth" },
   { slug: "farm", href: "/seller/onboarding/farm", title: "Your farm" },
@@ -26,6 +33,7 @@ const sellerSteps: StepDefinition[] = [
     href: "/seller/onboarding/certifications",
     title: "Certifications",
   },
+  { slug: "documents", href: "/seller/onboarding/documents", title: "Documents" },
   { slug: "done", href: "/seller/onboarding/done", title: "All set" },
 ]
 
@@ -35,14 +43,14 @@ export const stepsByRole: Record<OnboardingRole, StepDefinition[]> = {
 }
 
 /**
- * The step list a given draft actually walks through. A business/org account
- * has no personal date of birth to give, so "birthday" is dropped entirely —
- * not just made skippable — meaning the progress dots and step count are
- * correct for that account too, not just "6 steps, one of which is a no-op."
+ * The step list a given draft actually walks through. An organisation has no
+ * personal date of birth to give, so "birthday" is dropped entirely — not
+ * just made skippable — meaning the progress dots and step count are correct
+ * for that account too, not just "7 steps, one of which is a no-op."
  */
-export function effectiveSteps(role: OnboardingRole, accountType?: AccountType) {
+export function effectiveSteps(role: OnboardingRole, entityType?: EntityType) {
   const steps = stepsByRole[role]
-  return accountType === "business"
+  return entityType === "organization"
     ? steps.filter((step) => step.slug !== "birthday")
     : steps
 }
@@ -50,21 +58,22 @@ export function effectiveSteps(role: OnboardingRole, accountType?: AccountType) 
 export function stepIndex(
   role: OnboardingRole,
   slug: string,
-  accountType?: AccountType
+  entityType?: EntityType
 ) {
-  return effectiveSteps(role, accountType).findIndex((step) => step.slug === slug)
+  return effectiveSteps(role, entityType).findIndex((step) => step.slug === slug)
 }
 
 export function nextStep(
   role: OnboardingRole,
   slug: string,
-  accountType?: AccountType
+  entityType?: EntityType
 ) {
-  const steps = effectiveSteps(role, accountType)
+  const steps = effectiveSteps(role, entityType)
   // The current step may itself be filtered out (mid-flow "birthday" for a
-  // draft that just became a business account) — fall back to treating it as
-  // if we were sitting just before the first remaining step, not "not found".
-  const index = stepIndex(role, slug, accountType)
+  // draft that just became an organisation account) — fall back to treating
+  // it as if we were sitting just before the first remaining step, not "not
+  // found".
+  const index = stepIndex(role, slug, entityType)
   if (index >= 0) {
     return index < steps.length - 1 ? steps[index + 1] : null
   }
@@ -78,16 +87,18 @@ export function nextStep(
 export function previousStep(
   role: OnboardingRole,
   slug: string,
-  accountType?: AccountType
+  entityType?: EntityType
 ) {
-  const steps = effectiveSteps(role, accountType)
-  const index = stepIndex(role, slug, accountType)
+  const steps = effectiveSteps(role, entityType)
+  const index = stepIndex(role, slug, entityType)
   return index > 0 ? steps[index - 1] : null
 }
 
-/** A crop tile only ever renders at a few hundred px wide — no need for a full-res fetch. */
-export function cropImageUrl(photoId: string) {
-  return `https://images.unsplash.com/${photoId}?w=320&q=70&fit=crop&auto=format`
+/** A crop tile only ever renders at a few hundred px wide — no need for a
+ *  full-res fetch. Callers with more room (a marketplace listing card, say)
+ *  can ask for a wider crop of the same photo. */
+export function cropImageUrl(photoId: string, width = 320) {
+  return `https://images.unsplash.com/${photoId}?w=${width}&q=70&fit=crop&auto=format`
 }
 
 /**
@@ -95,17 +106,20 @@ export function cropImageUrl(photoId: string) {
  * grids. Each photo id is a verified `images.unsplash.com/photo-*` id —
  * check a new one resolves (`fetch` a small size, expect 200) before adding
  * it, since a bad id fails silently as a blank tile.
+ *
+ * No `label` here — display text lives in `onboarding.options.crops.<id>` in
+ * the translation dictionaries instead, keyed by `id`. Keeping it only there
+ * means one source of truth per language rather than an English default
+ * duplicated in this file and then shadowed everywhere it's rendered.
  */
 export const crops = [
   {
     id: "coffee",
-    label: "Coffee",
     photo: "photo-1447933601403-0c6688de566e",
     credit: { name: "Asthetik", profileUrl: "https://unsplash.com/@asthetik" },
   },
   {
     id: "cocoa",
-    label: "Cocoa",
     photo: "photo-1493925410384-84f842e616fb",
     credit: {
       name: "Pablo Merchán Montes",
@@ -114,7 +128,6 @@ export const crops = [
   },
   {
     id: "cashew",
-    label: "Cashew",
     photo: "photo-1626697556426-8a55a8af4999",
     credit: {
       name: "Towfiqu barbhuiya",
@@ -123,13 +136,11 @@ export const crops = [
   },
   {
     id: "sesame",
-    label: "Sesame",
     photo: "photo-1547496502-affa22d38842",
     credit: { name: "Yoav Aziz", profileUrl: "https://unsplash.com/@yoavaziz" },
   },
   {
     id: "spices",
-    label: "Spices",
     photo: "photo-1525289722380-f5bf1653d504",
     credit: {
       name: "Paolo Bendandi",
@@ -138,7 +149,6 @@ export const crops = [
   },
   {
     id: "tea",
-    label: "Tea",
     photo: "photo-1563822249366-3efb23b8e0c9",
     credit: {
       name: "Stri Khedonia",
@@ -147,7 +157,6 @@ export const crops = [
   },
   {
     id: "grains",
-    label: "Grains & cereals",
     photo: "photo-1595444042058-f038c7e0e778",
     credit: {
       name: "Melissa Askew",
@@ -156,7 +165,6 @@ export const crops = [
   },
   {
     id: "pulses",
-    label: "Pulses & legumes",
     photo: "photo-1612257416648-ee7a6c533b4f",
     credit: {
       name: "Suheyl Burak",
@@ -165,13 +173,11 @@ export const crops = [
   },
   {
     id: "fresh-fruit",
-    label: "Fresh fruit",
     photo: "photo-1619566636858-adf3ef46400b",
     credit: { name: "Jkakaroto", profileUrl: "https://unsplash.com/@jkakaroto" },
   },
   {
     id: "dried-fruit",
-    label: "Dried fruit",
     photo: "photo-1595412017587-b7f3117dff54",
     credit: {
       name: "Miracle Day",
@@ -180,7 +186,6 @@ export const crops = [
   },
   {
     id: "vegetables",
-    label: "Vegetables",
     photo: "photo-1597362925123-77861d3fbac7",
     credit: {
       name: "Randy Fath",
@@ -189,19 +194,16 @@ export const crops = [
   },
   {
     id: "nuts",
-    label: "Tree nuts",
     photo: "photo-1608797178974-15b35a64ede9",
     credit: { name: "Mockupo", profileUrl: "https://unsplash.com/@mockupo" },
   },
   {
     id: "cotton",
-    label: "Cotton & fibre",
     photo: "photo-1616431101491-554c0932ea40",
     credit: { name: "Ranurte", profileUrl: "https://unsplash.com/@ranurte" },
   },
   {
     id: "sugar",
-    label: "Sugar & sweeteners",
     photo: "photo-1559477882-f1a7c5931735",
     credit: {
       name: "John Cutting",
@@ -210,7 +212,6 @@ export const crops = [
   },
   {
     id: "oils",
-    label: "Edible oils",
     photo: "photo-1474979266404-7eaacbcd87c5",
     credit: { name: "Robertina", profileUrl: "https://unsplash.com/@robertina" },
   },
@@ -222,70 +223,61 @@ export const crops = [
  * registered marks (Fairtrade's mark, the Rainforest Alliance frog, etc.) —
  * reproducing those without a licence would be a trademark risk, and a grid
  * of mismatched third-party logo styles would look worse anyway.
+ *
+ * Display text (label + hint) lives in `onboarding.options.certifications.<id>`
+ * in the translation dictionaries — see the note on `crops` above. Most of
+ * these names (Fairtrade, HACCP, ISO 22000...) are proper nouns or standard
+ * codes that don't change across languages; the hints do.
  */
 export const certifications = [
-  { id: "organic", label: "Organic", hint: "EU / USDA / NOP", icon: "Leaf" },
-  { id: "fairtrade", label: "Fairtrade", hint: "FLO-CERT", icon: "Handshake" },
-  {
-    id: "globalgap",
-    label: "GlobalG.A.P.",
-    hint: "Farm assurance",
-    icon: "ShieldCheck",
-  },
-  {
-    id: "rainforest",
-    label: "Rainforest Alliance",
-    hint: "Sustainability",
-    icon: "TreePine",
-  },
-  { id: "haccp", label: "HACCP", hint: "Food safety", icon: "ClipboardCheck" },
-  {
-    id: "iso22000",
-    label: "ISO 22000",
-    hint: "Food safety mgmt",
-    icon: "Award",
-  },
-  { id: "halal", label: "Halal", hint: "Export markets", icon: "Moon" },
-  {
-    id: "none",
-    label: "None yet",
-    hint: "We can help you get certified",
-    icon: "CircleDashed",
-  },
+  { id: "organic", icon: "Leaf" },
+  { id: "fairtrade", icon: "Handshake" },
+  { id: "globalgap", icon: "ShieldCheck" },
+  { id: "rainforest", icon: "TreePine" },
+  { id: "haccp", icon: "ClipboardCheck" },
+  { id: "iso22000", icon: "Award" },
+  { id: "halal", icon: "Moon" },
+  { id: "none", icon: "CircleDashed" },
 ] as const
 
+// Every pick-list below stores a stable, language-independent `id` in the
+// draft — never the display label — so a selection made in one language
+// still reads back correctly after switching to another. Labels live in
+// `onboarding.options.<listName>.<id>` in the translation dictionaries.
 export const businessTypes = [
-  "Importer / distributor",
-  "Food manufacturer",
-  "Roaster / processor",
-  "Wholesaler",
-  "Retail chain",
-  "Trading house",
+  "importerDistributor",
+  "foodManufacturer",
+  "roasterProcessor",
+  "wholesaler",
+  "retailChain",
+  "tradingHouse",
 ] as const
 
 export const producerTypes = [
-  "Individual farmer",
-  "Family farm",
-  "Cooperative",
-  "Producer association",
-  "Estate / plantation",
-  "Aggregator",
+  "individualFarmer",
+  "familyFarm",
+  "cooperative",
+  "producerAssociation",
+  "estatePlantation",
+  "aggregator",
 ] as const
 
 export const annualVolumes = [
-  "Under 20 MT",
-  "20 – 100 MT",
-  "100 – 500 MT",
-  "500 – 2,000 MT",
-  "Over 2,000 MT",
+  "under20",
+  "between20And100",
+  "between100And500",
+  "between500And2000",
+  "over2000",
 ] as const
 
-export const incoterms = ["FOB", "CIF", "CFR", "EXW", "DAP", "Not sure yet"] as const
+// Incoterms are standard international trade codes, unchanged across
+// languages — only "not sure yet" is actual prose to translate.
+export const incoterms = ["fob", "cif", "cfr", "exw", "dap", "notSure"] as const
 
 export const farmSizes = [
-  "Under 2 hectares",
-  "2 – 10 hectares",
-  "10 – 50 hectares",
-  "50 – 200 hectares",
-  "Over 200 hectares",
+  "under2Ha",
+  "between2And10Ha",
+  "between10And50Ha",
+  "between50And200Ha",
+  "over200Ha",
 ] as const

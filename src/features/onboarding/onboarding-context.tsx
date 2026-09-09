@@ -54,7 +54,7 @@ function restoreOnce() {
     if (raw) {
       const stored = JSON.parse(raw)
       // A one-level spread would let a draft saved before a field existed
-      // (e.g. `accountType`, added after some users already had a draft in
+      // (e.g. `entityType`, added after some users already had a draft in
       // sessionStorage) silently replace the whole `buyer`/`seller` object
       // and drop the default for that field entirely. Merge one level
       // deeper so an old draft picks up new fields' defaults instead of

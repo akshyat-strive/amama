@@ -190,3 +190,162 @@
     @apply font-sans;
   }
 }
+
+/*
+ * Per-script font swap, keyed off the `lang` attribute `I18nRoot` sets on
+ * locale change. `--font-sans` is redefined here rather than reassigning
+ * `font-family` directly, since every component already reads it via the
+ * `font-sans` utility — one override point instead of hunting down every
+ * place that utility is used. Hindi is a deliberate serif (Tiro Devanagari
+ * Hindi); the rest are Noto Sans's per-script family, chosen only because no
+ * specific typeface was requested for them. English and Urdu are left on the
+ * default (Inter, with the browser's own font substitution covering Urdu's
+ * Arabic script).
+ *
+ * Deliberately outside `@layer base`: Next's font loader sets its own
+ * `--font-sans` on an unlayered class (`html.<hash>__variable`), and per the
+ * CSS cascade-layers spec an unlayered rule always beats a layered one
+ * regardless of specificity — so from inside `@layer base` this override
+ * would silently lose no matter how specific its selector was.
+ */
+html[lang="hi"] {
+  --font-sans: var(--font-hi);
+}
+html[lang="mr"] {
+  --font-sans: var(--font-mr);
+}
+html[lang="te"] {
+  --font-sans: var(--font-te);
+}
+html[lang="ta"] {
+  --font-sans: var(--font-ta);
+}
+html[lang="gu"] {
+  --font-sans: var(--font-gu);
+}
+html[lang="or"] {
+  --font-sans: var(--font-or);
+}
+html[lang="kn"] {
+  --font-sans: var(--font-kn);
+}
+
+/*
+ * "Floating chip" shadow — small controls that sit directly on the bare
+ * background rather than inside a bordered card, like the topbar's icon
+ * button, pills, and avatar once the topbar itself has no fill of its own.
+ * Several tightly-stacked layers at falling opacity read as one soft
+ * directional shadow rather than a single flat ring; the inset top/bottom
+ * hairlines add just enough bevel for the chip to read as a distinct
+ * physical surface instead of a flat cutout of the card color.
+ */
+.shadow-floating {
+  box-shadow:
+    0 1px 1.5px oklch(0 0 0 / 6%),
+    0 2.8px 2.2px oklch(0 0 0 / 4.5%),
+    0 6.7px 5.3px oklch(0 0 0 / 4%),
+    0 12.5px 10px oklch(0 0 0 / 3.5%),
+    0 22px 18px oklch(0 0 0 / 3%),
+    inset 0 1px 0 oklch(1 0 0 / 70%),
+    inset 0 -1px 0 oklch(0 0 0 / 4%);
+}
+
+.dark .shadow-floating {
+  box-shadow:
+    0 1px 1.5px oklch(0 0 0 / 35%),
+    0 2.8px 2.2px oklch(0 0 0 / 28%),
+    0 6.7px 5.3px oklch(0 0 0 / 24%),
+    0 12.5px 10px oklch(0 0 0 / 22%),
+    0 22px 18px oklch(0 0 0 / 18%),
+    inset 0 1px 0 oklch(1 0 0 / 6%),
+    inset 0 -1px 0 oklch(0 0 0 / 35%);
+}
+
+/*
+ * The upload-in-progress overlay: an aurora, not a progress bar.
+ *
+ * Two counter-drifting layers of saturated light — electric blue, violet,
+ * pink, and the brand green — over a near-black ground, blended with
+ * `screen` so overlaps bloom toward white the way actual light does rather
+ * than muddying like mixed paint. That blend, plus the heavy blur, is what
+ * separates this from a flat multicolour smear.
+ *
+ * It's a single 2s entrance that settles, not a loop: the sweep tracks the
+ * upload rather than idling under it, and an infinite loop on a 2s task
+ * reads as decoration. `both` holds the final frame if the upload runs
+ * long. The percentage still sits on top for anyone who'd rather read the
+ * number than watch the light.
+ */
+@keyframes upload-aurora-a {
+  0% {
+    opacity: 0;
+    transform: translate3d(-18%, 12%, 0) scale(0.85) rotate(-8deg);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.95;
+    transform: translate3d(10%, -6%, 0) scale(1.25) rotate(6deg);
+  }
+}
+
+@keyframes upload-aurora-b {
+  0% {
+    opacity: 0;
+    transform: translate3d(16%, -14%, 0) scale(0.9) rotate(7deg);
+  }
+  45% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.9;
+    transform: translate3d(-12%, 8%, 0) scale(1.3) rotate(-5deg);
+  }
+}
+
+.upload-aurora {
+  position: relative;
+  isolation: isolate;
+  background-color: oklch(0.17 0.03 265);
+}
+
+.upload-aurora::before,
+.upload-aurora::after {
+  content: "";
+  position: absolute;
+  inset: -45%;
+  mix-blend-mode: screen;
+  filter: blur(26px) saturate(150%);
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+.upload-aurora::before {
+  background-image: radial-gradient(
+      38% 55% at 26% 42%,
+      #4c6fff 0%,
+      transparent 70%
+    ),
+    radial-gradient(34% 50% at 64% 28%, #a855f7 0%, transparent 72%);
+  animation: upload-aurora-a 2s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.upload-aurora::after {
+  background-image: radial-gradient(
+      36% 52% at 72% 68%,
+      #ff4d8d 0%,
+      transparent 70%
+    ),
+    radial-gradient(42% 56% at 32% 76%, #00d084 0%, transparent 72%);
+  animation: upload-aurora-b 2s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .upload-aurora::before,
+  .upload-aurora::after {
+    animation: none;
+    opacity: 0.95;
+    transform: none;
+  }
+}

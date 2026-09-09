@@ -1,13 +1,7 @@
-import { SearchIcon } from "lucide-react"
+"use client"
 
-import { ComingSoon } from "@/features/dashboard/coming-soon"
+import { SourcingView } from "@/features/dashboard/views/sourcing-view"
 
 export default function Page() {
-  return (
-    <ComingSoon
-      icon={SearchIcon}
-      title="Sourcing"
-      description="Growers matched to the crops you're sourcing will show up here."
-    />
-  )
+  return <SourcingView />
 }

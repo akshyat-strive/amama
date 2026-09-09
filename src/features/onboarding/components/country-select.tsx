@@ -8,6 +8,8 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox"
+import { InputGroupAddon } from "@/components/ui/input-group"
+import { useI18n } from "@/features/i18n/i18n-context"
 import {
   countries,
   countryCodeToFlag,
@@ -24,13 +26,14 @@ function CountryCombobox({
   id,
   value,
   onValueChange,
-  placeholder = "Search for a country",
+  placeholder,
 }: {
   id?: string
   value: string
   onValueChange: (value: string) => void
   placeholder?: string
 }) {
+  const { t } = useI18n()
   const selected = countries.find((country) => country.code === value) ?? null
 
   return (
@@ -38,24 +41,39 @@ function CountryCombobox({
       items={countries}
       value={selected}
       onValueChange={(item: Country | null) => onValueChange(item?.code ?? "")}
-      // Flag + name together as one string — this is what actually shows in
-      // the closed input, so the flag needs to live here, not just on the
-      // dropdown item (which only ever renders while the list is open).
-      itemToStringLabel={(item: Country) =>
-        `${countryCodeToFlag(item.code)} ${item.name}`
-      }
+      // The first matching item is highlighted as soon as the list opens or
+      // the query changes, so Enter always commits something sensible
+      // instead of requiring an arrow-key press first.
+      autoHighlight
+      // Plain country name only — this is what shows in the closed input,
+      // and the flag has no business being part of the *text value* (it's
+      // rendered as its own trailing addon below, outside the input).
+      itemToStringLabel={(item: Country) => item.name}
       isItemEqualToValue={(a: Country, b: Country) => a.code === b.code}
     >
       <ComboboxInput
         id={id}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t("onboarding.country.placeholder")}
         // The wrapped fields elsewhere in this flow have no focus ring — this
         // one shouldn't grow one either just because it's built on top of
         // shadcn's InputGroup, which rings by default on focus.
-        className="h-auto w-full min-w-0 flex-1 rounded-none border-0 bg-transparent p-0 shadow-none has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0 [&_[data-slot=input-group-control]]:h-auto [&_[data-slot=input-group-control]]:p-0 [&_[data-slot=input-group-control]]:text-[15px]"
-      />
+        className="h-auto min-w-0 flex-1 rounded-none border-0 bg-transparent p-0 shadow-none has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0 [&_[data-slot=input-group-control]]:h-auto [&_[data-slot=input-group-control]]:p-0 [&_[data-slot=input-group-control]]:text-[15px]"
+      >
+        {/* The selected country's flag — a decorative echo of the text,
+            never part of the input's own value, so copying or reading the
+            field back never picks up an emoji glued to the name. Ordered
+            after the built-in chevron/clear addon, so it sits at the very
+            end. */}
+        {selected ? (
+          <InputGroupAddon align="inline-end" className="pe-0">
+            <span aria-hidden className="text-base leading-none">
+              {countryCodeToFlag(selected.code)}
+            </span>
+          </InputGroupAddon>
+        ) : null}
+      </ComboboxInput>
       <ComboboxContent>
-        <ComboboxEmpty>No countries found.</ComboboxEmpty>
+        <ComboboxEmpty>{t("onboarding.country.empty")}</ComboboxEmpty>
         <ComboboxList>
           {(country: Country) => (
             <ComboboxItem key={country.code} value={country}>

@@ -1,13 +1,7 @@
-import { SettingsIcon } from "lucide-react"
+"use client"
 
-import { ComingSoon } from "@/features/dashboard/coming-soon"
+import { SettingsView } from "@/features/dashboard/views/settings-view"
 
 export default function Page() {
-  return (
-    <ComingSoon
-      icon={SettingsIcon}
-      title="Settings"
-      description="Manage your company profile, team and trade preferences."
-    />
-  )
+  return <SettingsView role="buyer" />
 }

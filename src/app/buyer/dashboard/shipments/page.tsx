@@ -1,13 +1,7 @@
-import { ShipIcon } from "lucide-react"
+"use client"
 
-import { ComingSoon } from "@/features/dashboard/coming-soon"
+import { ShipmentsView } from "@/features/dashboard/views/shipments-view"
 
 export default function Page() {
-  return (
-    <ComingSoon
-      icon={ShipIcon}
-      title="Shipments"
-      description="Track every shipment from origin to port to your warehouse, in one place."
-    />
-  )
+  return <ShipmentsView />
 }

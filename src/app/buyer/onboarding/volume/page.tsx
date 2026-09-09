@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { ArrowRightIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { useI18n } from "@/features/i18n/i18n-context"
 import { StepShell } from "@/features/onboarding/components/step-shell"
 import {
   SelectableRow,
@@ -21,20 +22,21 @@ import {
 
 export default function BuyerVolumePage() {
   const router = useRouter()
+  const { t } = useI18n()
   const { draft, updateBuyer } = useOnboarding()
   const buyer = draft.buyer
 
   const canContinue = buyer.annualVolume.length > 0 && buyer.incoterm.length > 0
-  const target = nextStep("buyer", "volume", buyer.accountType)
-  const back = previousStep("buyer", "volume", buyer.accountType)
+  const target = nextStep("buyer", "volume", buyer.entityType)
+  const back = previousStep("buyer", "volume", buyer.entityType)
 
   return (
     <StepShell
-      step={stepIndex("buyer", "volume", buyer.accountType) + 1}
-      totalSteps={effectiveSteps("buyer", buyer.accountType).length}
+      step={stepIndex("buyer", "volume", buyer.entityType) + 1}
+      totalSteps={effectiveSteps("buyer", buyer.entityType).length}
       backHref={back?.href ?? "/"}
-      title="How do you like to trade?"
-      description="This shapes the quotes you get. Nothing here is binding — you can change it per order."
+      title={t("onboarding.volume.title")}
+      description={t("onboarding.volume.description")}
       skipHref={target?.href}
       footer={
         <Button
@@ -43,22 +45,22 @@ export default function BuyerVolumePage() {
           disabled={!canContinue}
           onClick={() => target && router.push(target.href)}
         >
-          Continue
-          <ArrowRightIcon className="rtl:-scale-x-100" />
+          {t("common.continue")}
+          <ArrowRightIcon />
         </Button>
       }
     >
       <div className="flex flex-col gap-8">
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 text-[14px] font-semibold">
-            Expected annual volume
+            {t("onboarding.volume.annualVolumeLegend")}
           </legend>
           <SelectableGroup>
             {annualVolumes.map((volume) => (
               <SelectableRow
                 key={volume}
                 name="annualVolume"
-                label={volume}
+                label={t(`onboarding.options.annualVolumes.${volume}`)}
                 selected={buyer.annualVolume === volume}
                 onSelect={() => updateBuyer({ annualVolume: volume })}
               />
@@ -68,14 +70,14 @@ export default function BuyerVolumePage() {
 
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 text-[14px] font-semibold">
-            Preferred incoterm
+            {t("onboarding.volume.incotermLegend")}
           </legend>
           <SelectableGroup>
             {incoterms.map((term) => (
               <SelectableRow
                 key={term}
                 name="incoterm"
-                label={term}
+                label={t(`onboarding.options.incoterms.${term}`)}
                 selected={buyer.incoterm === term}
                 onSelect={() => updateBuyer({ incoterm: term })}
               />

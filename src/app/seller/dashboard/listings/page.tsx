@@ -1,13 +1,7 @@
-import { SproutIcon } from "lucide-react"
+"use client"
 
-import { ComingSoon } from "@/features/dashboard/coming-soon"
+import { ListingsView } from "@/features/dashboard/views/listings-view"
 
 export default function Page() {
-  return (
-    <ComingSoon
-      icon={SproutIcon}
-      title="Listings"
-      description="Add your harvest and manage what's currently listed for sale."
-    />
-  )
+  return <ListingsView />
 }

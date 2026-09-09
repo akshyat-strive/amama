@@ -157,6 +157,21 @@ function SelectableTile({
 }
 
 /**
+ * Wraps a grid of `SelectableTile` checkboxes with the group semantics a
+ * plain `<div>` doesn't give them for free. Each tile already exposes its
+ * own name and checked state, but without this a screen reader landing in
+ * the grid announces a bare run of checkboxes with no sense of what they're
+ * a checklist *of* — this is what `aria-label` (usually the step's own
+ * heading) supplies. Always required, not optional, for exactly that
+ * reason — there's no such thing as a tile grid that doesn't need one.
+ */
+function SelectableTileGroup({
+  ...props
+}: React.ComponentProps<"div"> & { "aria-label": string }) {
+  return <div role="group" {...props} />
+}
+
+/**
  * The same hairline-bordered, divided-list container as `FieldGroup` — wraps
  * a set of `SelectableRow`s so the group gets one outline instead of every
  * option carrying its own heavy border.
@@ -244,4 +259,4 @@ function SelectableRow({
   )
 }
 
-export { SelectableTile, SelectableRow, SelectableGroup }
+export { SelectableTile, SelectableTileGroup, SelectableRow, SelectableGroup }

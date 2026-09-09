@@ -9,12 +9,12 @@ import {
   FieldGroupRow,
   FieldGroupInput,
 } from "@/components/ui/field-group"
+import { useI18n } from "@/features/i18n/i18n-context"
 import { StepShell } from "@/features/onboarding/components/step-shell"
 import {
   SelectableRow,
   SelectableGroup,
 } from "@/features/onboarding/components/selectable"
-import { CountryCombobox } from "@/features/onboarding/components/country-select"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import {
   businessTypes,
@@ -26,24 +26,23 @@ import {
 
 export default function BuyerCompanyPage() {
   const router = useRouter()
+  const { t } = useI18n()
   const { draft, updateBuyer } = useOnboarding()
   const buyer = draft.buyer
 
   const canContinue =
-    buyer.companyName.trim().length >= 2 &&
-    buyer.country.trim().length >= 2 &&
-    buyer.businessType.length > 0
+    buyer.companyName.trim().length >= 2 && buyer.businessType.length > 0
 
-  const target = nextStep("buyer", "company", buyer.accountType)
-  const back = previousStep("buyer", "company", buyer.accountType)
+  const target = nextStep("buyer", "company", buyer.entityType)
+  const back = previousStep("buyer", "company", buyer.entityType)
 
   return (
     <StepShell
-      step={stepIndex("buyer", "company", buyer.accountType) + 1}
-      totalSteps={effectiveSteps("buyer", buyer.accountType).length}
+      step={stepIndex("buyer", "company", buyer.entityType) + 1}
+      totalSteps={effectiveSteps("buyer", buyer.entityType).length}
       backHref={back?.href ?? "/"}
-      title="Tell us about your business"
-      description="Growers see this before they accept an enquiry — it's how trust starts."
+      title={t("onboarding.company.title")}
+      description={t("onboarding.company.description")}
       skipHref={target?.href}
       footer={
         <Button
@@ -52,35 +51,28 @@ export default function BuyerCompanyPage() {
           disabled={!canContinue}
           onClick={() => target && router.push(target.href)}
         >
-          Continue
-          <ArrowRightIcon className="rtl:-scale-x-100" />
+          {t("common.continue")}
+          <ArrowRightIcon />
         </Button>
       }
     >
       <div className="flex flex-col gap-6">
         <FieldGroup>
-          <FieldGroupRow label="Company" htmlFor="companyName">
+          <FieldGroupRow label={t("onboarding.company.companyLabel")} htmlFor="companyName">
             <FieldGroupInput
               id="companyName"
               autoComplete="organization"
-              placeholder="Northwind Foods Ltd"
+              placeholder={t("onboarding.company.companyPlaceholder")}
               value={buyer.companyName}
               onChange={(event) =>
                 updateBuyer({ companyName: event.target.value })
               }
             />
           </FieldGroupRow>
-          <FieldGroupRow label="Country" htmlFor="country">
-            <CountryCombobox
-              id="country"
-              value={buyer.country}
-              onValueChange={(country) => updateBuyer({ country })}
-            />
-          </FieldGroupRow>
-          <FieldGroupRow label="Licence" htmlFor="importLicence">
+          <FieldGroupRow label={t("onboarding.company.licenceLabel")} htmlFor="importLicence">
             <FieldGroupInput
               id="importLicence"
-              placeholder="Add it now or later"
+              placeholder={t("onboarding.company.licencePlaceholder")}
               value={buyer.importLicence}
               onChange={(event) =>
                 updateBuyer({ importLicence: event.target.value })
@@ -91,14 +83,14 @@ export default function BuyerCompanyPage() {
 
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 text-[14px] font-semibold">
-            What kind of business is it?
+            {t("onboarding.company.businessTypeLegend")}
           </legend>
           <SelectableGroup>
             {businessTypes.map((type) => (
               <SelectableRow
                 key={type}
                 name="businessType"
-                label={type}
+                label={t(`onboarding.options.businessTypes.${type}`)}
                 selected={buyer.businessType === type}
                 onSelect={() => updateBuyer({ businessType: type })}
               />

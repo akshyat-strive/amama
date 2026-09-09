@@ -1,13 +1,7 @@
-import { MessageCircleIcon } from "lucide-react"
+"use client"
 
-import { ComingSoon } from "@/features/dashboard/coming-soon"
+import { MessagesView } from "@/features/dashboard/views/messages-view"
 
 export default function Page() {
-  return (
-    <ComingSoon
-      icon={MessageCircleIcon}
-      title="Messages"
-      description="Conversations with growers and cooperatives will land here."
-    />
-  )
+  return <MessagesView role="buyer" />
 }

@@ -9,6 +9,7 @@ import {
   DateOfBirthPicker,
   type DateParts,
 } from "@/components/ui/date-of-birth-picker"
+import { useI18n } from "@/features/i18n/i18n-context"
 import { StepShell } from "@/features/onboarding/components/step-shell"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import {
@@ -29,23 +30,24 @@ function defaultDate(): DateParts {
 
 function BirthdayStep({ role }: { role: OnboardingRole }) {
   const router = useRouter()
+  const { locale, t } = useI18n()
   const { draft, updateBuyer, updateSeller } = useOnboarding()
   const current = role === "buyer" ? draft.buyer : draft.seller
   const update = role === "buyer" ? updateBuyer : updateSeller
 
-  // A business/organisation account has no personal birthday to give — this
-  // step isn't part of that flow at all (see `effectiveSteps`), not merely
-  // skippable. A business draft only ever lands here via the back button or
-  // a stale bookmark, in which case it's bounced straight past.
-  const isBusiness = current.accountType === "business"
-  const target = nextStep(role, "birthday", current.accountType)
-  // "account" always precedes "birthday" positionally regardless of account
-  // type, so this doesn't need the accountType-filtered lookup.
+  // An organisation account has no personal birthday to give — this step
+  // isn't part of that flow at all (see `effectiveSteps`), not merely
+  // skippable. An organisation draft only ever lands here via the back
+  // button or a stale bookmark, in which case it's bounced straight past.
+  const isOrganization = current.entityType === "organization"
+  const target = nextStep(role, "birthday", current.entityType)
+  // "account" always precedes "birthday" positionally regardless of entity
+  // type, so this doesn't need the entityType-filtered lookup.
   const back = previousStep(role, "birthday")
 
   React.useEffect(() => {
-    if (isBusiness && target) router.replace(target.href)
-  }, [isBusiness, target, router])
+    if (isOrganization && target) router.replace(target.href)
+  }, [isOrganization, target, router])
 
   // Driven straight off the draft — every spin is saved, so leaving the step
   // and coming back returns the wheels exactly where they were left.
@@ -58,25 +60,25 @@ function BirthdayStep({ role }: { role: OnboardingRole }) {
     if (target) router.push(target.href)
   }
 
-  const readable = new Intl.DateTimeFormat("en", { dateStyle: "long" }).format(
+  const readable = new Intl.DateTimeFormat(locale.tag, { dateStyle: "long" }).format(
     new Date(value.year, value.month - 1, value.day)
   )
 
   // Redirecting away — render nothing rather than a birthday screen that's
   // about to disappear.
-  if (isBusiness) return null
+  if (isOrganization) return null
 
   return (
     <StepShell
-      step={stepIndex(role, "birthday", current.accountType) + 1}
-      totalSteps={effectiveSteps(role, current.accountType).length}
+      step={stepIndex(role, "birthday", current.entityType) + 1}
+      totalSteps={effectiveSteps(role, current.entityType).length}
       backHref={back?.href ?? "/"}
-      title="When were you born?"
-      description={`Cross-border trade accounts are ${MIN_AGE}+. We only ever show your age bracket, never the date.`}
+      title={t("onboarding.birthday.title")}
+      description={t("onboarding.birthday.description", { minAge: MIN_AGE })}
       footer={
         <Button size="xl" className="w-full" onClick={handleContinue}>
-          Continue
-          <ArrowRightIcon className="rtl:-scale-x-100" />
+          {t("common.continue")}
+          <ArrowRightIcon />
         </Button>
       }
     >
@@ -92,7 +94,7 @@ function BirthdayStep({ role }: { role: OnboardingRole }) {
           minAge={MIN_AGE}
         />
         <p className="text-[13px] leading-relaxed text-muted-foreground">
-          Spin the wheels, or focus one and use the arrow keys.
+          {t("onboarding.birthday.hint")}
         </p>
       </div>
     </StepShell>

@@ -6,6 +6,7 @@ import { ArrowLeftIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
+import { useI18n } from "@/features/i18n/i18n-context"
 
 type StepShellProps = {
   /** 1-based position, used for the bar and the announcement. */
@@ -92,22 +93,28 @@ function StepShell({
   skipHref,
   className,
 }: StepShellProps) {
+  const { t } = useI18n()
+
   return (
     <div className="flex min-h-dvh flex-col bg-card">
       <header className="sticky top-0 z-20 bg-card/85 backdrop-blur-sm">
-        <div className="mx-auto flex w-full max-w-lg items-center gap-3 px-4 py-3">
+        {/* Extra end padding reserves room for the fixed `[en]` language
+            switcher pinned to the same corner on every screen — on mobile
+            widths there's no outer gutter for it to float in otherwise, so
+            without this it would sit on top of the step count. */}
+        <div className="mx-auto flex w-full max-w-lg items-center gap-3 ps-4 pe-16 py-3">
           {/* A link is a link: styled with the button recipe rather than routed
               through <Button>, which would strip native anchor semantics. */}
           <Link
             href={backHref}
-            aria-label="Go back"
+            aria-label={t("common.goBack")}
             className={cn(
               buttonVariants({ variant: "ghost", size: "icon" }),
               "-ms-2 shrink-0"
             )}
           >
             {/* Mirrors automatically in RTL. */}
-            <ArrowLeftIcon className="rtl:-scale-x-100" />
+            <ArrowLeftIcon />
           </Link>
           <StepDots step={step} totalSteps={totalSteps} />
           <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
@@ -144,7 +151,7 @@ function StepShell({
                 href={skipHref}
                 className={cn(buttonVariants({ variant: "outline", size: "xl" }))}
               >
-                Skip
+                {t("common.skip")}
               </Link>
             ) : null}
             <div className="flex-1">{footer}</div>

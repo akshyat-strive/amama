@@ -1,13 +1,7 @@
-import { PackageIcon } from "lucide-react"
+"use client"
 
-import { ComingSoon } from "@/features/dashboard/coming-soon"
+import { OrdersView } from "@/features/dashboard/views/orders-view"
 
 export default function Page() {
-  return (
-    <ComingSoon
-      icon={PackageIcon}
-      title="Orders"
-      description="Your purchase orders and their status will show up here once you place one."
-    />
-  )
+  return <OrdersView role="buyer" />
 }

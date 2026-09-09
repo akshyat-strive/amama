@@ -9,12 +9,12 @@ import {
   FieldGroupRow,
   FieldGroupInput,
 } from "@/components/ui/field-group"
+import { useI18n } from "@/features/i18n/i18n-context"
 import { StepShell } from "@/features/onboarding/components/step-shell"
 import {
   SelectableRow,
   SelectableGroup,
 } from "@/features/onboarding/components/selectable"
-import { CountryCombobox } from "@/features/onboarding/components/country-select"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import {
   effectiveSteps,
@@ -27,25 +27,25 @@ import {
 
 export default function SellerFarmPage() {
   const router = useRouter()
+  const { t } = useI18n()
   const { draft, updateSeller } = useOnboarding()
   const seller = draft.seller
 
   const canContinue =
     seller.farmName.trim().length >= 2 &&
-    seller.country.trim().length >= 2 &&
     seller.producerType.length > 0 &&
     seller.farmSize.length > 0
 
-  const target = nextStep("seller", "farm", seller.accountType)
-  const back = previousStep("seller", "farm", seller.accountType)
+  const target = nextStep("seller", "farm", seller.entityType)
+  const back = previousStep("seller", "farm", seller.entityType)
 
   return (
     <StepShell
-      step={stepIndex("seller", "farm", seller.accountType) + 1}
-      totalSteps={effectiveSteps("seller", seller.accountType).length}
+      step={stepIndex("seller", "farm", seller.entityType) + 1}
+      totalSteps={effectiveSteps("seller", seller.entityType).length}
       backHref={back?.href ?? "/"}
-      title="Tell us about your farm"
-      description="Buyers see origin details first. The fuller this is, the more enquiries you get."
+      title={t("onboarding.farm.title")}
+      description={t("onboarding.farm.description")}
       skipHref={target?.href}
       footer={
         <Button
@@ -54,32 +54,25 @@ export default function SellerFarmPage() {
           disabled={!canContinue}
           onClick={() => target && router.push(target.href)}
         >
-          Continue
-          <ArrowRightIcon className="rtl:-scale-x-100" />
+          {t("common.continue")}
+          <ArrowRightIcon />
         </Button>
       }
     >
       <div className="flex flex-col gap-6">
         <FieldGroup>
-          <FieldGroupRow label="Farm" htmlFor="farmName">
+          <FieldGroupRow label={t("onboarding.farm.farmLabel")} htmlFor="farmName">
             <FieldGroupInput
               id="farmName"
-              placeholder="Krishna Valley Farmers Cooperative"
+              placeholder={t("onboarding.farm.farmPlaceholder")}
               value={seller.farmName}
               onChange={(event) => updateSeller({ farmName: event.target.value })}
             />
           </FieldGroupRow>
-          <FieldGroupRow label="Country" htmlFor="sellerCountry">
-            <CountryCombobox
-              id="sellerCountry"
-              value={seller.country}
-              onValueChange={(country) => updateSeller({ country })}
-            />
-          </FieldGroupRow>
-          <FieldGroupRow label="Region" htmlFor="region">
+          <FieldGroupRow label={t("onboarding.farm.regionLabel")} htmlFor="region">
             <FieldGroupInput
               id="region"
-              placeholder="Nashik, Maharashtra"
+              placeholder={t("onboarding.farm.regionPlaceholder")}
               value={seller.region}
               onChange={(event) => updateSeller({ region: event.target.value })}
             />
@@ -88,14 +81,14 @@ export default function SellerFarmPage() {
 
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 text-[14px] font-semibold">
-            Who are you selling as?
+            {t("onboarding.farm.sellingAsLegend")}
           </legend>
           <SelectableGroup>
             {producerTypes.map((type) => (
               <SelectableRow
                 key={type}
                 name="producerType"
-                label={type}
+                label={t(`onboarding.options.producerTypes.${type}`)}
                 selected={seller.producerType === type}
                 onSelect={() => updateSeller({ producerType: type })}
               />
@@ -105,14 +98,14 @@ export default function SellerFarmPage() {
 
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 text-[14px] font-semibold">
-            Land under cultivation
+            {t("onboarding.farm.landLegend")}
           </legend>
           <SelectableGroup>
             {farmSizes.map((size) => (
               <SelectableRow
                 key={size}
                 name="farmSize"
-                label={size}
+                label={t(`onboarding.options.farmSizes.${size}`)}
                 selected={seller.farmSize === size}
                 onSelect={() => updateSeller({ farmSize: size })}
               />

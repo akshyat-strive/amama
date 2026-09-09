@@ -1,13 +1,7 @@
-import { WalletIcon } from "lucide-react"
+"use client"
 
-import { ComingSoon } from "@/features/dashboard/coming-soon"
+import { PaymentsView } from "@/features/dashboard/views/payments-view"
 
 export default function Page() {
-  return (
-    <ComingSoon
-      icon={WalletIcon}
-      title="Payments"
-      description="Track payouts and the payment terms you've agreed to."
-    />
-  )
+  return <PaymentsView />
 }

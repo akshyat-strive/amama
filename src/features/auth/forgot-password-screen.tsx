@@ -13,12 +13,14 @@ import {
   FieldStatusIcon,
 } from "@/components/ui/field-group"
 import { EditorialImage } from "@/components/ui/editorial-image"
+import { useI18n } from "@/features/i18n/i18n-context"
 import { loginContent } from "@/features/auth/login-content"
 import type { OnboardingRole } from "@/features/onboarding/types"
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
 function ForgotPasswordScreen({ role }: { role: OnboardingRole }) {
+  const { t } = useI18n()
   const content = loginContent[role]
   const [email, setEmail] = React.useState("")
   const [submitting, setSubmitting] = React.useState(false)
@@ -57,8 +59,8 @@ function ForgotPasswordScreen({ role }: { role: OnboardingRole }) {
               href={`/${role}/login`}
               className="mb-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground"
             >
-              <ArrowLeftIcon className="size-4 rtl:-scale-x-100" />
-              Back to log in
+              <ArrowLeftIcon className="size-4" />
+              {t("auth.backToLogin")}
             </Link>
 
             {sent ? (
@@ -67,32 +69,30 @@ function ForgotPasswordScreen({ role }: { role: OnboardingRole }) {
                   <MailCheckIcon className="size-5" strokeWidth={2.25} />
                 </span>
                 <h1 className="mt-4 text-[28px] font-bold leading-tight tracking-tight text-balance sm:text-[32px]">
-                  Check your email
+                  {t("auth.checkEmailTitle")}
                 </h1>
                 <p className="mt-2 text-[15px] leading-relaxed text-pretty text-muted-foreground">
-                  If an account exists for <strong className="text-foreground">{email}</strong>,
-                  we&apos;ve sent a link to reset your password.
+                  {t("auth.checkEmailDescription", { email })}
                 </p>
                 <Link
                   href={`/${role}/login`}
                   className={cn(buttonVariants({ size: "lg" }), "mt-6 w-full")}
                 >
-                  Back to log in
+                  {t("auth.backToLogin")}
                 </Link>
               </>
             ) : (
               <>
                 <h1 className="text-[28px] font-bold leading-tight tracking-tight text-balance sm:text-[32px]">
-                  Reset your password
+                  {t("auth.resetTitle")}
                 </h1>
                 <p className="mt-2 text-[15px] leading-relaxed text-pretty text-muted-foreground">
-                  Enter the email on your account and we&apos;ll send you a link
-                  to get back in.
+                  {t("auth.resetDescription")}
                 </p>
 
                 <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-3">
                   <FieldGroup>
-                    <FieldGroupRow label="Email" htmlFor="forgot-email">
+                    <FieldGroupRow label={t("auth.emailLabel")} htmlFor="forgot-email">
                       <FieldGroupInput
                         id="forgot-email"
                         type="email"
@@ -102,7 +102,7 @@ function ForgotPasswordScreen({ role }: { role: OnboardingRole }) {
                         autoCorrect="off"
                         spellCheck={false}
                         required
-                        placeholder="user@domain.com"
+                        placeholder={t("auth.emailPlaceholder")}
                         value={email}
                         onChange={(event) =>
                           setEmail(event.target.value.toLowerCase())
@@ -118,8 +118,8 @@ function ForgotPasswordScreen({ role }: { role: OnboardingRole }) {
                     className="mt-1 w-full"
                     disabled={submitting || !emailValid}
                   >
-                    {submitting ? "Sending…" : "Send reset link"}
-                    {!submitting && <ArrowRightIcon className="rtl:-scale-x-100" />}
+                    {submitting ? t("auth.sendingLabel") : t("auth.sendResetLink")}
+                    {!submitting && <ArrowRightIcon />}
                   </Button>
                 </form>
               </>

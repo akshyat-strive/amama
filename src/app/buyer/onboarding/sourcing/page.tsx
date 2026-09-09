@@ -4,8 +4,12 @@ import { useRouter } from "next/navigation"
 import { ArrowRightIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { useI18n } from "@/features/i18n/i18n-context"
 import { StepShell } from "@/features/onboarding/components/step-shell"
-import { SelectableTile } from "@/features/onboarding/components/selectable"
+import {
+  SelectableTile,
+  SelectableTileGroup,
+} from "@/features/onboarding/components/selectable"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import {
   cropImageUrl,
@@ -18,9 +22,10 @@ import {
 
 export default function BuyerSourcingPage() {
   const router = useRouter()
+  const { t } = useI18n()
   const { draft, updateBuyer } = useOnboarding()
   const picked = draft.buyer.sourcing
-  const accountType = draft.buyer.accountType
+  const entityType = draft.buyer.entityType
 
   const toggle = (id: string) =>
     updateBuyer((prev) => ({
@@ -29,16 +34,16 @@ export default function BuyerSourcingPage() {
         : [...prev.sourcing, id],
     }))
 
-  const target = nextStep("buyer", "sourcing", accountType)
-  const back = previousStep("buyer", "sourcing", accountType)
+  const target = nextStep("buyer", "sourcing", entityType)
+  const back = previousStep("buyer", "sourcing", entityType)
 
   return (
     <StepShell
-      step={stepIndex("buyer", "sourcing", accountType) + 1}
-      totalSteps={effectiveSteps("buyer", accountType).length}
+      step={stepIndex("buyer", "sourcing", entityType) + 1}
+      totalSteps={effectiveSteps("buyer", entityType).length}
       backHref={back?.href ?? "/"}
-      title="What do you want to source?"
-      description="Pick as many as you like — you can always add more later. We'll match you with growers who have them ready this season."
+      title={t("onboarding.sourcing.title")}
+      description={t("onboarding.sourcing.description")}
       skipHref={target?.href}
       footer={
         <Button
@@ -46,25 +51,33 @@ export default function BuyerSourcingPage() {
           className="w-full"
           onClick={() => target && router.push(target.href)}
         >
-          {picked.length > 0 ? `Continue with ${picked.length}` : "Continue"}
-          <ArrowRightIcon className="rtl:-scale-x-100" />
+          {picked.length > 0
+            ? t("common.continueWithCount", { count: picked.length })
+            : t("common.continue")}
+          <ArrowRightIcon />
         </Button>
       }
     >
       <p aria-live="polite" className="sr-only">
-        {picked.length} selected
+        {t("onboarding.sourcing.selectedAnnouncement", { count: picked.length })}
       </p>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {crops.map((crop) => (
-          <SelectableTile
-            key={crop.id}
-            label={crop.label}
-            photo={{ src: cropImageUrl(crop.photo), alt: crop.label }}
-            selected={picked.includes(crop.id)}
-            onToggle={() => toggle(crop.id)}
-          />
-        ))}
-      </div>
+      <SelectableTileGroup
+        aria-label={t("onboarding.sourcing.title")}
+        className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+      >
+        {crops.map((crop) => {
+          const label = t(`onboarding.options.crops.${crop.id}`)
+          return (
+            <SelectableTile
+              key={crop.id}
+              label={label}
+              photo={{ src: cropImageUrl(crop.photo), alt: label }}
+              selected={picked.includes(crop.id)}
+              onToggle={() => toggle(crop.id)}
+            />
+          )
+        })}
+      </SelectableTileGroup>
     </StepShell>
   )
 }

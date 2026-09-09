@@ -28,7 +28,7 @@ export const loginContent: Record<OnboardingRole, LoginContent> = {
         profileUrl: "https://unsplash.com/@hooverpaul55?ref=amamacrm",
       },
     },
-    onboardingHref: "/buyer/onboarding/account",
+    onboardingHref: "/buyer/onboarding/country",
     otherRole: { href: "/seller/login" },
   },
   seller: {
@@ -41,7 +41,7 @@ export const loginContent: Record<OnboardingRole, LoginContent> = {
         profileUrl: "https://unsplash.com/@saikirankesari",
       },
     },
-    onboardingHref: "/seller/onboarding/account",
+    onboardingHref: "/seller/onboarding/country",
     otherRole: { href: "/buyer/login" },
   },
 }

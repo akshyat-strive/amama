@@ -20,9 +20,10 @@ import { ProductInfoPanel } from "@/features/marketplace/product-info-panel"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 
 /** Same viewport-relative height as every other full-height chat surface
- *  in the dashboard, only from `lg` up — below that the panels stack and
- *  the page scrolls normally. */
-const FULL_HEIGHT = "lg:h-[calc(100dvh-104px)] sm:lg:h-[calc(100dvh-112px)]"
+ *  in the dashboard — the topbar offset (80px) plus the content wrapper's
+ *  own bottom padding (12px, `pb-3`) — only from `lg` up: below that the
+ *  panels stack and the page scrolls normally. */
+const FULL_HEIGHT = "lg:h-[calc(100dvh-92px)]"
 
 /**
  * The seller's side of a single product: who's asked about it, and the

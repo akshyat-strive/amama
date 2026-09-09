@@ -34,6 +34,21 @@ function ReviewGate({
 
   if (status === "approved") return <>{children}</>
 
+  // A KAM can reject one document without touching the submission's overall
+  // status (see `setDocumentStatus` — it's meant to be usable one document
+  // at a time, independent of the whole application). Left as plain
+  // "pending" here, the applicant would see "we're checking your
+  // documents" forever with no way to fix anything. Treating it the same as
+  // a full `requestChanges` — same screen, same "go fix it" link — is what
+  // actually gets them back to the one document that needs re-uploading.
+  const rejectedDocuments = submission?.documents.filter(
+    (document) => document.reviewStatus === "rejected"
+  )
+  const effectiveStatus =
+    status === "pending" && rejectedDocuments && rejectedDocuments.length > 0
+      ? "changes-requested"
+      : status
+
   const variants: Record<
     "pending" | "changes-requested" | "not-submitted",
     { icon: LucideIcon; tone: string; title: string; description: string }
@@ -58,7 +73,7 @@ function ReviewGate({
     },
   }
 
-  const variant = variants[status]
+  const variant = variants[effectiveStatus]
   const Icon = variant.icon
 
   const submittedOn = submission?.submittedAt
@@ -88,8 +103,11 @@ function ReviewGate({
         </p>
 
         {/* The KAM's own words, not a paraphrase — someone sent back for a
-            blurry land record needs to know it was the land record. */}
-        {status === "changes-requested" && submission?.reviewerNote ? (
+            blurry land record needs to know it was the land record. Shown
+            for a whole-application send-back; a single rejected document
+            gets its own note inline in the list below instead, since that's
+            the more specific reason. */}
+        {effectiveStatus === "changes-requested" && submission?.reviewerNote ? (
           <blockquote className="mt-4 rounded-2xl border border-status-warning/30 bg-status-warning/5 px-4 py-3 text-[14px] leading-relaxed text-foreground">
             {submission.reviewerNote}
           </blockquote>
@@ -104,35 +122,54 @@ function ReviewGate({
               ) : null}
             </h2>
             <ul className="mt-2 flex flex-col gap-1.5">
-              {submission.documents.map((document) => (
-                <li
-                  key={document.id}
-                  className="flex items-center gap-2.5 rounded-xl border border-border px-3 py-2.5"
-                >
-                  <FileText aria-hidden className="size-4 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
-                    {t(`onboarding.options.documents.${document.id}.label`)}
-                  </span>
-                  <span className="shrink-0 truncate text-[12px] text-muted-foreground">
-                    {document.name}
-                  </span>
-                </li>
-              ))}
+              {submission.documents.map((document) => {
+                const rejected = document.reviewStatus === "rejected"
+                return (
+                  <li
+                    key={document.id}
+                    className={cn(
+                      "flex flex-col gap-1.5 rounded-xl border px-3 py-2.5",
+                      rejected ? "border-destructive/30 bg-destructive/5" : "border-border"
+                    )}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <FileText
+                        aria-hidden
+                        className={cn(
+                          "size-4 shrink-0",
+                          rejected ? "text-destructive" : "text-muted-foreground"
+                        )}
+                      />
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
+                        {t(`onboarding.options.documents.${document.id}.label`)}
+                      </span>
+                      <span className="shrink-0 truncate text-[12px] text-muted-foreground">
+                        {document.name}
+                      </span>
+                    </div>
+                    {rejected && document.reviewNote ? (
+                      <p className="text-[12px] leading-relaxed text-destructive">
+                        {document.reviewNote}
+                      </p>
+                    ) : null}
+                  </li>
+                )
+              })}
             </ul>
           </section>
         ) : null}
 
-        {status !== "pending" ? (
+        {effectiveStatus !== "pending" ? (
           <Link
             href={
-              status === "changes-requested"
+              effectiveStatus === "changes-requested"
                 ? `/${role}/onboarding/documents`
                 : `/${role}/onboarding/country`
             }
             className={cn(buttonVariants({ size: "xl" }), "mt-7 w-full")}
           >
             {t(
-              status === "changes-requested"
+              effectiveStatus === "changes-requested"
                 ? "review.fixDocuments"
                 : "review.finishOnboarding"
             )}

@@ -212,6 +212,32 @@ function useVerification() {
         })
       },
 
+      /** Sends just the documents a KAM flagged back in, merged into the
+       *  existing submission rather than replacing it — anything the KAM
+       *  didn't reject (approved or still-pending) stays exactly as it was.
+       *  The touched documents go back to "pending" review, and the
+       *  submission as a whole goes back to "pending" too, since it needs
+       *  another look — but only for the pieces that changed, not a full
+       *  from-scratch resubmission. */
+      resubmitDocuments: (role: OnboardingRole, updatedDocuments: SubmittedDocument[]) => {
+        const existing = snapshot[role]
+        if (!existing) return
+        const updatedById = new Map(updatedDocuments.map((document) => [document.id, document]))
+        write({
+          ...snapshot,
+          [role]: {
+            ...existing,
+            status: "pending",
+            documents: existing.documents.map(
+              (document) => updatedById.get(document.id) ?? document
+            ),
+            submittedAt: new Date().toISOString(),
+            reviewedAt: null,
+            reviewerNote: null,
+          },
+        })
+      },
+
       reset: () => write(emptyStore),
     }),
     [submissions]

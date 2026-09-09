@@ -15,8 +15,8 @@ import type { OnboardingRole } from "@/features/onboarding/types"
 
 /** Same viewport-relative height as every other full-height chat surface
  *  in the dashboard — the topbar offset (80px) plus the content wrapper's
- *  own top/bottom padding. */
-const FULL_HEIGHT = "h-[calc(100dvh-104px)] sm:h-[calc(100dvh-112px)]"
+ *  own bottom padding (12px, `pb-3`). */
+const FULL_HEIGHT = "h-[calc(100dvh-92px)]"
 
 type UiThread = {
   id: string

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { ConversationThread } from "@/features/marketplace/conversation-thread"
 import { useConversations } from "@/features/marketplace/conversation-store"
 
-const FULL_HEIGHT = "h-[calc(100dvh-104px)] sm:h-[calc(100dvh-112px)]"
+const FULL_HEIGHT = "h-[calc(100dvh-92px)]"
 
 /**
  * Read-only, on purpose — a KAM can see every product conversation to step

@@ -33,6 +33,11 @@ type UploadState =
   | { status: "idle" }
   | { status: "uploading"; file: File; progress: number }
   | { status: "uploaded"; file: File; previewUrl: string | null }
+  /** Seeded from a previous visit — the applicant picked this file before
+   *  (this session or an earlier one), but the real `File` couldn't survive
+   *  a reload, so there's no preview, only the name and size that were
+   *  saved alongside it. Behaves like `uploaded` everywhere it's rendered. */
+  | { status: "restored"; name: string; size: number }
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -87,6 +92,7 @@ function DocumentUploadCard({
   hint,
   required,
   icon: Icon,
+  initialFile = null,
   onChange,
 }: {
   documentId: DocumentId
@@ -94,31 +100,66 @@ function DocumentUploadCard({
   hint: string
   required: boolean
   icon: LucideIcon
+  /** A file already on record for this document — from an earlier visit
+   *  this session, an earlier session (a saved draft), or a document a KAM
+   *  already approved. Seeds the card straight into its "done" state
+   *  instead of making the applicant redo work that's already saved. */
+  initialFile?: UploadedFile | null
   onChange?: (file: UploadedFile | null) => void
 }) {
   const { t } = useI18n()
   const inputId = React.useId()
   const inputRef = React.useRef<HTMLInputElement>(null)
-  const [state, setState] = React.useState<UploadState>({ status: "idle" })
+  const [state, setState] = React.useState<UploadState>(() =>
+    initialFile ? { status: "restored", name: initialFile.name, size: initialFile.size } : { status: "idle" }
+  )
   const [dragging, setDragging] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
   const constraint = constraintFor(documentId)
   const maxSize = describeMaxSize(constraint)
 
+  // Covers the one case the lazy initializer above can't: `initialFile`
+  // arriving *after* this card has already mounted idle — restoring from
+  // `localStorage` only resolves once React has hydrated, one render later
+  // than this component's own first paint. Queued as a microtask rather
+  // than set synchronously in the effect body (same trick `StepDots` uses
+  // for its own post-mount state flip) — deferring means it's a reaction to
+  // that late arrival, not an effect re-deriving state React already had.
+  // Guarded to `idle` only, so it can never clobber a file the visitor is
+  // actively picking or has already picked in this same session.
+  React.useEffect(() => {
+    if (!initialFile) return
+    queueMicrotask(() => {
+      setState((current) =>
+        current.status === "idle"
+          ? { status: "restored", name: initialFile.name, size: initialFile.size }
+          : current
+      )
+    })
+  }, [initialFile])
+
   // `onChange` is called from an effect rather than inline so the parent
-  // hears about *every* arrival at a terminal state — including the
-  // upload finishing on a timer, which no click handler covers.
+  // hears about the upload finishing on a timer, which no click handler
+  // covers. Deliberately one-directional — it only ever reports a file
+  // *arriving* (freshly uploaded, or restored from a previous visit), never
+  // an absence. Reporting "nothing here" from this same effect would fire
+  // the instant this card mounts idle, before the restoration effect above
+  // has had a chance to run — and against a store that persists what it's
+  // told (`useDocumentDraft`), that transient "nothing yet" would be read
+  // as "the applicant removed this document" and overwrite the real save.
+  // A removal is a real user action instead: `remove()` below reports it
+  // directly, synchronously with the click.
   const onChangeRef = React.useRef(onChange)
   React.useEffect(() => {
     onChangeRef.current = onChange
   })
   React.useEffect(() => {
-    onChangeRef.current?.(
-      state.status === "uploaded"
-        ? { name: state.file.name, size: state.file.size }
-        : null
-    )
+    if (state.status === "uploaded") {
+      onChangeRef.current?.({ name: state.file.name, size: state.file.size })
+    } else if (state.status === "restored") {
+      onChangeRef.current?.({ name: state.name, size: state.size })
+    }
   }, [state])
 
   // Advances the simulated progress a random, uneven amount every tick — a
@@ -174,8 +215,16 @@ function DocumentUploadCard({
   const remove = () => {
     setError(null)
     setState({ status: "idle" })
+    onChange?.(null)
   }
   const replace = () => inputRef.current?.click()
+
+  const fileInfo =
+    state.status === "uploaded"
+      ? { name: state.file.name, size: state.file.size }
+      : state.status === "restored"
+        ? { name: state.name, size: state.size }
+        : null
 
   return (
     <div className="rounded-2xl border border-border bg-card p-3">
@@ -331,7 +380,7 @@ function DocumentUploadCard({
         </div>
       ) : null}
 
-      {state.status === "uploaded" && !state.previewUrl ? (
+      {(state.status === "uploaded" && !state.previewUrl) || state.status === "restored" ? (
         <div className="flex h-24 items-center gap-2.5 rounded-xl border border-border bg-muted/40 px-3">
           <span
             aria-hidden
@@ -341,9 +390,9 @@ function DocumentUploadCard({
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-medium text-foreground">
-              {state.file.name}
+              {fileInfo!.name}
             </p>
-            <p className="text-[11px] text-muted-foreground">{formatBytes(state.file.size)}</p>
+            <p className="text-[11px] text-muted-foreground">{formatBytes(fileInfo!.size)}</p>
           </div>
           <div className="flex shrink-0 gap-1">
             <ActionButton

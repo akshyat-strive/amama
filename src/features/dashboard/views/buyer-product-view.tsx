@@ -21,9 +21,11 @@ import { useOnboarding } from "@/features/onboarding/onboarding-context"
 
 /** Same viewport-relative height on every full-height chat surface in the
  *  dashboard — the topbar offset (80px) plus the content wrapper's own
- *  top/bottom padding. Only applied from `lg` up: below that the two
- *  panels stack and the page is allowed to scroll normally. */
-const FULL_HEIGHT = "lg:h-[calc(100dvh-104px)] sm:lg:h-[calc(100dvh-112px)]"
+ *  top/bottom padding (12px, `pb-3`), matching the shell exactly so this
+ *  panel's bottom edge lines up with the sidebar's. Only applied from `lg`
+ *  up: below that the two panels stack and the page is allowed to scroll
+ *  normally. */
+const FULL_HEIGHT = "lg:h-[calc(100dvh-92px)]"
 
 /**
  * A single product's own page — left is everything about it, right is the
@@ -80,8 +82,8 @@ function BuyerProductView({ listingId }: { listingId: string }) {
 
   return (
     <div className={cn("flex flex-col gap-4 lg:flex-row lg:overflow-hidden", FULL_HEIGHT)}>
-      <div className="flex flex-col overflow-hidden rounded-3xl border border-border bg-card lg:w-[380px] lg:shrink-0">
-        <div className="shrink-0 border-b border-border px-5 py-3.5">
+      <div className="flex flex-col overflow-hidden rounded-3xl border border-border bg-black lg:w-[380px] lg:shrink-0">
+        <div className="shrink-0 px-5 py-3.5">
           <Link
             href="/buyer/dashboard/sourcing"
             className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground"
@@ -91,7 +93,7 @@ function BuyerProductView({ listingId }: { listingId: string }) {
           </Link>
         </div>
         <div className="lg:flex-1 lg:overflow-y-auto">
-          <div className="p-4">
+          <div className="p-4 bg-card rounded-3xl">
             <ProductInfoPanel listing={listing} />
           </div>
         </div>

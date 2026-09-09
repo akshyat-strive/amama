@@ -1,9 +1,8 @@
 "use client"
 
 import Image from "next/image"
-import { PenLineIcon, Trash2Icon } from "lucide-react"
+import { Trash2Icon } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import { cropLabels } from "@/features/dashboard/demo-data"
 import { cropImageUrl } from "@/features/onboarding/steps"
 import { GradeBadge } from "@/features/marketplace/grade-badge"
@@ -24,33 +23,22 @@ function formatUsd(amount: number) {
  * lives here instead, since the card's job is just to get someone to
  * this page. Shared between the buyer's read-only view and the seller's
  * own (which adds edit/remove).
+ *
+ * Ordered by what a buyer actually needs to decide, not by what's easiest
+ * to shoot a photo of: what it is, how much, and for how much comes first;
+ * the photo is confirmation, not the pitch, so it comes after. Seller
+ * identity is context, not a decision input — it's the last line, not a
+ * card competing for attention with the product itself.
+ *
+ * Edit/remove used to live here as a button row, but a seller's own actions
+ * on their listing aren't part of what the listing *is* — they're the
+ * page's own footer now (see `SellerProductView`), not this panel's.
  */
-function ProductInfoPanel({
-  listing,
-  ownerView = false,
-  onEdit,
-  onRemove,
-}: {
-  listing: Listing
-  ownerView?: boolean
-  onEdit?: () => void
-  onRemove?: () => void
-}) {
+function ProductInfoPanel({ listing }: { listing: Listing }) {
   const cropLabel = cropLabels[listing.cropId] ?? listing.cropId
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="relative aspect-4/3 w-full overflow-hidden rounded-3xl bg-muted">
-        <Image
-          src={cropImageUrl(listing.photo, 720)}
-          alt={cropLabel}
-          fill
-          sizes="(min-width: 1024px) 480px, 90vw"
-          className="object-cover"
-          priority
-        />
-      </div>
-
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[22px] font-bold tracking-tight text-foreground">{cropLabel}</p>
@@ -78,30 +66,27 @@ function ProductInfoPanel({
         <p className="text-[14px] leading-relaxed text-muted-foreground">{listing.description}</p>
       ) : null}
 
-      <ProximityMap country={listing.country} region={listing.region} className="h-32 w-full rounded-2xl" />
-
-      <div className="flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3">
-        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-[12px] font-bold text-foreground/70">
-          {listing.sellerName.charAt(0)}
-        </span>
-        <div className="min-w-0">
-          <p className="truncate text-[13px] font-semibold text-foreground">{listing.sellerName}</p>
-          <p className="text-[12px] text-muted-foreground">Seller</p>
-        </div>
+      {/* A single photo today, laid out the same way a multi-photo carousel
+       *  would be (full-bleed, aspect-locked) so swapping in an actual
+       *  carousel later — once a listing can carry more than one image —
+       *  is a drop-in, not a redesign. */}
+      <div className="relative aspect-4/3 w-full overflow-hidden rounded-3xl bg-muted">
+        <Image
+          src={cropImageUrl(listing.photo, 720)}
+          alt={cropLabel}
+          fill
+          sizes="(min-width: 1024px) 480px, 90vw"
+          className="object-cover"
+          priority
+        />
       </div>
 
-      {ownerView && !listing.deletedAt ? (
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="flex-1" onClick={onEdit}>
-            <PenLineIcon />
-            Edit listing
-          </Button>
-          <Button variant="outline" size="sm" className="flex-1 text-destructive" onClick={onRemove}>
-            <Trash2Icon />
-            Remove
-          </Button>
-        </div>
-      ) : null}
+      <ProximityMap country={listing.country} region={listing.region} className="h-32 w-full rounded-2xl" />
+
+      <div>
+        <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Seller</p>
+        <p className="mt-0.5 text-[14px] font-semibold text-foreground">{listing.sellerName}</p>
+      </div>
     </div>
   )
 }

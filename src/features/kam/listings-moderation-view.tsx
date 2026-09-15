@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cropLabels } from "@/features/dashboard/demo-data"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
-import { notifyFromKam, KAM_NAME } from "@/features/marketplace/kam-thread-store"
+import { notifyFromKam } from "@/features/marketplace/kam-thread-store"
+import { useKamIdentity } from "@/features/admin/kam-identity"
 import {
   moderateListing,
   useListings,
@@ -31,7 +32,7 @@ function formatUsd(amount: number) {
   }).format(amount)
 }
 
-function ListingModerationCard({ listing }: { listing: Listing }) {
+function ListingModerationCard({ listing, kamName }: { listing: Listing; kamName: string }) {
   const [mode, setMode] = React.useState<"idle" | "flagging">("idle")
   const [note, setNote] = React.useState("")
   const status = moderationStyles[listing.moderationStatus]
@@ -39,7 +40,7 @@ function ListingModerationCard({ listing }: { listing: Listing }) {
 
   const flag = () => {
     const trimmed = note.trim()
-    moderateListing(listing.id, "flagged", KAM_NAME, trimmed || null)
+    moderateListing(listing.id, "flagged", kamName, trimmed || null)
     if (trimmed) {
       notifyFromKam(
         listing.sellerId,
@@ -111,7 +112,7 @@ function ListingModerationCard({ listing }: { listing: Listing }) {
           <Button
             size="sm"
             disabled={listing.moderationStatus === "verified"}
-            onClick={() => moderateListing(listing.id, "verified", KAM_NAME)}
+            onClick={() => moderateListing(listing.id, "verified", kamName)}
           >
             <BadgeCheckIcon />
             Mark verified
@@ -120,7 +121,7 @@ function ListingModerationCard({ listing }: { listing: Listing }) {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => moderateListing(listing.id, "unverified", KAM_NAME)}
+              onClick={() => moderateListing(listing.id, "unverified", kamName)}
             >
               <RotateCcw />
               Clear flag
@@ -139,6 +140,8 @@ function ListingModerationCard({ listing }: { listing: Listing }) {
 
 function ListingsModerationView() {
   const listings = useListings()
+  const identity = useKamIdentity()
+  const kamName = identity?.name ?? "KAM"
 
   return (
     <div>
@@ -155,7 +158,7 @@ function ListingsModerationView() {
       ) : (
         <div className="mt-6 flex flex-col gap-4">
           {listings.map((listing) => (
-            <ListingModerationCard key={listing.id} listing={listing} />
+            <ListingModerationCard key={listing.id} listing={listing} kamName={kamName} />
           ))}
         </div>
       )}

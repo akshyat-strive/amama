@@ -7,7 +7,6 @@ import type { OnboardingRole } from "@/features/onboarding/types"
 export type KamMessage = { from: "kam" | "you"; text: string; at: string }
 
 const STORAGE_KEY = "amama.marketplace.kamThreads"
-const KAM_NAME = "Priya Nair"
 
 /** Keyed by whichever buyer/seller identity id owns the thread — every
  *  account gets exactly one KAM channel, not one per product. */
@@ -103,4 +102,4 @@ function notifyFromKam(personId: string, role: OnboardingRole, text: string) {
   appendKamMessage(personId, role, { from: "kam", text, at: new Date().toISOString() })
 }
 
-export { useKamThread, sendToKam, notifyFromKam, KAM_NAME }
+export { useKamThread, sendToKam, notifyFromKam }

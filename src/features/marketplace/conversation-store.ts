@@ -177,6 +177,25 @@ function logSystemMessage(listingId: string, text: string) {
   )
 }
 
+/** Same idea again, but scoped to exactly *one* conversation rather than
+ *  every thread about a listing — for events that only concern the two
+ *  parties actually in that thread, like a deal being proposed or
+ *  confirmed. A seller can have many buyers messaging about the same
+ *  listing; a deal only ever involves the one conversation it came from. */
+function logSystemMessageForConversation(id: string, text: string) {
+  restoreOnce()
+  write(
+    snapshot.map((conversation) =>
+      conversation.id === id
+        ? {
+            ...conversation,
+            messages: [...conversation.messages, { from: "system", text, at: new Date().toISOString() }],
+          }
+        : conversation
+    )
+  )
+}
+
 const EMAIL_PATTERN = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/
 
 /**
@@ -217,6 +236,7 @@ export {
   sendMessage,
   logListingChange,
   logSystemMessage,
+  logSystemMessageForConversation,
   toThreadMessages,
   containsContactInfo,
   conversationId,

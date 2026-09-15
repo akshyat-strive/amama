@@ -51,6 +51,11 @@ export type Submission = {
   reviewedAt: string | null
   /** The KAM's reason, when they send an application back. */
   reviewerNote: string | null
+  /** Which KAM actually decided this — `null` until `approve`/`requestChanges`
+   *  sets it, so Master Admin can count real per-KAM verification stats
+   *  instead of an anonymous aggregate. */
+  reviewedByKamId: string | null
+  reviewedByKamName: string | null
 }
 
 type Store = Record<OnboardingRole, Submission | null>
@@ -79,9 +84,14 @@ function normalizeDocument(document: Partial<SubmittedDocument>): SubmittedDocum
   return { reviewStatus: "pending", reviewNote: null, ...document } as SubmittedDocument
 }
 
-function normalizeSubmission(submission: Submission | null): Submission | null {
-  if (!submission) return submission
-  return { ...submission, documents: submission.documents.map(normalizeDocument) }
+function normalizeSubmission(submission: Partial<Submission> | null): Submission | null {
+  if (!submission) return null
+  return {
+    reviewedByKamId: null,
+    reviewedByKamName: null,
+    ...submission,
+    documents: (submission.documents ?? []).map(normalizeDocument),
+  } as Submission
 }
 
 function restoreOnce() {
@@ -156,10 +166,12 @@ function useVerification() {
             submittedAt: new Date().toISOString(),
             reviewedAt: null,
             reviewerNote: null,
+            reviewedByKamId: null,
+            reviewedByKamName: null,
           },
         }),
 
-      approve: (role: OnboardingRole) => {
+      approve: (role: OnboardingRole, kam: { id: string; name: string }) => {
         const existing = snapshot[role]
         if (!existing) return
         write({
@@ -169,11 +181,13 @@ function useVerification() {
             status: "approved",
             reviewedAt: new Date().toISOString(),
             reviewerNote: null,
+            reviewedByKamId: kam.id,
+            reviewedByKamName: kam.name,
           },
         })
       },
 
-      requestChanges: (role: OnboardingRole, note: string) => {
+      requestChanges: (role: OnboardingRole, note: string, kam: { id: string; name: string }) => {
         const existing = snapshot[role]
         if (!existing) return
         write({
@@ -183,6 +197,8 @@ function useVerification() {
             status: "changes-requested",
             reviewedAt: new Date().toISOString(),
             reviewerNote: note,
+            reviewedByKamId: kam.id,
+            reviewedByKamName: kam.name,
           },
         })
       },

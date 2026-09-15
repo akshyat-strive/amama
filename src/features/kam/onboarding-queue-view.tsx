@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { useKamIdentity } from "@/features/admin/kam-identity"
 import en from "@/features/i18n/translations/en"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
 import type { OnboardingRole } from "@/features/onboarding/types"
@@ -138,9 +139,15 @@ function DocumentRow({ role, document }: { role: OnboardingRole; document: Submi
 
 function SubmissionCard({ submission }: { submission: Submission }) {
   const { approve, requestChanges } = useVerification()
+  const identity = useKamIdentity()
   const [note, setNote] = React.useState("")
   const [showNote, setShowNote] = React.useState(false)
   const status = statusStyles[submission.status]
+
+  // `AdminShell` already redirects a signed-out visitor away from every KAM
+  // route before this ever renders — the fallback only covers the instant
+  // between that redirect firing and the route actually changing.
+  const kam = identity ?? { id: "kam", name: "KAM" }
 
   const submittedOn = submission.submittedAt
     ? new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(
@@ -167,6 +174,11 @@ function SubmissionCard({ submission }: { submission: Submission }) {
 
       {submittedOn ? (
         <p className="mt-3 text-[12px] text-muted-foreground">Submitted {submittedOn}</p>
+      ) : null}
+      {submission.reviewedByKamName ? (
+        <p className="mt-0.5 text-[12px] text-muted-foreground">
+          Reviewed by {submission.reviewedByKamName}
+        </p>
       ) : null}
 
       <ul className="mt-4 flex flex-col gap-1.5">
@@ -199,7 +211,7 @@ function SubmissionCard({ submission }: { submission: Submission }) {
               variant="outline"
               disabled={note.trim().length === 0}
               onClick={() => {
-                requestChanges(submission.role, note.trim())
+                requestChanges(submission.role, note.trim(), kam)
                 setShowNote(false)
                 setNote("")
               }}
@@ -216,7 +228,7 @@ function SubmissionCard({ submission }: { submission: Submission }) {
           <Button
             size="sm"
             disabled={submission.status === "approved"}
-            onClick={() => approve(submission.role)}
+            onClick={() => approve(submission.role, kam)}
           >
             <CheckCircle2 />
             Approve

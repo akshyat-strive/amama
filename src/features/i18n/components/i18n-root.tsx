@@ -18,10 +18,10 @@ import { useI18n } from "@/features/i18n/i18n-context"
 function I18nRoot({ children }: { children: React.ReactNode }) {
   const { locale } = useI18n()
   const pathname = usePathname()
-  // The dashboard and the KAM console both have their own topbar with a
-  // chip for this in the same corner — the fixed global switcher would
-  // only sit on top of it there.
-  const hasOwnSwitcher = pathname.includes("/dashboard") || pathname.startsWith("/kam")
+  // The dashboard and the admin module's own consoles (KAM, master admin)
+  // all have their own topbar with a chip for this in the same corner —
+  // the fixed global switcher would only sit on top of it there.
+  const hasOwnSwitcher = pathname.includes("/dashboard") || pathname.startsWith("/admin")
 
   React.useEffect(() => {
     document.documentElement.lang = locale.tag

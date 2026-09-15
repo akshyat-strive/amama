@@ -16,6 +16,8 @@ import {
   toThreadMessages,
   useConversations,
 } from "@/features/marketplace/conversation-store"
+import { DealStatusFooter } from "@/features/marketplace/deal-status-footer"
+import { latestDealForConversation, useDeals } from "@/features/marketplace/deal-store"
 import { useListings } from "@/features/marketplace/listing-store"
 import { ProductInfoPanel } from "@/features/marketplace/product-info-panel"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
@@ -63,6 +65,8 @@ function BuyerProductView({ listingId }: { listingId: string }) {
   const conversations = useConversations()
   const id = listing ? conversationId(buyer.id, listing.sellerId, listing.id) : null
   const conversation = conversations.find((entry) => entry.id === id) ?? null
+  const deals = useDeals()
+  const deal = id ? latestDealForConversation(deals, id) : null
 
   if (!listing) {
     return (
@@ -133,6 +137,14 @@ function BuyerProductView({ listingId }: { listingId: string }) {
             <ProductInfoPanel listing={listing} />
           </div>
         </div>
+        <DealStatusFooter
+          deal={deal}
+          conversation={conversation}
+          listing={listing}
+          role="buyer"
+          myName={buyer.name}
+          counterpartName={listing.sellerName}
+        />
       </div>
 
       {/* Desktop: inline, side by side. */}

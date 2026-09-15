@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# client-sent prototype (its own separate repos, never part of this one)
+/client-prototype/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

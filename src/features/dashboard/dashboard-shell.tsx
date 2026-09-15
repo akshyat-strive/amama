@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { LanguageSwitcher } from "@/features/i18n/components/language-switcher"
 import { NavList } from "@/features/dashboard/nav-list"
 import { dashboardNav } from "@/features/dashboard/nav-config"
+import { useSidebarOpen } from "@/features/dashboard/sidebar-open-store"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
 
@@ -27,19 +28,25 @@ const TOPBAR_OFFSET = "pt-20"
  * iOS nav bar. Everything below (sidebar, scrollable content) reserves that
  * same height as top padding so nothing starts out hidden underneath it.
  *
- * Below the topbar, a sidebar floats over the canvas rather than sitting
+ * Below the topbar, the sidebar floats over the canvas rather than sitting
  * flush against it — its own rounded, shadowed card, inset with a gap on
  * every side, the way a popover reads as a distinct surface rather than
  * another panel bolted to the layout.
  *
- * There's no separate "collapsed" rail state. Closing the sidebar slides it
- * fully out of view (a transform, so it's a slide, not a squeeze) while the
- * wrapper's own layout width animates to zero in step, which is what lets
- * the body reclaim the space instead of just hiding behind it. On phone
- * widths the sidebar can't push anything — there's no spare width to push
- * into — so it becomes a full-height overlay with a backdrop instead; same
- * component, the breakpoint decides which behaviour applies.
+ * The one `sidebarOpen` toggle means something different at each
+ * breakpoint, which is what makes three visual states out of one boolean:
+ *  - Desktop: collapsed is a narrow icon-only rail, never fully hidden —
+ *    it still pushes the body over, just less.
+ *  - Mobile: collapsed means gone entirely (there's no spare width for a
+ *    rail to live in), sliding back in as a full icon+label overlay when
+ *    opened.
+ * `NavList`'s own `expanded` prop (driven by this same boolean) is what
+ * switches between icon+label and icon-only — the width change here and
+ * the label visibility there have to move together or the rail would clip
+ * text instead of hiding it.
  */
+const RAIL_WIDTH_MD = "md:w-[84px]"
+
 function DashboardShell({
   role,
   children,
@@ -48,32 +55,11 @@ function DashboardShell({
   children: React.ReactNode
 }) {
   const { draft } = useOnboarding()
-  // A lazy initializer, not an effect: it only ever runs once, during this
-  // component's first render, so there's no second render to "correct" a
-  // default the way restoring a value in an effect would need.
-  // `typeof window` guards the one real difference from the onboarding
-  // draft's own store — this is plain `useState`, not
-  // `useSyncExternalStore`, so nothing re-runs this on the server at all.
-  const [sidebarOpen, setSidebarOpen] = React.useState(() => {
-    if (typeof window === "undefined") return true
-    try {
-      return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) !== "0"
-    } catch {
-      return true
-    }
-  })
+  const [sidebarOpen, setSidebarOpen] = useSidebarOpen(SIDEBAR_STORAGE_KEY)
   const nav = dashboardNav[role]
 
   const toggleSidebar = () => {
-    setSidebarOpen((open) => {
-      const next = !open
-      try {
-        window.localStorage.setItem(SIDEBAR_STORAGE_KEY, next ? "1" : "0")
-      } catch {
-        // Persistence is best-effort.
-      }
-      return next
-    })
+    setSidebarOpen((open) => !open)
   }
 
   const person = role === "buyer" ? draft.buyer : draft.seller
@@ -141,33 +127,38 @@ function DashboardShell({
         {/* Outer wrapper: the thing whose *layout* size changes. Fixed and
             full-height below `md` (an overlay doesn't take up flex space to
             begin with), back in normal flow above it where its width is
-            what pushes or reclaims the body's space. */}
+            what pushes or reclaims the body's space. Collapsed width is `0`
+            below `md` (nothing to shrink to) and the icon rail at `md` and
+            up (never fully hidden there). */}
         <div
           className={cn(
             "fixed inset-y-0 start-0 z-40 min-w-0 overflow-hidden md:static md:inset-auto md:z-auto md:shrink-0",
             "transition-[width] duration-300 ease-out",
-            sidebarOpen ? "w-72" : "w-0"
+            sidebarOpen ? "w-72" : cn("w-0", RAIL_WIDTH_MD)
           )}
         >
-          {/* Inner panel: always full width, so it's a slide (transform)
-              clipped by the shrinking wrapper above, not a squeeze. The
-              topbar offset lives here (not on the outer wrapper) so it
-              travels with the panel instead of clipping against the
-              width transition. */}
+          {/* Inner panel: matches the outer wrapper's width exactly — a
+              collapsed rail needs to actually be narrow (icons reflow into
+              it), not just clipped by the wrapper while staying full-width
+              underneath. The transform is only how mobile hides it;
+              desktop's collapsed rail never translates, it just resizes. */}
           <div
             className={cn(
-              "h-full w-72 p-3 transition-transform duration-300 ease-out md:pe-0",
+              "h-full p-3 transition-[width,transform] duration-300 ease-out md:pe-0",
               TOPBAR_OFFSET,
-              sidebarOpen ? "translate-x-0" : "-translate-x-full rtl:translate-x-full"
+              sidebarOpen ? "w-72" : cn("w-72", RAIL_WIDTH_MD),
+              sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 rtl:translate-x-full md:rtl:translate-x-0"
             )}
           >
-            {/* Fixed near-black surface, not `bg-card` — the sidebar reads
-                the same in light or dark mode rather than following the
-                page theme; the brand green only shows up on the active
-                item, not the whole rail. */}
-            <div className="flex h-full flex-col rounded-3xl bg-[#0a0a0a] p-3 shadow-lg ring-1 ring-black/20">
+            <div
+              className={cn(
+                "flex h-full flex-col bg-card p-3 shadow-lg ring-1 ring-border",
+                sidebarOpen ? "rounded-3xl" : "rounded-full"
+              )}
+            >
               <NavList
                 items={nav}
+                expanded={sidebarOpen}
                 onNavigate={() => {
                   if (window.matchMedia("(max-width: 767px)").matches) {
                     setSidebarOpen(false)

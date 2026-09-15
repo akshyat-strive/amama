@@ -12,22 +12,22 @@ import {
 
 /**
  * The nav list itself, shared between the persistent desktop sidebar and the
- * mobile drawer so the two never drift out of sync.
+ * mobile drawer so the two never drift out of sync — and, now, between the
+ * two widths each can be shown at.
  *
- * The sidebar is a fixed near-black surface with white text — deliberately
- * not theme-aware (no `bg-card`/`text-foreground` here), so it reads the
- * same way in light or dark mode rather than flipping to a pale card. The
- * active item is filled with the brand's own bright green (`--amama`,
- * accent-only elsewhere in the app) rather than a generic dark pill — on
- * a black sidebar that's what actually reads as "this app's nav", not a
- * template's. `amama-foreground` is the near-black the brand green is
- * defined to pair with, not white — white-on-bright-green fails contrast.
+ * `expanded` controls icon+label vs. icon-only rendering. It's a rendering
+ * concern only: which *width* a collapsed sidebar resolves to (a narrow
+ * desktop rail vs. fully hidden on mobile) is the shell's problem, not
+ * this component's — `NavList` just draws whichever of the two the shell
+ * asks for.
  */
 function NavList({
   items,
+  expanded = true,
   onNavigate,
 }: {
   items: DashboardNavItem[]
+  expanded?: boolean
   onNavigate?: () => void
 }) {
   const pathname = usePathname()
@@ -63,9 +63,11 @@ function NavList({
     <nav className="flex flex-1 flex-col overflow-y-auto">
       {groups.map(({ group, items: groupItems }) => (
         <div key={group} className="mt-5 first:mt-0">
-          <p className="px-4 pb-1.5 text-[11px] font-semibold tracking-wider text-white/40 uppercase">
-            {dashboardNavGroupLabels[group]}
-          </p>
+          {expanded ? (
+            <p className="px-4 pb-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+              {dashboardNavGroupLabels[group]}
+            </p>
+          ) : null}
           <div className="flex flex-col gap-0.5">
             {groupItems.map((item) => {
               const active = item.href === activeHref
@@ -76,20 +78,25 @@ function NavList({
                   href={item.href}
                   onClick={onNavigate}
                   aria-current={active ? "page" : undefined}
+                  aria-label={item.label}
+                  title={expanded ? undefined : item.label}
                   className={cn(
-                    "flex items-center gap-3 rounded-xl py-2.5 ps-4 pe-3 text-[14px] transition-colors",
+                    "flex items-center text-[14px] transition-colors",
+                    expanded
+                      ? "gap-3 rounded-xl py-2.5 ps-4 pe-3"
+                      : "size-10 justify-center self-center rounded-full",
                     active
-                      ? "bg-amama text-amama-foreground"
-                      : "text-white/70 hover:bg-white/10 hover:text-white"
+                      ? "bg-amama-deep text-white"
+                      : "text-foreground/70 hover:bg-muted hover:text-foreground"
                   )}
                 >
                   <item.icon
-                    className={cn("size-[18px] shrink-0", active ? "text-amama-foreground" : "text-white/60")}
+                    className={cn("size-[18px] shrink-0", active ? "text-white" : "text-foreground/60")}
                     strokeWidth={2.25}
                   />
-                  <span className={active ? "font-semibold" : "font-medium"}>
-                    {item.label}
-                  </span>
+                  {expanded ? (
+                    <span className={active ? "font-semibold" : "font-medium"}>{item.label}</span>
+                  ) : null}
                 </Link>
               )
             })}

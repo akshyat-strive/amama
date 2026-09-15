@@ -25,6 +25,8 @@ import {
   toThreadMessages,
   useConversations,
 } from "@/features/marketplace/conversation-store"
+import { DealStatusFooter } from "@/features/marketplace/deal-status-footer"
+import { latestDealForConversation, useDeals } from "@/features/marketplace/deal-store"
 import {
   softDeleteListing,
   useListings,
@@ -85,6 +87,7 @@ function SellerProductView({ listingId }: { listingId: string }) {
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
   const selected = productConversations.find((entry) => entry.id === selectedId) ?? null
   const [mobileChatOpen, setMobileChatOpen] = React.useState(false)
+  const deals = useDeals()
 
   if (!listing) {
     return (
@@ -179,7 +182,16 @@ function SellerProductView({ listingId }: { listingId: string }) {
           </div>
         </div>
 
-        {!listing.deletedAt ? (
+        {selected ? (
+          <DealStatusFooter
+            deal={latestDealForConversation(deals, selected.id)}
+            conversation={selected}
+            listing={listing}
+            role="seller"
+            myName={seller.name}
+            counterpartName={selected.buyerName}
+          />
+        ) : !listing.deletedAt ? (
           <div className="flex shrink-0 items-center justify-between gap-3 pt-3">
             <button
               type="button"

@@ -24,7 +24,7 @@ const roleContent: Record<AdminRole, { label: string; name?: string; icon: typeo
 /** Same rail-width constant and rationale as `DashboardShell` — see there
  *  for why one `sidebarOpen` boolean resolves to three different visual
  *  states across the two breakpoints. */
-const RAIL_WIDTH_MD = "md:w-[64px]"
+const RAIL_WIDTH_MD = "md:w-[66px]"
 
 /**
  * The admin module's own shell — same popover-sidebar-over-flat-canvas shape
@@ -85,7 +85,7 @@ function AdminShell({ role, children }: { role: AdminRole; children: React.React
   }
 
   return (
-    <div className="h-dvh bg-background">
+    <div className="h-dvh bg-card">
       <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center gap-3 bg-transparent pr-4 sm:pr-6">
         <Button
           variant="ghost"

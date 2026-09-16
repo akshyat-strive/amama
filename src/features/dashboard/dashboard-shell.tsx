@@ -45,7 +45,7 @@ const TOPBAR_OFFSET = "pt-20"
  * the label visibility there have to move together or the rail would clip
  * text instead of hiding it.
  */
-const RAIL_WIDTH_MD = "md:w-[64px]"
+const RAIL_WIDTH_MD = "md:w-[66px]"
 
 function DashboardShell({
   role,
@@ -67,7 +67,7 @@ function DashboardShell({
   const initial = displayName.charAt(0).toUpperCase()
 
   return (
-    <div className="h-dvh bg-background">
+    <div className="h-dvh bg-card">
       <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center gap-3 bg-transparent pr-4 sm:pr-6">
         <Button
           variant="ghost"

@@ -45,7 +45,7 @@ const TOPBAR_OFFSET = "pt-20"
  * the label visibility there have to move together or the rail would clip
  * text instead of hiding it.
  */
-const RAIL_WIDTH_MD = "md:w-[84px]"
+const RAIL_WIDTH_MD = "md:w-[64px]"
 
 function DashboardShell({
   role,
@@ -150,22 +150,15 @@ function DashboardShell({
               sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 rtl:translate-x-full md:rtl:translate-x-0"
             )}
           >
-            <div
-              className={cn(
-                "flex h-full flex-col bg-card p-3 shadow-lg ring-1 ring-border",
-                sidebarOpen ? "rounded-3xl" : "rounded-full"
-              )}
-            >
-              <NavList
-                items={nav}
-                expanded={sidebarOpen}
-                onNavigate={() => {
-                  if (window.matchMedia("(max-width: 767px)").matches) {
-                    setSidebarOpen(false)
-                  }
-                }}
-              />
-            </div>
+            <NavList
+              items={nav}
+              expanded={sidebarOpen}
+              onNavigate={() => {
+                if (window.matchMedia("(max-width: 767px)").matches) {
+                  setSidebarOpen(false)
+                }
+              }}
+            />
           </div>
         </div>
 

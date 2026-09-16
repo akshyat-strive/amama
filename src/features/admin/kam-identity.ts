@@ -81,4 +81,11 @@ function signInKam(name: string, email: string): KamIdentity {
   return identity
 }
 
-export { useKamIdentity, signInKam }
+/** Called from the KAM settings page. Leaves the roster entry in place
+ *  (another KAM shouldn't vanish from history just because they signed
+ *  out) — only this browser's own session identity is cleared. */
+function signOutKam() {
+  write(null)
+}
+
+export { useKamIdentity, signInKam, signOutKam }

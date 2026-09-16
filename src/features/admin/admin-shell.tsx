@@ -24,7 +24,7 @@ const roleContent: Record<AdminRole, { label: string; name?: string; icon: typeo
 /** Same rail-width constant and rationale as `DashboardShell` — see there
  *  for why one `sidebarOpen` boolean resolves to three different visual
  *  states across the two breakpoints. */
-const RAIL_WIDTH_MD = "md:w-[84px]"
+const RAIL_WIDTH_MD = "md:w-[64px]"
 
 /**
  * The admin module's own shell — same popover-sidebar-over-flat-canvas shape
@@ -142,22 +142,15 @@ function AdminShell({ role, children }: { role: AdminRole; children: React.React
               sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 rtl:translate-x-full md:rtl:translate-x-0"
             )}
           >
-            <div
-              className={cn(
-                "flex h-full flex-col bg-card p-3 shadow-lg ring-1 ring-border",
-                sidebarOpen ? "rounded-3xl" : "rounded-full"
-              )}
-            >
-              <NavList
-                items={adminNav[role]}
-                expanded={sidebarOpen}
-                onNavigate={() => {
-                  if (window.matchMedia("(max-width: 767px)").matches) {
-                    setSidebarOpen(false)
-                  }
-                }}
-              />
-            </div>
+            <NavList
+              items={adminNav[role]}
+              expanded={sidebarOpen}
+              onNavigate={() => {
+                if (window.matchMedia("(max-width: 767px)").matches) {
+                  setSidebarOpen(false)
+                }
+              }}
+            />
           </div>
         </div>
 

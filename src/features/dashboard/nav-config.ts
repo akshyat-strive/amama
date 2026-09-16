@@ -7,6 +7,7 @@ import {
   ShipIcon,
   StoreIcon,
   SproutIcon,
+  UserRoundIcon,
   WalletIcon,
 } from "lucide-react"
 
@@ -31,6 +32,12 @@ export const dashboardNavGroupLabels: Record<DashboardNavGroup, string> = {
   general: "General",
 }
 
+/** `NavList` pins this one group to the very bottom of the sidebar — its
+ *  own row below the scrollable groups when expanded, its own separate
+ *  pill below theirs when collapsed — rather than scrolling with the rest.
+ *  Every role's account-level items (profile, settings) belong here. */
+export const dashboardNavFooterGroup: DashboardNavGroup = "general"
+
 /**
  * Sidebar contents per role. Adding a role later (this is buyer/seller only
  * for now, more are coming) means adding one more key here — the shell and
@@ -49,6 +56,7 @@ export const dashboardNav: Record<OnboardingRole, DashboardNavItem[]> = {
     { label: "Overview", href: "/buyer/dashboard", icon: LayoutDashboardIcon, group: "menu" },
     { label: "Orders", href: "/buyer/dashboard/orders", icon: PackageIcon, group: "menu" },
     { label: "Shipments", href: "/buyer/dashboard/shipments", icon: ShipIcon, group: "menu" },
+    { label: "Profile", href: "/buyer/dashboard/profile", icon: UserRoundIcon, group: "general" },
     {
       label: "Settings",
       href: "/buyer/dashboard/settings",
@@ -67,6 +75,7 @@ export const dashboardNav: Record<OnboardingRole, DashboardNavItem[]> = {
     { label: "Overview", href: "/seller/dashboard", icon: LayoutDashboardIcon, group: "menu" },
     { label: "Orders", href: "/seller/dashboard/orders", icon: PackageIcon, group: "menu" },
     { label: "Payments", href: "/seller/dashboard/payments", icon: WalletIcon, group: "menu" },
+    { label: "Profile", href: "/seller/dashboard/profile", icon: UserRoundIcon, group: "general" },
     {
       label: "Settings",
       href: "/seller/dashboard/settings",

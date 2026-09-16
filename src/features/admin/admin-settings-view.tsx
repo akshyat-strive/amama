@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { LogOutIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Panel } from "@/features/dashboard/dashboard-ui"
+import { AdminPanel } from "@/features/admin/admin-ui"
 import { signOutKam } from "@/features/admin/kam-identity"
 import type { AdminRole } from "@/features/admin/admin-nav-config"
 
@@ -31,7 +31,7 @@ function AdminSettingsView({ role }: { role: AdminRole }) {
       </p>
 
       {role === "kam" ? (
-        <Panel title="Session" className="mt-6">
+        <AdminPanel title="Session" className="mt-6">
           <div className="flex items-center justify-between gap-4 px-5 py-4">
             <p className="text-[13px] text-muted-foreground">
               Sign out and clear this browser&apos;s KAM identity.
@@ -41,7 +41,7 @@ function AdminSettingsView({ role }: { role: AdminRole }) {
               Sign out
             </Button>
           </div>
-        </Panel>
+        </AdminPanel>
       ) : null}
     </div>
   )

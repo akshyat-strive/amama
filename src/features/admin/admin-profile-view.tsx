@@ -2,7 +2,7 @@
 
 import { CrownIcon, ShieldCheckIcon } from "lucide-react"
 
-import { Panel } from "@/features/dashboard/dashboard-ui"
+import { AdminPanel } from "@/features/admin/admin-ui"
 import { useKamIdentity } from "@/features/admin/kam-identity"
 import { useKamRoster } from "@/features/admin/kam-roster-store"
 import type { AdminRole } from "@/features/admin/admin-nav-config"
@@ -36,7 +36,7 @@ function AdminProfileView({ role }: { role: AdminRole }) {
         {role === "kam" ? "Your identity across the KAM console." : "Master Admin's fixed account."}
       </p>
 
-      <Panel title="Profile" className="mt-6">
+      <AdminPanel title="Profile" className="mt-6">
         {role === "kam" ? (
           <div className="divide-y divide-border">
             <Field label="Name" value={identity?.name || "—"} />
@@ -63,10 +63,10 @@ function AdminProfileView({ role }: { role: AdminRole }) {
             </div>
           </div>
         )}
-      </Panel>
+      </AdminPanel>
 
       {role === "kam" ? (
-        <Panel title="Role" className="mt-4">
+        <AdminPanel title="Role" className="mt-4">
           <div className="flex items-center gap-3 px-5 py-4">
             <span className="grid size-10 shrink-0 place-items-center rounded-full bg-amama-deep text-white">
               <ShieldCheckIcon className="size-4.5" />
@@ -78,7 +78,7 @@ function AdminProfileView({ role }: { role: AdminRole }) {
               </p>
             </div>
           </div>
-        </Panel>
+        </AdminPanel>
       ) : null}
     </div>
   )

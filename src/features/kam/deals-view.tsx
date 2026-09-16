@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { GateBar } from "@/features/dashboard/dashboard-ui"
+import { ADMIN_SELECTED_CLASS, AdminEmptyState, AdminPanel } from "@/features/admin/admin-ui"
 import { useKamIdentity } from "@/features/admin/kam-identity"
 import {
   DEAL_STAGE_LABELS,
@@ -74,13 +75,11 @@ function KamDealsView() {
       </p>
 
       {myDeals.length === 0 ? (
-        <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border px-5 py-16 text-center">
-          <HandshakeIcon aria-hidden className="size-6 text-muted-foreground" />
-          <p className="text-[15px] font-semibold">No deals assigned to you yet</p>
-          <p className="max-w-sm text-[13px] text-muted-foreground">
-            Once a master admin assigns you a confirmed deal, it&apos;ll show up here.
-          </p>
-        </div>
+        <AdminEmptyState
+          icon={HandshakeIcon}
+          title="No deals assigned to you yet"
+          description="Once a master admin assigns you a confirmed deal, it'll show up here."
+        />
       ) : (
         <div className="mt-6 grid gap-4 lg:grid-cols-[320px_1fr]">
           <ul className="flex flex-col gap-2">
@@ -93,15 +92,27 @@ function KamDealsView() {
                     type="button"
                     onClick={() => setSelectedId(deal.id)}
                     className={cn(
-                      "w-full rounded-2xl border px-4 py-3 text-start transition-colors",
-                      active ? "border-amama-deep bg-amama-subtle" : "border-border bg-card hover:bg-muted/50"
+                      "w-full rounded-[16px] border px-4 py-3 text-start transition-colors",
+                      active ? ADMIN_SELECTED_CLASS : "border-border bg-card hover:bg-muted/50"
                     )}
                   >
-                    <p className="truncate text-[13px] font-semibold text-foreground">
+                    <p className="truncate text-[13px] font-semibold">
                       {deal.buyerName} ↔ {deal.sellerName}
                     </p>
-                    <p className="mt-0.5 truncate text-[12px] text-muted-foreground">{deal.listingTitle}</p>
-                    <p className="mt-2 text-[11px] font-medium text-muted-foreground">
+                    <p
+                      className={cn(
+                        "mt-0.5 truncate text-[12px]",
+                        active ? "text-amama-foreground/80" : "text-muted-foreground"
+                      )}
+                    >
+                      {deal.listingTitle}
+                    </p>
+                    <p
+                      className={cn(
+                        "mt-2 text-[11px] font-medium",
+                        active ? "text-amama-foreground/80" : "text-muted-foreground"
+                      )}
+                    >
                       {deal.stage ? DEAL_STAGE_LABELS[deal.stage] : "Starting"}
                     </p>
                     <div className="mt-1.5">
@@ -116,7 +127,7 @@ function KamDealsView() {
           {selected ? (
             <DealDetail deal={selected} kamName={identity?.name ?? "KAM"} />
           ) : (
-            <div className="flex items-center justify-center rounded-3xl border border-dashed border-border py-16 text-center text-[13px] text-muted-foreground">
+            <div className="flex items-center justify-center rounded-[20px] border border-dashed border-border py-16 text-center text-[13px] text-muted-foreground">
               Pick a deal to manage it.
             </div>
           )}
@@ -141,7 +152,7 @@ function DealDetail({ deal, kamName }: { deal: Deal; kamName: string }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-3xl border border-border bg-card p-5">
+      <div className="rounded-[20px] border border-border bg-card p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="truncate text-[16px] font-bold tracking-tight">{deal.listingTitle}</h2>
@@ -176,62 +187,64 @@ function DealDetail({ deal, kamName }: { deal: Deal; kamName: string }) {
           tracking", so a KAM needs to log it any time the deal is active. */}
       <ShipmentsPanel deal={deal} />
 
-      <div className="rounded-3xl border border-border bg-card p-5">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[14px] font-semibold text-foreground">Advance the pipeline</p>
-          {!isLastStage ? (
+      <AdminPanel
+        title="Advance the pipeline"
+        action={
+          !isLastStage ? (
             <Button size="sm" onClick={() => setAdvancing((value) => !value)}>
               Advance to next stage
               <ArrowRightIcon />
             </Button>
           ) : (
             <span className="text-[13px] font-medium text-amama-deep">Final stage reached</span>
-          )}
-        </div>
-        {advancing ? (
-          <div className="mt-3 flex flex-col gap-2">
-            <Textarea
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              placeholder="Anything worth logging about this handoff? (optional)"
-              rows={2}
-            />
-            <div className="flex gap-2">
-              <Button size="sm" onClick={advance}>
-                Confirm advance
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setAdvancing(false)}>
-                Cancel
-              </Button>
+          )
+        }
+      >
+        <div className="flex flex-col gap-4 p-5">
+          {advancing ? (
+            <div className="flex flex-col gap-2">
+              <Textarea
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder="Anything worth logging about this handoff? (optional)"
+                rows={2}
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={advance}>
+                  Confirm advance
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setAdvancing(false)}>
+                  Cancel
+                </Button>
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        {deal.stageHistory.length > 0 ? (
-          <ul className="mt-4 flex flex-col gap-1.5 border-t border-border pt-3">
-            {[...deal.stageHistory].reverse().map((entry, index) => (
-              <li key={index} className="text-[12px] text-muted-foreground">
-                <span className="font-medium text-foreground">{DEAL_STAGE_LABELS[entry.stage]}</span> — {entry.by}{" "}
-                ·{" "}
-                {new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(
-                  new Date(entry.at)
-                )}
-                {entry.note ? <span className="block">{entry.note}</span> : null}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </div>
+          {deal.stageHistory.length > 0 ? (
+            <ul className={cn("flex flex-col gap-1.5", advancing && "border-t border-border pt-3")}>
+              {[...deal.stageHistory].reverse().map((entry, index) => (
+                <li key={index} className="text-[12px] text-muted-foreground">
+                  <span className="font-medium text-foreground">{DEAL_STAGE_LABELS[entry.stage]}</span> — {entry.by}{" "}
+                  ·{" "}
+                  {new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(
+                    new Date(entry.at)
+                  )}
+                  {entry.note ? <span className="block">{entry.note}</span> : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      </AdminPanel>
     </div>
   )
 }
 
 function StageCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-3xl border border-border bg-card p-5">
-      <p className="text-[14px] font-semibold text-foreground">{title}</p>
-      <div className="mt-3 flex flex-col gap-3">{children}</div>
-    </div>
+    <AdminPanel title={title}>
+      <div className="flex flex-col gap-3 p-5">{children}</div>
+    </AdminPanel>
   )
 }
 
@@ -411,69 +424,71 @@ function ShipmentsPanel({ deal }: { deal: Deal }) {
   }
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-5">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[14px] font-semibold text-foreground">Shipments</p>
+    <AdminPanel
+      title="Shipments"
+      action={
         <Button size="sm" variant="outline" onClick={() => setAdding((value) => !value)}>
           <PlusIcon />
           Add shipment
         </Button>
+      }
+    >
+      <div className="flex flex-col gap-3 p-5">
+        {adding ? (
+          <div className="grid grid-cols-1 gap-2 rounded-[14px] border border-dashed border-border p-3 sm:grid-cols-3">
+            <Input placeholder="Carrier" value={carrier} onChange={(event) => setCarrier(event.target.value)} />
+            <Input
+              placeholder="BL / AWB no."
+              value={documentNumber}
+              onChange={(event) => setDocumentNumber(event.target.value)}
+            />
+            <Input type="date" value={eta} onChange={(event) => setEta(event.target.value)} />
+            <Button size="sm" className="sm:col-span-3" onClick={submit}>
+              Save shipment
+            </Button>
+          </div>
+        ) : null}
+
+        {deal.shipments.length === 0 ? (
+          <p className="flex items-center gap-2 text-[13px] text-muted-foreground">
+            <ShipIcon className="size-4" />
+            Nothing booked yet.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {deal.shipments.map((shipment) => (
+              <li key={shipment.id} className="flex flex-wrap items-center gap-2.5 rounded-[14px] border border-border px-3 py-2.5">
+                <ShipIcon className="size-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-semibold text-foreground">{shipment.carrier}</p>
+                  <p className="truncate text-[12px] text-muted-foreground">
+                    {shipment.documentNumber || "No BL/AWB yet"}
+                    {shipment.eta ? ` · ETA ${shipment.eta}` : ""}
+                  </p>
+                </div>
+                <Select
+                  value={shipment.status}
+                  onValueChange={(value) =>
+                    updateShipment(deal.id, shipment.id, { status: value as ShipmentStatus })
+                  }
+                >
+                  <SelectTrigger size="sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(shipmentStatusLabels).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-
-      {adding ? (
-        <div className="mt-3 grid grid-cols-1 gap-2 rounded-2xl border border-dashed border-border p-3 sm:grid-cols-3">
-          <Input placeholder="Carrier" value={carrier} onChange={(event) => setCarrier(event.target.value)} />
-          <Input
-            placeholder="BL / AWB no."
-            value={documentNumber}
-            onChange={(event) => setDocumentNumber(event.target.value)}
-          />
-          <Input type="date" value={eta} onChange={(event) => setEta(event.target.value)} />
-          <Button size="sm" className="sm:col-span-3" onClick={submit}>
-            Save shipment
-          </Button>
-        </div>
-      ) : null}
-
-      {deal.shipments.length === 0 ? (
-        <p className="mt-3 flex items-center gap-2 text-[13px] text-muted-foreground">
-          <ShipIcon className="size-4" />
-          Nothing booked yet.
-        </p>
-      ) : (
-        <ul className="mt-3 flex flex-col gap-2">
-          {deal.shipments.map((shipment) => (
-            <li key={shipment.id} className="flex flex-wrap items-center gap-2.5 rounded-2xl border border-border px-3 py-2.5">
-              <ShipIcon className="size-4 shrink-0 text-muted-foreground" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-semibold text-foreground">{shipment.carrier}</p>
-                <p className="truncate text-[12px] text-muted-foreground">
-                  {shipment.documentNumber || "No BL/AWB yet"}
-                  {shipment.eta ? ` · ETA ${shipment.eta}` : ""}
-                </p>
-              </div>
-              <Select
-                value={shipment.status}
-                onValueChange={(value) =>
-                  updateShipment(deal.id, shipment.id, { status: value as ShipmentStatus })
-                }
-              >
-                <SelectTrigger size="sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(shipmentStatusLabels).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    </AdminPanel>
   )
 }
 

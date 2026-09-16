@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { AdminEmptyState } from "@/features/admin/admin-ui"
 import { useKamIdentity } from "@/features/admin/kam-identity"
 import en from "@/features/i18n/translations/en"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
@@ -63,7 +64,7 @@ function DocumentRow({ role, document }: { role: OnboardingRole; document: Submi
   const status = documentStyles[document.reviewStatus]
 
   return (
-    <li className="flex flex-col gap-2 rounded-xl border border-border px-3 py-2.5">
+    <li className="flex flex-col gap-2 rounded-[14px] border border-border px-3 py-2.5">
       <div className="flex items-center gap-2.5">
         <FileText aria-hidden className="size-4 shrink-0 text-muted-foreground" />
         <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
@@ -84,7 +85,7 @@ function DocumentRow({ role, document }: { role: OnboardingRole; document: Submi
       </div>
 
       {document.reviewStatus === "rejected" && document.reviewNote ? (
-        <p className="rounded-lg bg-destructive/10 px-2.5 py-1.5 text-[12px] text-destructive">
+        <p className="rounded-[10px] bg-destructive/10 px-2.5 py-1.5 text-[12px] text-destructive">
           {document.reviewNote}
         </p>
       ) : null}
@@ -156,8 +157,8 @@ function SubmissionCard({ submission }: { submission: Submission }) {
     : null
 
   return (
-    <article className="rounded-3xl border border-border bg-card p-5">
-      <header className="flex flex-wrap items-start justify-between gap-3">
+    <article className="overflow-hidden rounded-[20px] border border-border bg-muted">
+      <header className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
         <div className="min-w-0">
           <h2 className="truncate text-[17px] font-bold tracking-tight">
             {submission.applicant.fullName || "Unnamed applicant"}
@@ -172,73 +173,75 @@ function SubmissionCard({ submission }: { submission: Submission }) {
         <Badge className={cn("shrink-0", status.className)}>{status.label}</Badge>
       </header>
 
-      {submittedOn ? (
-        <p className="mt-3 text-[12px] text-muted-foreground">Submitted {submittedOn}</p>
-      ) : null}
-      {submission.reviewedByKamName ? (
-        <p className="mt-0.5 text-[12px] text-muted-foreground">
-          Reviewed by {submission.reviewedByKamName}
-        </p>
-      ) : null}
+      <div className="flex flex-col gap-3 border-t border-border bg-card p-5">
+        {submittedOn ? (
+          <p className="text-[12px] text-muted-foreground">Submitted {submittedOn}</p>
+        ) : null}
+        {submission.reviewedByKamName ? (
+          <p className="-mt-1.5 text-[12px] text-muted-foreground">
+            Reviewed by {submission.reviewedByKamName}
+          </p>
+        ) : null}
 
-      <ul className="mt-4 flex flex-col gap-1.5">
-        {submission.documents.map((document) => (
-          <DocumentRow key={document.id} role={submission.role} document={document} />
-        ))}
-      </ul>
+        <ul className="flex flex-col gap-1.5">
+          {submission.documents.map((document) => (
+            <DocumentRow key={document.id} role={submission.role} document={document} />
+          ))}
+        </ul>
 
-      {submission.reviewerNote ? (
-        <p className="mt-3 rounded-2xl bg-muted px-3 py-2 text-[13px] text-muted-foreground">
-          Sent back: {submission.reviewerNote}
-        </p>
-      ) : null}
+        {submission.reviewerNote ? (
+          <p className="rounded-[14px] bg-muted px-3 py-2 text-[13px] text-muted-foreground">
+            Sent back: {submission.reviewerNote}
+          </p>
+        ) : null}
 
-      {showNote ? (
-        <div className="mt-4 flex flex-col gap-2">
-          <label htmlFor={`note-${submission.role}`} className="text-[13px] font-medium">
-            What needs fixing?
-          </label>
-          <Textarea
-            id={`note-${submission.role}`}
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            placeholder="The land record is too blurry to read the survey number."
-            rows={3}
-          />
-          <div className="flex gap-2">
+        {showNote ? (
+          <div className="flex flex-col gap-2">
+            <label htmlFor={`note-${submission.role}`} className="text-[13px] font-medium">
+              What needs fixing?
+            </label>
+            <Textarea
+              id={`note-${submission.role}`}
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              placeholder="The land record is too blurry to read the survey number."
+              rows={3}
+            />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={note.trim().length === 0}
+                onClick={() => {
+                  requestChanges(submission.role, note.trim(), kam)
+                  setShowNote(false)
+                  setNote("")
+                }}
+              >
+                Send back
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setShowNote(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
-              variant="outline"
-              disabled={note.trim().length === 0}
-              onClick={() => {
-                requestChanges(submission.role, note.trim(), kam)
-                setShowNote(false)
-                setNote("")
-              }}
+              disabled={submission.status === "approved"}
+              onClick={() => approve(submission.role, kam)}
             >
-              Send back
+              <CheckCircle2 />
+              Approve
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setShowNote(false)}>
-              Cancel
+            <Button size="sm" variant="outline" onClick={() => setShowNote(true)}>
+              <RotateCcw />
+              Request changes
             </Button>
           </div>
-        </div>
-      ) : (
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            disabled={submission.status === "approved"}
-            onClick={() => approve(submission.role, kam)}
-          >
-            <CheckCircle2 />
-            Approve
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setShowNote(true)}>
-            <RotateCcw />
-            Request changes
-          </Button>
-        </div>
-      )}
+        )}
+      </div>
     </article>
   )
 }
@@ -258,14 +261,11 @@ function OnboardingQueueView() {
       </p>
 
       {open.length === 0 ? (
-        <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border px-5 py-16 text-center">
-          <Inbox aria-hidden className="size-6 text-muted-foreground" />
-          <p className="text-[15px] font-semibold">Nothing waiting</p>
-          <p className="max-w-sm text-[13px] text-muted-foreground">
-            Applications land here once someone finishes onboarding and submits their
-            documents.
-          </p>
-        </div>
+        <AdminEmptyState
+          icon={Inbox}
+          title="Nothing waiting"
+          description="Applications land here once someone finishes onboarding and submits their documents."
+        />
       ) : (
         <div className="mt-6 flex flex-col gap-4">
           {open.map((submission) => (

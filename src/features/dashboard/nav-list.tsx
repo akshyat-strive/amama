@@ -207,13 +207,12 @@ function NavItemLink({
   expanded: boolean
   onNavigate?: () => void
 }) {
-  return (
+  const link = (
     <Link
       href={item.href}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       aria-label={item.label}
-      title={expanded ? undefined : item.label}
       className={cn(
         "flex items-center text-[14px] transition-colors",
         expanded ? "h-11 gap-3 rounded-full ps-4 pe-3" : "size-11 justify-center rounded-full",
@@ -225,6 +224,19 @@ function NavItemLink({
       <item.icon className="size-[18px] shrink-0" strokeWidth={2.25} />
       {expanded ? <span className={active ? "font-semibold" : "font-medium"}>{item.label}</span> : null}
     </Link>
+  )
+
+  // Expanded already shows the label as text — a tooltip would be a
+  // redundant echo. Collapsed is icon-only, so the same real Tooltip used
+  // for the group header's dots stands in for the label here too (a
+  // native `title` attribute turned out unreliable for this).
+  if (expanded) return link
+
+  return (
+    <Tooltip>
+      <TooltipTrigger render={link} />
+      <TooltipContent side="right">{item.label}</TooltipContent>
+    </Tooltip>
   )
 }
 

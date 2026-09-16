@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { GateBar } from "@/features/dashboard/dashboard-ui"
+import { ADMIN_SELECTED_CLASS, AdminEmptyState } from "@/features/admin/admin-ui"
 import { useKamRoster } from "@/features/admin/kam-roster-store"
 import {
   DEAL_STAGE_LABELS,
@@ -78,9 +79,7 @@ function MasterDealsView() {
             onClick={() => setFilter(id)}
             className={cn(
               "rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors",
-              filter === id
-                ? "border-transparent bg-amama-deep text-white"
-                : "border-border text-foreground hover:bg-muted"
+              filter === id ? ADMIN_SELECTED_CLASS : "border-border text-foreground hover:bg-muted"
             )}
           >
             {label}
@@ -89,10 +88,7 @@ function MasterDealsView() {
       </div>
 
       {visible.length === 0 ? (
-        <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border px-5 py-16 text-center">
-          <HandshakeIcon aria-hidden className="size-6 text-muted-foreground" />
-          <p className="text-[15px] font-semibold">Nothing here</p>
-        </div>
+        <AdminEmptyState icon={HandshakeIcon} title="Nothing here" />
       ) : (
         <div className="mt-6 flex flex-col gap-3">
           {visible.map((deal) => (
@@ -125,8 +121,8 @@ function DealCard({
   const progress = deal.status === "active" ? dealStageProgress(deal) : null
 
   return (
-    <article className="rounded-3xl border border-border bg-card p-5">
-      <header className="flex flex-wrap items-start justify-between gap-3">
+    <article className="overflow-hidden rounded-[20px] border border-border bg-muted">
+      <header className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
         <button type="button" onClick={onToggle} className="min-w-0 flex-1 text-start">
           <h2 className="truncate text-[15px] font-bold tracking-tight">{deal.listingTitle}</h2>
           <p className="mt-0.5 truncate text-[13px] text-muted-foreground">
@@ -137,95 +133,97 @@ function DealCard({
         <Badge className={cn("shrink-0", status.className)}>{status.label}</Badge>
       </header>
 
-      {progress ? (
-        <div className="mt-3">
-          <div className="flex items-center justify-between text-[12px] font-medium text-muted-foreground">
-            <span>{deal.stage ? DEAL_STAGE_LABELS[deal.stage] : "Starting"}</span>
-            <span>
-              {progress.cleared}/{progress.total}
+      <div className="flex flex-col gap-4 border-t border-border bg-card p-5">
+        {progress ? (
+          <div>
+            <div className="flex items-center justify-between text-[12px] font-medium text-muted-foreground">
+              <span>{deal.stage ? DEAL_STAGE_LABELS[deal.stage] : "Starting"}</span>
+              <span>
+                {progress.cleared}/{progress.total}
+              </span>
+            </div>
+            <div className="mt-1.5">
+              <GateBar cleared={progress.cleared} total={progress.total} status={progress.status} />
+            </div>
+          </div>
+        ) : null}
+
+        {deal.status === "active" ? (
+          <div className="flex items-center gap-2.5">
+            <span className="text-[13px] font-medium text-muted-foreground">
+              {deal.assignedKamName ? `Assigned to ${deal.assignedKamName}` : "Unassigned"}
             </span>
-          </div>
-          <div className="mt-1.5">
-            <GateBar cleared={progress.cleared} total={progress.total} status={progress.status} />
-          </div>
-        </div>
-      ) : null}
-
-      {deal.status === "active" ? (
-        <div className="mt-4 flex items-center gap-2.5">
-          <span className="text-[13px] font-medium text-muted-foreground">
-            {deal.assignedKamName ? `Assigned to ${deal.assignedKamName}` : "Unassigned"}
-          </span>
-          <Select
-            value={deal.assignedKamId ?? undefined}
-            onValueChange={(value) => {
-              const kam = roster.find((entry) => entry.id === value)
-              if (kam) assignKam(deal.id, kam, "Master Admin")
-            }}
-          >
-            <SelectTrigger size="sm">
-              <SelectValue placeholder={deal.assignedKamId ? "Reassign" : "Assign a KAM"} />
-            </SelectTrigger>
-            <SelectContent>
-              {roster.length === 0 ? (
-                <SelectItem value="none" disabled>
-                  No KAM has signed in yet
-                </SelectItem>
-              ) : (
-                roster.map((kam) => (
-                  <SelectItem key={kam.id} value={kam.id}>
-                    {kam.name}
+            <Select
+              value={deal.assignedKamId ?? undefined}
+              onValueChange={(value) => {
+                const kam = roster.find((entry) => entry.id === value)
+                if (kam) assignKam(deal.id, kam, "Master Admin")
+              }}
+            >
+              <SelectTrigger size="sm">
+                <SelectValue placeholder={deal.assignedKamId ? "Reassign" : "Assign a KAM"} />
+              </SelectTrigger>
+              <SelectContent>
+                {roster.length === 0 ? (
+                  <SelectItem value="none" disabled>
+                    No KAM has signed in yet
                   </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-      ) : null}
+                ) : (
+                  roster.map((kam) => (
+                    <SelectItem key={kam.id} value={kam.id}>
+                      {kam.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
 
-      {expanded ? (
-        <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4">
-          {deal.stageHistory.length > 0 ? (
-            <div>
-              <p className="text-[12px] font-semibold text-foreground">Stage history</p>
-              <ul className="mt-1.5 flex flex-col gap-1">
-                {deal.stageHistory.map((entry, index) => (
-                  <li key={index} className="text-[12px] text-muted-foreground">
-                    {DEAL_STAGE_LABELS[entry.stage]} — {entry.by} ·{" "}
-                    {new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(entry.at))}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-          {deal.assignmentHistory.length > 0 ? (
-            <div>
-              <p className="text-[12px] font-semibold text-foreground">Assignment history</p>
-              <ul className="mt-1.5 flex flex-col gap-1">
-                {deal.assignmentHistory.map((entry, index) => (
-                  <li key={index} className="text-[12px] text-muted-foreground">
-                    {entry.kamName}, by {entry.assignedBy} ·{" "}
-                    {new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(entry.at))}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-          {deal.shipments.length > 0 ? (
-            <div>
-              <p className="text-[12px] font-semibold text-foreground">Shipments</p>
-              <ul className="mt-1.5 flex flex-col gap-1">
-                {deal.shipments.map((shipment) => (
-                  <li key={shipment.id} className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-                    <ShipIcon className="size-3.5 shrink-0" />
-                    {shipment.carrier} · {shipment.status}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+        {expanded ? (
+          <div className="flex flex-col gap-3 border-t border-border pt-4">
+            {deal.stageHistory.length > 0 ? (
+              <div>
+                <p className="text-[12px] font-semibold text-foreground">Stage history</p>
+                <ul className="mt-1.5 flex flex-col gap-1">
+                  {deal.stageHistory.map((entry, index) => (
+                    <li key={index} className="text-[12px] text-muted-foreground">
+                      {DEAL_STAGE_LABELS[entry.stage]} — {entry.by} ·{" "}
+                      {new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(entry.at))}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {deal.assignmentHistory.length > 0 ? (
+              <div>
+                <p className="text-[12px] font-semibold text-foreground">Assignment history</p>
+                <ul className="mt-1.5 flex flex-col gap-1">
+                  {deal.assignmentHistory.map((entry, index) => (
+                    <li key={index} className="text-[12px] text-muted-foreground">
+                      {entry.kamName}, by {entry.assignedBy} ·{" "}
+                      {new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(entry.at))}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {deal.shipments.length > 0 ? (
+              <div>
+                <p className="text-[12px] font-semibold text-foreground">Shipments</p>
+                <ul className="mt-1.5 flex flex-col gap-1">
+                  {deal.shipments.map((shipment) => (
+                    <li key={shipment.id} className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                      <ShipIcon className="size-3.5 shrink-0" />
+                      {shipment.carrier} · {shipment.status}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
     </article>
   )
 }

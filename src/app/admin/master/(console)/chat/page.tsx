@@ -1,7 +1,7 @@
 "use client"
 
-import { StaffChatView } from "@/features/admin/staff-chat-view"
+import { ChatView } from "@/features/admin/chat-view"
 
 export default function Page() {
-  return <StaffChatView role="master" />
+  return <ChatView role="master" />
 }

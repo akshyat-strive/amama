@@ -2,10 +2,10 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ChevronRightIcon, InboxIcon, MessageCircleIcon, PackageSearchIcon } from "lucide-react"
+import { ChevronRightIcon, InboxIcon, MessagesSquareIcon, PackageSearchIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Panel, StatCard } from "@/features/dashboard/dashboard-ui"
+import { AdminPanel, AdminStatCard } from "@/features/admin/admin-ui"
 import { useKamRoster } from "@/features/admin/kam-roster-store"
 import { useDeals } from "@/features/marketplace/deal-store"
 import { useListings } from "@/features/marketplace/listing-store"
@@ -25,10 +25,10 @@ const quickLinks = [
     description: "Every listing a seller has published",
   },
   {
-    href: "/admin/kam/conversations",
-    icon: MessageCircleIcon,
-    label: "Conversations",
-    description: "Every buyer/seller thread, read-only",
+    href: "/admin/kam/chat",
+    icon: MessagesSquareIcon,
+    label: "Chat",
+    description: "Every buyer/seller conversation, plus the KAM team",
   },
 ] as const
 
@@ -68,15 +68,15 @@ function MasterOverviewView() {
       </p>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Applications" value={String(applications.length)} caption="Submitted so far" />
-        <StatCard
+        <AdminStatCard label="Applications" value={String(applications.length)} caption="Submitted so far" />
+        <AdminStatCard
           label="Awaiting a KAM"
           value={String(pendingApplications)}
           tone={pendingApplications > 0 ? "warning" : "plain"}
           caption="Pending or sent back"
         />
-        <StatCard label="Live listings" value={String(activeListings.length)} caption="Not soft-deleted" />
-        <StatCard
+        <AdminStatCard label="Live listings" value={String(activeListings.length)} caption="Not soft-deleted" />
+        <AdminStatCard
           label="Need a look"
           value={String(flaggedListings + unverifiedListings)}
           tone={flaggedListings + unverifiedListings > 0 ? "warning" : "plain"}
@@ -84,14 +84,12 @@ function MasterOverviewView() {
         />
       </div>
 
-      <section className="mt-6 rounded-2xl border border-border bg-card">
-        <header className="px-5 py-4">
-          <h2 className="text-[15px] font-semibold text-foreground">Jump into the KAM console</h2>
-          <p className="mt-0.5 text-[13px] text-muted-foreground">
-            Same queue every KAM works from — a master admin can step in directly.
-          </p>
-        </header>
-        <ul className="divide-y divide-border border-t border-border">
+      <AdminPanel
+        title="Jump into the KAM console"
+        subtitle="Same queue every KAM works from — a master admin can step in directly."
+        className="mt-6"
+      >
+        <ul className="divide-y divide-border">
           {quickLinks.map(({ href, icon: Icon, label, description }) => (
             <li key={href}>
               <Link
@@ -112,9 +110,9 @@ function MasterOverviewView() {
             </li>
           ))}
         </ul>
-      </section>
+      </AdminPanel>
 
-      <Panel
+      <AdminPanel
         title="By KAM"
         subtitle="Who's verified how much, and who's carrying which deals."
         className="mt-6"
@@ -158,7 +156,7 @@ function MasterOverviewView() {
             })}
           </ul>
         )}
-      </Panel>
+      </AdminPanel>
     </div>
   )
 }

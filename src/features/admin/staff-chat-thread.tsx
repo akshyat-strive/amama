@@ -78,7 +78,12 @@ function StaffChatThread({
       {messages.length === 0 ? (
         <div className="flex flex-1 items-center justify-center p-6 text-center">{emptyState}</div>
       ) : (
-        <div ref={scrollRef} className="flex flex-1 flex-col gap-2 overflow-y-auto px-5 py-4">
+        <div
+          ref={scrollRef}
+          role="log"
+          aria-live="polite"
+          className="flex flex-1 flex-col gap-2 overflow-y-auto px-5 py-4"
+        >
           {messages.map((message, index) => (
             <StaffMessageBubble
               key={message.id}
@@ -97,10 +102,10 @@ function StaffChatThread({
             event.preventDefault()
             send()
           }}
-          className="relative flex shrink-0 items-center gap-2 border-t border-border p-3"
+          className="relative shrink-0 p-3"
         >
           {mentionQuery !== null && filteredCandidates.length > 0 ? (
-            <div className="absolute inset-x-3 bottom-full mb-2 max-h-40 overflow-y-auto rounded-2xl border border-border bg-card p-1.5 shadow-lg">
+            <div className="absolute inset-x-3 bottom-full mb-2 max-h-40 overflow-y-auto rounded-[16px] border border-border bg-card p-1.5 shadow-lg">
               {filteredCandidates.map((candidate) => (
                 <button
                   key={candidate.id}
@@ -113,20 +118,31 @@ function StaffChatThread({
               ))}
             </div>
           ) : null}
-          <input
-            value={draftText}
-            onChange={(event) => handleChange(event.target.value)}
-            placeholder={placeholder}
-            className="h-10 flex-1 rounded-full border border-border bg-transparent px-4 text-[14px] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
-          />
-          <button
-            type="submit"
-            disabled={draftText.trim().length === 0}
-            aria-label="Send message"
-            className="grid size-10 shrink-0 place-items-center rounded-full bg-amama-deep text-white transition-colors hover:bg-amama-deep-hover disabled:pointer-events-none disabled:opacity-40"
-          >
-            <SendIcon className="size-4 rtl:-scale-x-100" />
-          </button>
+          {/* One filled pill housing both the text and the send affordance —
+              no border, no focus ring; the fill itself is the only chrome,
+              same shape a lot of chat composers (Google Chat, DeepSeek) use
+              instead of an outlined field that glows on focus. */}
+          <div className="flex items-center gap-1 rounded-[24px] bg-muted ps-4 pe-1.5">
+            <label htmlFor="staff-chat-composer" className="sr-only">
+              Message
+            </label>
+            <input
+              id="staff-chat-composer"
+              value={draftText}
+              onChange={(event) => handleChange(event.target.value)}
+              placeholder={placeholder}
+              autoComplete="off"
+              className="h-11 flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted-foreground"
+            />
+            <button
+              type="submit"
+              disabled={draftText.trim().length === 0}
+              aria-label="Send message"
+              className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors enabled:bg-amama-deep enabled:text-white enabled:hover:bg-amama-deep-hover disabled:opacity-50"
+            >
+              <SendIcon className="size-4 rtl:-scale-x-100" />
+            </button>
+          </div>
         </form>
       )}
     </div>

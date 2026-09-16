@@ -79,6 +79,13 @@ function useStaffChannel(channelId: string): StaffChatMessage[] {
   return store[channelId] ?? emptyChannel
 }
 
+/** The whole store, keyed by channel — for a chat list that wants to show
+ *  a last-message preview per row without a `useStaffChannel` call per
+ *  row (hooks can't run inside a `.map`). */
+function useStaffChatStore(): Record<string, StaffChatMessage[]> {
+  return React.useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+}
+
 /** Which candidates' names actually appear as `@Name` in the text —
  *  longest name first, so "Priya Nair" matches before a shorter name that
  *  happens to be a prefix of it would. Pure and roster-independent: the
@@ -113,6 +120,7 @@ function sendStaffMessage(
 
 export {
   useStaffChannel,
+  useStaffChatStore,
   parseMentions,
   sendStaffMessage,
   staffDmChannelId,

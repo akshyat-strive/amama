@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowRightIcon, EyeIcon, EyeOffIcon } from "lucide-react"
+import { ArrowRightIcon, EyeIcon, EyeOffIcon, KeyRoundIcon } from "lucide-react"
 
 import {
   FieldGroup,
@@ -14,8 +14,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { EditorialImage } from "@/components/ui/editorial-image"
 import { adminLoginContent } from "@/features/auth/admin-login-content"
-import { signInKam } from "@/features/admin/kam-identity"
-import type { AdminRole } from "@/features/admin/admin-nav-config"
+import { useRoles } from "@/features/admin/role-store"
+import { signIn } from "@/features/admin/session-store"
+import { useUsers } from "@/features/admin/user-store"
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
@@ -23,28 +24,39 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
  * The admin module's own sign-in — deliberately plainer than the buyer/
  * seller `LoginScreen`: no social providers, no "new here? get started"
  * (there's no public sign-up for staff accounts), no forgot-password link
- * yet. Same no-backend shortcut as the rest of the app, though: submitting
- * just drops the visitor straight into that role's console.
+ * yet. One door for every business-side role now, checked against real
+ * (if entirely local) accounts in `user-store.ts` — no more typing
+ * whatever name you want.
  */
-function AdminLoginScreen({ role }: { role: AdminRole }) {
+function AdminLoginScreen() {
   const router = useRouter()
-  const content = adminLoginContent[role]
+  const content = adminLoginContent
+  const users = useUsers()
+  const roles = useRoles()
   const [submitting, setSubmitting] = React.useState(false)
-  const [name, setName] = React.useState("")
   const [email, setEmail] = React.useState("")
+  const [password, setPassword] = React.useState("")
   const [showPassword, setShowPassword] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const [quickLoginOpen, setQuickLoginOpen] = React.useState(false)
 
   const enterConsole = () => router.push(content.homeHref)
 
+  const attemptSignIn = (attemptEmail: string, attemptPassword: string) => {
+    setSubmitting(true)
+    setError(null)
+    const result = signIn(attemptEmail, attemptPassword)
+    if (result.ok) {
+      window.setTimeout(enterConsole, 300)
+    } else {
+      setSubmitting(false)
+      setError(result.error)
+    }
+  }
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
-    setSubmitting(true)
-    // A KAM's identity is whatever they just typed here — there's no
-    // roster to check against, this sign-in *is* the roster entry (see
-    // `signInKam`). Every later moderation/verification/deal action
-    // attributes to this identity instead of a hardcoded name.
-    if (role === "kam") signInKam(name.trim(), email.trim())
-    window.setTimeout(enterConsole, 500)
+    attemptSignIn(email.trim(), password)
   }
 
   const emailValid = EMAIL_PATTERN.test(email.trim())
@@ -68,19 +80,6 @@ function AdminLoginScreen({ role }: { role: AdminRole }) {
 
             <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-3">
               <FieldGroup>
-                {role === "kam" ? (
-                  <FieldGroupRow label="Your name" htmlFor="admin-login-name">
-                    <FieldGroupInput
-                      id="admin-login-name"
-                      type="text"
-                      autoComplete="name"
-                      required
-                      placeholder="Priya Nair"
-                      value={name}
-                      onChange={(event) => setName(event.target.value)}
-                    />
-                  </FieldGroupRow>
-                ) : null}
                 <FieldGroupRow label="Email" htmlFor="admin-login-email">
                   <FieldGroupInput
                     id="admin-login-email"
@@ -93,7 +92,10 @@ function AdminLoginScreen({ role }: { role: AdminRole }) {
                     required
                     placeholder="you@amama.com"
                     value={email}
-                    onChange={(event) => setEmail(event.target.value.toLowerCase())}
+                    onChange={(event) => {
+                      setEmail(event.target.value.toLowerCase())
+                      setError(null)
+                    }}
                   />
                   <FieldStatusIcon status={emailStatus} />
                 </FieldGroupRow>
@@ -104,6 +106,11 @@ function AdminLoginScreen({ role }: { role: AdminRole }) {
                     autoComplete="current-password"
                     required
                     placeholder="••••••••"
+                    value={password}
+                    onChange={(event) => {
+                      setPassword(event.target.value)
+                      setError(null)
+                    }}
                   />
                   <button
                     type="button"
@@ -117,15 +124,58 @@ function AdminLoginScreen({ role }: { role: AdminRole }) {
                 </FieldGroupRow>
               </FieldGroup>
 
+              {error ? <p className="text-[13px] font-medium text-destructive">{error}</p> : null}
+
               <Button type="submit" size="lg" className="mt-1 w-full" disabled={submitting}>
                 {submitting ? "Signing in…" : "Log in"}
                 {!submitting && <ArrowRightIcon />}
               </Button>
             </form>
 
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => setQuickLoginOpen((open) => !open)}
+                aria-expanded={quickLoginOpen}
+                className="flex w-full items-center justify-center gap-1.5 rounded-full border border-dashed border-border py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+              >
+                <KeyRoundIcon className="size-3.5" />
+                Quick login as a demo account
+              </button>
+
+              {quickLoginOpen ? (
+                <div className="mt-2 flex flex-col gap-1 rounded-[16px] border border-border bg-card p-1.5">
+                  {users.map((user) => {
+                    const role = roles.find((entry) => entry.id === user.roleId)
+                    return (
+                      <button
+                        key={user.id}
+                        type="button"
+                        disabled={submitting}
+                        onClick={() => attemptSignIn(user.email, user.password)}
+                        className="flex items-center gap-3 rounded-[12px] px-3 py-2 text-start transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+                      >
+                        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-amama-deep text-[12px] font-semibold text-white">
+                          {user.name.trim().charAt(0).toUpperCase() || "?"}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[13px] font-semibold text-foreground">
+                            {user.name}
+                          </span>
+                          <span className="block truncate text-[12px] text-muted-foreground">
+                            {role?.name ?? "No role"} · {user.email}
+                          </span>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : null}
+            </div>
+
             <p className="mt-6 text-center text-[13px] text-muted-foreground">
-              <Link href={content.otherRole.href} className="underline underline-offset-4 hover:text-foreground">
-                {content.otherRole.label}
+              <Link href="/creds" className="underline underline-offset-4 hover:text-foreground">
+                View every demo account&apos;s credentials
               </Link>
             </p>
           </div>

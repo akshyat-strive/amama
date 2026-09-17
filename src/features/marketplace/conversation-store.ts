@@ -87,6 +87,14 @@ function useConversations(): Conversation[] {
   return React.useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }
 
+/** Seeds a fixed batch of conversations, but only if the store is
+ *  genuinely empty — see `seed-data.ts`. */
+function seedConversationsIfEmpty(conversations: Conversation[]) {
+  restoreOnce()
+  if (snapshot.length > 0) return
+  write(conversations)
+}
+
 /**
  * "Contact seller" is idempotent — clicking it again from another listing,
  * or after a reload, finds the existing thread with that seller rather than
@@ -232,6 +240,7 @@ function toThreadMessages(messages: ConversationMessage[], mine: "buyer" | "sell
 
 export {
   useConversations,
+  seedConversationsIfEmpty,
   startConversation,
   sendMessage,
   logListingChange,

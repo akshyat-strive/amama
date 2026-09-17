@@ -4,7 +4,10 @@ import * as React from "react"
 
 const STORAGE_KEY = "amama.admin.staffChat"
 
-export type StaffChatSender = { id: string; name: string; role: "kam" | "master" }
+/** `role` is directory metadata only (the sender's role NAME, e.g. "KAM",
+ *  "Compliance") — nothing here ever branches on its value, only `.id`/
+ *  `.name` are read when rendering a message. */
+export type StaffChatSender = { id: string; name: string; role: string }
 
 export type StaffChatMessage = {
   id: string
@@ -15,12 +18,16 @@ export type StaffChatMessage = {
   at: string
 }
 
-export const MASTER_ADMIN_MENTION_CANDIDATE = { id: "master-admin", name: "Master Admin" }
 export const STAFF_GROUP_CHANNEL_ID = "group"
 export const STAFF_ANNOUNCEMENTS_CHANNEL_ID = "announcements"
 
-function staffDmChannelId(kamId: string) {
-  return `dm:${kamId}`
+/** Sorted-pair key so both sides of a DM land in the same channel — a
+ *  single fixed "the other party's id" key breaks the moment a third admin
+ *  exists, since Master's DM-with-Priya and Arjun's DM-with-Priya would
+ *  otherwise collide on the same channel while Priya's own DM-with-Arjun
+ *  lived somewhere else entirely. */
+function staffDmChannelId(userIdA: string, userIdB: string) {
+  return `dm:${[userIdA, userIdB].sort().join(":")}`
 }
 
 /*
@@ -118,10 +125,19 @@ function sendStaffMessage(
   return message
 }
 
+/** Seeds a fixed batch of channel messages, but only if the store is
+ *  genuinely empty — see `seed-data.ts`. */
+function seedStaffChatIfEmpty(byChannel: Record<string, StaffChatMessage[]>) {
+  restoreOnce()
+  if (Object.keys(snapshot).length > 0) return
+  write(byChannel)
+}
+
 export {
   useStaffChannel,
   useStaffChatStore,
   parseMentions,
   sendStaffMessage,
+  seedStaffChatIfEmpty,
   staffDmChannelId,
 }

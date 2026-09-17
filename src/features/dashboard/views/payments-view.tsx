@@ -56,10 +56,7 @@ function PaymentsView() {
 
   return (
     <div>
-      <h1 className="text-[24px] font-bold tracking-tight">Payments</h1>
-      <p className="mt-1 text-[15px] text-muted-foreground">
-        What&apos;s been settled, and what&apos;s still on its way to you.
-      </p>
+      <h1 className="text-[28px] font-bold tracking-tight">Payments</h1>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         <StatCard label="Paid out" value={formatUsd(paid)} caption="Season to date" />

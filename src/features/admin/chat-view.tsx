@@ -5,11 +5,10 @@ import { ChevronLeftIcon, MessageCircleIcon, UsersIcon, type LucideIcon } from "
 
 import { cn } from "@/lib/utils"
 import { ADMIN_SELECTED_CLASS } from "@/features/admin/admin-ui"
-import { useKamIdentity } from "@/features/admin/kam-identity"
-import { useKamRoster } from "@/features/admin/kam-roster-store"
+import { useCurrentAdmin } from "@/features/admin/current-admin"
+import { useUsers } from "@/features/admin/user-store"
 import { StaffChatThread } from "@/features/admin/staff-chat-thread"
 import {
-  MASTER_ADMIN_MENTION_CANDIDATE,
   STAFF_GROUP_CHANNEL_ID,
   sendStaffMessage,
   staffDmChannelId,
@@ -35,60 +34,89 @@ type ConversationRow = {
 }
 
 type ChatItem = StaffChannel | ConversationRow
+type Tab = "external" | "internal"
 
 function initial(name: string) {
   return name.trim().charAt(0).toUpperCase() || "?"
 }
 
 /**
- * One inbox, not two — a KAM used to have a separate "Conversations" page
- * for read-only buyer/seller oversight and a separate "Team chat" page for
- * DMs/Team. Folded together here because they're the same *kind* of thing
- * (a list of threads, pick one, read it) even though what's inside differs:
- * a conversation is always read-only and renders through `ConversationThread`
- * (the marketplace's own, with its contact-info guard); a staff channel is
- * interactive and renders through `StaffChatThread` (mentions, no guard —
- * staff can share contact details with each other). Announcements used to
- * live in this same list as a third channel; it's its own page now
- * (`announcements-view.tsx`) since a broadcast feed isn't really a
- * "conversation" to pick out of an inbox — it's something you check.
+ * A single sliding unit, not two independent buttons — the highlight is
+ * one shared element that moves to whichever label is active (an
+ * absolutely-positioned pill animating its own position) rather than each
+ * button toggling its own background on click. That's what makes it read
+ * as one toggle switching state instead of two buttons that happen to
+ * sit next to each other.
  */
-function ChatView({ role }: { role: "kam" | "master" }) {
-  const identity = useKamIdentity()
-  const roster = useKamRoster()
+function ChatTabSwitch({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {
+  return (
+    <div className="relative flex shrink-0 rounded-full bg-card p-1">
+      <span
+        aria-hidden
+        className={cn(
+          "absolute inset-y-1 w-[calc(50%-4px)] rounded-full bg-amama-deep shadow-sm transition-all duration-200 ease-out",
+          tab === "external" ? "left-1" : "left-1/2"
+        )}
+      />
+      <button
+        type="button"
+        onClick={() => onChange("external")}
+        className={cn(
+          "relative z-10 flex-1 rounded-full py-1.5 text-center text-[13px] font-medium transition-colors",
+          tab === "external" ? "text-white" : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        External
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("internal")}
+        className={cn(
+          "relative z-10 flex-1 rounded-full py-1.5 text-center text-[13px] font-medium transition-colors",
+          tab === "internal" ? "text-white" : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        Internal
+      </button>
+    </div>
+  )
+}
+
+/**
+ * One inbox, split by an External/Internal tab rather than two separate
+ * pages — External is read-only buyer/seller oversight (`ConversationThread`,
+ * with its contact-info guard); Internal is the team's own DM/Team channels
+ * (`StaffChatThread`, no guard — staff can share contact details with each
+ * other freely). Announcements isn't a third tab here — it's its own page
+ * (`announcements-view.tsx`), since a broadcast feed is something you
+ * check, not a thread you pick out of an inbox.
+ */
+function ChatView() {
+  const admin = useCurrentAdmin()
+  const users = useUsers()
   const conversations = useConversations()
   const staffStore = useStaffChatStore()
+  const [tab, setTab] = React.useState<Tab>("external")
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
+  const mentionCandidates = React.useMemo(() => users.map((user) => ({ id: user.id, name: user.name })), [users])
+  if (!admin) return null
 
-  const sender: StaffChatSender =
-    role === "master"
-      ? { id: MASTER_ADMIN_MENTION_CANDIDATE.id, name: MASTER_ADMIN_MENTION_CANDIDATE.name, role: "master" }
-      : { id: identity?.id ?? "kam", name: identity?.name ?? "KAM", role: "kam" }
+  const sender: StaffChatSender = { id: admin.user.id, name: admin.user.name, role: admin.role.name }
 
-  const staffChannels: StaffChannel[] =
-    role === "kam"
-      ? [
-          {
-            kind: "staff",
-            id: staffDmChannelId(sender.id),
-            title: "Master Admin",
-            subtitle: "Direct message",
-            icon: UsersIcon,
-          },
-          { kind: "staff", id: STAFF_GROUP_CHANNEL_ID, title: "Team", subtitle: "Every KAM", icon: UsersIcon },
-        ]
-      : [
-          { kind: "staff", id: STAFF_GROUP_CHANNEL_ID, title: "Team", subtitle: "Every KAM", icon: UsersIcon },
-          ...roster.map(
-            (kam): StaffChannel => ({
-              kind: "staff",
-              id: staffDmChannelId(kam.id),
-              title: kam.name,
-              subtitle: "Direct message",
-              icon: UsersIcon,
-            })
-          ),
-        ]
+  const staffChannels: StaffChannel[] = [
+    { kind: "staff", id: STAFF_GROUP_CHANNEL_ID, title: "Team", subtitle: "Everyone signed in", icon: UsersIcon },
+    ...users
+      .filter((user) => user.id !== admin.user.id)
+      .map(
+        (user): StaffChannel => ({
+          kind: "staff",
+          id: staffDmChannelId(admin.user.id, user.id),
+          title: user.name,
+          subtitle: "Direct message",
+          icon: UsersIcon,
+        })
+      ),
+  ]
 
   const conversationRows: ConversationRow[] = conversations.map((conversation) => ({
     kind: "conversation",
@@ -96,20 +124,21 @@ function ChatView({ role }: { role: "kam" | "master" }) {
     conversation,
   }))
 
-  const items: ChatItem[] = [...conversationRows, ...staffChannels]
-  // What to *render* in the thread pane — falls back to the first item so
-  // desktop (which shows both panes at once) never sits on an empty pane.
+  const items: ChatItem[] = tab === "external" ? conversationRows : staffChannels
+  // What to *render* in the thread pane — falls back to the tab's first
+  // item so desktop (which shows both panes at once) never sits on an
+  // empty pane.
   const selected = items.find((item) => item.id === selectedId) ?? items[0] ?? null
   // Whether a chat has actually been *picked* — separate from `selected`
   // above because this, not the fallback, is what decides which pane shows
   // on mobile. Falling back to item 0 for that too would open a thread the
   // moment the page loads, defeating the point of splitting the two panes.
-  const threadOpenOnMobile = selectedId !== null
+  const threadOpenOnMobile = selectedId !== null && items.some((item) => item.id === selectedId)
 
-  const mentionCandidates = React.useMemo(
-    () => [MASTER_ADMIN_MENTION_CANDIDATE, ...roster.map((kam) => ({ id: kam.id, name: kam.name }))],
-    [roster]
-  )
+  const switchTab = (next: Tab) => {
+    setTab(next)
+    setSelectedId(null)
+  }
 
   const backButton = (
     <button
@@ -130,37 +159,41 @@ function ChatView({ role }: { role: "kam" | "master" }) {
           divider — on mobile only one of them is ever on screen at a time
           (the list, or the open thread with a way back), which a single
           shared box can't do cleanly. */}
-      <div className="mt-6 flex flex-col gap-4 lg:h-[calc(100vh-160px)] lg:flex-row">
+      <div className="mt-6 flex flex-col gap-4 lg:h-[calc(100vh-158px)] lg:flex-row">
         <div
           className={cn(
-            "flex flex-col gap-3 overflow-y-auto rounded-[20px] border border-border bg-muted p-2 lg:flex lg:h-full lg:w-[300px] lg:shrink-0",
+            "flex flex-col gap-2 overflow-hidden rounded-[20px] border border-border bg-muted p-2 lg:flex lg:h-full lg:w-[300px] lg:shrink-0",
             threadOpenOnMobile && "hidden"
           )}
         >
-          {conversationRows.length > 0 ? (
-            <ChatSection title="Conversations">
-              {conversationRows.map((row) => (
+          <ChatTabSwitch tab={tab} onChange={switchTab} />
+
+          <div className="flex flex-1 flex-col gap-1 overflow-y-auto">
+            {items.length === 0 ? (
+              <p className="px-3 py-4 text-[13px] text-muted-foreground">
+                {tab === "external" ? "No conversations yet." : "Nobody else has signed in yet."}
+              </p>
+            ) : tab === "external" ? (
+              conversationRows.map((row) => (
                 <ConversationRowButton
                   key={row.id}
                   row={row}
                   active={selected?.id === row.id}
                   onClick={() => setSelectedId(row.id)}
                 />
-              ))}
-            </ChatSection>
-          ) : null}
-
-          <ChatSection title="Team">
-            {staffChannels.map((channel) => (
-              <StaffChannelRowButton
-                key={channel.id}
-                channel={channel}
-                lastMessage={staffStore[channel.id]?.at(-1)?.text}
-                active={selected?.id === channel.id}
-                onClick={() => setSelectedId(channel.id)}
-              />
-            ))}
-          </ChatSection>
+              ))
+            ) : (
+              staffChannels.map((channel) => (
+                <StaffChannelRowButton
+                  key={channel.id}
+                  channel={channel}
+                  lastMessage={staffStore[channel.id]?.at(-1)?.text}
+                  active={selected?.id === channel.id}
+                  onClick={() => setSelectedId(channel.id)}
+                />
+              ))
+            )}
+          </div>
         </div>
 
         <div
@@ -185,17 +218,6 @@ function ChatView({ role }: { role: "kam" | "master" }) {
           )}
         </div>
       </div>
-    </div>
-  )
-}
-
-function ChatSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <p className="px-3 pb-1 pt-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-        {title}
-      </p>
-      {children}
     </div>
   )
 }
@@ -304,7 +326,7 @@ function StaffChannelRowButton({
   )
 }
 
-/** Read-only, on purpose — a KAM or master admin can see every product
+/** Read-only, on purpose — anyone signed in can see every product
  *  conversation to step in if something looks wrong, but this isn't
  *  another inbox to reply from. */
 function ConversationPane({
@@ -314,14 +336,25 @@ function ConversationPane({
   conversation: Conversation
   backButton: React.ReactNode
 }) {
-  const messages = conversation.messages.map((message) => ({
-    from: message.from === "system" ? ("system" as const) : ("them" as const),
-    text:
-      message.from === "system"
-        ? message.text
-        : `${message.from === "buyer" ? conversation.buyerName : conversation.sellerName}: ${message.text}`,
-    diff: message.diff,
-  }))
+  // Neither party is "you" here — this is a KAM reading someone else's
+  // conversation, not one of the two people in it — so buyer and seller
+  // each get a fixed, named side (buyer left, seller right) instead of
+  // the usual "me"/"them" a first-person inbox would use.
+  const messages = conversation.messages.map((message) => {
+    if (message.from === "system") {
+      const side = message.text.startsWith(conversation.buyerName)
+        ? ("left" as const)
+        : message.text.startsWith(conversation.sellerName)
+          ? ("right" as const)
+          : undefined
+      return { from: "system" as const, text: message.text, diff: message.diff, side }
+    }
+    return {
+      from: message.from,
+      text: message.text,
+      senderName: message.from === "buyer" ? conversation.buyerName : conversation.sellerName,
+    }
+  })
 
   return (
     <ConversationThread

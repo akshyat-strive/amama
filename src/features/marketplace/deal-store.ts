@@ -59,15 +59,69 @@ export type DealAssignmentEntry = {
 
 export type ShipmentStatus = "booked" | "in-transit" | "arrived" | "delayed"
 
+/** Real, named checkpoints a shipment actually passes through — "where it
+ *  is, everything," not just a 4-value status flag. Ordered loosely by
+ *  when they'd typically happen, though nothing enforces that order; a
+ *  KAM logs whatever actually occurred. */
+export type ShipmentEventType =
+  | "booked"
+  | "gate-in"
+  | "loaded"
+  | "departed"
+  | "in-transit"
+  | "arrived-port"
+  | "customs"
+  | "out-for-delivery"
+  | "delivered"
+  | "delayed"
+
+export type ShipmentEvent = {
+  id: string
+  type: ShipmentEventType
+  label: string
+  location: string | null
+  at: string
+  note: string | null
+}
+
 export type Shipment = {
   id: string
   carrier: string
   documentNumber: string
   status: ShipmentStatus
+  origin: string | null
+  destination: string | null
+  /** The one line a non-technical buyer/seller actually wants an answer
+   *  to: "where is it right now." Kept alongside `events` (not derived
+   *  from it on every read) so it's always a plain, cheap-to-render field. */
+  currentLocation: string | null
   eta: string | null
   note: string | null
+  /** Oldest → newest. The tracker's own timeline reads straight off this. */
+  events: ShipmentEvent[]
   createdAt: string
   updatedAt: string
+}
+
+/** Backfills a `Shipment` stored before the event-timeline fields existed
+ *  — same convention as `listing-store.ts`'s `normalize`. Without this, a
+ *  browser with old-shaped data in `localStorage` would crash the first
+ *  time the tracker reads `shipment.events`. */
+function normalizeShipment(raw: Partial<Shipment>): Shipment {
+  return {
+    origin: null,
+    destination: null,
+    currentLocation: null,
+    events: [],
+    ...raw,
+  } as Shipment
+}
+
+function normalizeDeal(raw: Partial<Deal>): Deal {
+  return {
+    ...raw,
+    shipments: (raw.shipments ?? []).map((shipment) => normalizeShipment(shipment as Partial<Shipment>)),
+  } as Deal
 }
 
 export type Deal = {
@@ -146,10 +200,19 @@ function restoreOnce() {
   restored = true
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (raw) snapshot = JSON.parse(raw)
+    if (raw) snapshot = (JSON.parse(raw) as Partial<Deal>[]).map(normalizeDeal)
   } catch {
     // Private mode or blocked storage — carry on with nothing proposed yet.
   }
+}
+
+/** Seeds a fixed batch of deals straight into the store, but only if it's
+ *  genuinely empty — belt-and-suspenders alongside `seed-data.ts`'s own
+ *  version flag, so this is safe to call more than once. */
+function seedDealsIfEmpty(deals: Deal[]) {
+  restoreOnce()
+  if (snapshot.length > 0) return
+  write(deals)
 }
 
 function subscribe(listener: () => void) {
@@ -403,6 +466,33 @@ function updateShipment(dealId: string, shipmentId: string, patch: Partial<Omit<
   })
 }
 
+/** Logs one real tracking checkpoint and keeps the shipment's own summary
+ *  fields (`status`/`currentLocation`/`eta`) in step with it — a single
+ *  form submission ("we departed Nhava Sheva, ETA the 12th") updates
+ *  everything the tracker reads, rather than needing three separate edits
+ *  that could drift out of sync. */
+function addShipmentEvent(
+  dealId: string,
+  shipmentId: string,
+  input: { type: ShipmentEventType; label: string; location: string | null; note: string | null },
+  derived: { status?: ShipmentStatus; currentLocation?: string | null; eta?: string | null } = {}
+): ShipmentEvent {
+  restoreOnce()
+  const deal = findDeal(dealId)
+  if (!deal) throw new Error(`No deal ${dealId}`)
+  const shipment = deal.shipments.find((entry) => entry.id === shipmentId)
+  if (!shipment) throw new Error(`No shipment ${shipmentId} on deal ${dealId}`)
+  const now = new Date().toISOString()
+  const event: ShipmentEvent = { ...input, id: generateId("event"), at: now }
+  updateShipment(dealId, shipmentId, {
+    events: [...shipment.events, event],
+    status: derived.status ?? shipment.status,
+    currentLocation: derived.currentLocation ?? input.location ?? shipment.currentLocation,
+    eta: derived.eta ?? shipment.eta,
+  })
+  return event
+}
+
 /** `GateBar`-ready progress: how many of the fixed stages are behind this
  *  deal, out of the total, plus a `TradeStatus` for its color — `paid` is
  *  on-track/done, everything else in flight is on-track too since there's
@@ -431,5 +521,7 @@ export {
   updatePayment,
   addShipment,
   updateShipment,
+  addShipmentEvent,
   dealStageProgress,
+  seedDealsIfEmpty,
 }

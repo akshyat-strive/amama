@@ -88,7 +88,7 @@ function NavList({
             {regularGroups.map(({ group, items: groupItems }) => (
               <div key={group} className="flex flex-col overflow-hidden rounded-[24px] border border-border bg-muted">
                 <GroupHeader group={group} expanded={false} />
-                <div className="flex flex-col items-center gap-0.5 rounded-[20px] bg-card p-1">
+                <div className="flex flex-col items-center gap-0.5 rounded-[24px] bg-card p-1">
                   {groupItems.map((item) => (
                     <NavItemLink
                       key={item.href}
@@ -124,11 +124,11 @@ function NavList({
     <div
       className="flex h-full flex-col overflow-hidden rounded-[24px] border border-border bg-muted bg-[repeating-linear-gradient(-45deg,var(--surface-border)_0px,var(--surface-border)_1px,transparent_1px,transparent_7px)] shadow-lg"
     >
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
+      <nav className="flex flex-1 flex-col gap-3.5 overflow-y-auto">
         {regularGroups.map(({ group, items: groupItems }) => (
-          <div key={group} className="flex flex-col">
+          <div key={group} className="flex flex-col bg-muted rounded-[24px]">
             <GroupHeader group={group} expanded />
-            <div className="flex flex-col gap-0.5 rounded-[20px] bg-card p-1">
+            <div className="flex flex-col gap-0.5 rounded-[24px] bg-card p-1">
               {groupItems.map((item) => (
                 <NavItemLink
                   key={item.href}

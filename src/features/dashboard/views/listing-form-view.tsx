@@ -188,14 +188,9 @@ function ListingFormView({ listingId }: { listingId?: string }) {
         {editing ? "Back to listing" : "Your catalog"}
       </Link>
 
-      <h1 className="mt-3 text-[24px] font-bold tracking-tight">
+      <h1 className="mt-3 text-[28px] font-bold tracking-tight">
         {editing ? "Edit listing" : "Add a listing"}
       </h1>
-      <p className="mt-1 text-[14px] text-muted-foreground">
-        {editing
-          ? "Changes go back through KAM review, and anyone already talking to you about this product gets notified."
-          : "This goes straight into the marketplace buyers browse — the photo is a stock shot for the crop, not your actual harvest."}
-      </p>
 
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
         <FormSection title="Product">

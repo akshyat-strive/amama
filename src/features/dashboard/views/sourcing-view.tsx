@@ -58,14 +58,8 @@ function SourcingView() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[24px] font-bold tracking-tight">Marketplace</h1>
-          <p className="mt-1 text-[15px] text-muted-foreground">
-            Every seller&apos;s catalog in one place — find what you need and message
-            them directly.
-          </p>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-[28px] font-bold tracking-tight">Marketplace</h1>
 
         <div className="flex items-center gap-2">
           <button

@@ -8,9 +8,23 @@ import { containsContactInfo, type ListingDiff } from "@/features/marketplace/co
 import { ListingDiffDialog } from "@/features/marketplace/listing-diff-dialog"
 
 export type ThreadMessage = {
-  from: "me" | "them" | "system"
+  /** `me`/`them` is the two-party self view (a buyer or seller reading
+   *  their own inbox — one side is always "you"). `buyer`/`seller` is the
+   *  third-party observer view (a KAM reading someone else's
+   *  conversation) — neither side is "you", so it names them directly and
+   *  fixes buyer-left/seller-right instead. Both alias to the same
+   *  left/right styling in `MessageBubble` (`them`≈`buyer`, `me`≈`seller`). */
+  from: "me" | "them" | "buyer" | "seller" | "system"
   text: string
   diff?: ListingDiff
+  /** A small caption above the first bubble in a run — only meaningful
+   *  for the third-party `buyer`/`seller` view, which (unlike `me`/`them`)
+   *  has no other way to say who's speaking. */
+  senderName?: string
+  /** Which side a system log line anchors to, so it reads as a reply from
+   *  whichever party actually did the thing — `undefined` keeps the
+   *  neutral centered pill used by the two-party self view. */
+  side?: "left" | "right"
 }
 
 /**
@@ -129,10 +143,15 @@ function ConversationThread({
   )
 }
 
-/** The platform's own voice in a thread — a listing changed, not either
- *  party speaking — so it's a centred, muted line rather than a bubble on
- *  either side. Clickable straight through to the before/after when there
- *  is one. */
+/** The platform's own voice in a thread — a listing changed, or a deal
+ *  moved, not either party typing — so it's a pill rather than a bubble.
+ *  In the two-party self view (`side` unset) that pill floats centered,
+ *  neutral to both sides. In the third-party `buyer`/`seller` view it
+ *  instead anchors to whichever side actually did the thing — a buyer's
+ *  proposal reads as a beat from the left, a seller's decline or accept
+ *  replies to it from the right — tinted to match that side's bubble
+ *  color so the connection reads at a glance. Clickable straight through
+ *  to the before/after when there is one. */
 function SystemLogLine({
   message,
   onOpenDiff,
@@ -141,14 +160,22 @@ function SystemLogLine({
   onOpenDiff: (diff: ListingDiff) => void
 }) {
   return (
-    <div className="my-2 flex justify-center">
+    <div
+      className={cn(
+        "my-2 flex",
+        message.side === "left" ? "justify-start" : message.side === "right" ? "justify-end" : "justify-center"
+      )}
+    >
       <button
         type="button"
         disabled={!message.diff}
         onClick={() => message.diff && onOpenDiff(message.diff)}
         className={cn(
-          "flex items-center gap-1.5 rounded-full bg-muted px-3.5 py-1.5 text-[12px] font-medium text-muted-foreground",
-          message.diff && "cursor-pointer transition-colors hover:bg-amama-subtle hover:text-amama-deep"
+          "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-medium",
+          message.side === "right"
+            ? "bg-amama-subtle text-amama-deep"
+            : "bg-muted text-muted-foreground",
+          message.diff && "cursor-pointer transition-colors hover:brightness-95"
         )}
       >
         <PackageIcon className="size-3.5 shrink-0" />
@@ -162,13 +189,16 @@ function SystemLogLine({
  *  the last one in the run needs the usual gap above it, so a burst of
  *  three messages reads as one breath, not three separate turns. */
 function MessageBubble({ message, grouped }: { message: ThreadMessage; grouped: boolean }) {
-  const mine = message.from === "me"
+  const alignRight = message.from === "me" || message.from === "seller"
   return (
-    <div className={cn("flex", mine && "justify-end", grouped ? "mt-0.5" : "mt-2 first:mt-0")}>
+    <div className={cn("flex flex-col", alignRight ? "items-end" : "items-start", grouped ? "mt-0.5" : "mt-2 first:mt-0")}>
+      {message.senderName && !grouped ? (
+        <p className="mb-1 px-1 text-[11px] font-medium text-muted-foreground">{message.senderName}</p>
+      ) : null}
       <p
         className={cn(
           "max-w-[75%] rounded-3xl px-4 py-2 text-[14px] leading-relaxed",
-          mine ? "bg-amama-deep text-white" : "bg-muted text-foreground"
+          alignRight ? "bg-amama-deep text-white" : "bg-muted text-foreground"
         )}
       >
         {message.text}

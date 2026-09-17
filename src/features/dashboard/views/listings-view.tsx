@@ -27,13 +27,8 @@ function ListingsView() {
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[24px] font-bold tracking-tight">Listings</h1>
-          <p className="mt-1 text-[15px] text-muted-foreground">
-            Your own catalog — what buyers see when they search for what you grow.
-          </p>
-        </div>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-[28px] font-bold tracking-tight">Listings</h1>
         <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"

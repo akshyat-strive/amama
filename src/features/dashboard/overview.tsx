@@ -150,12 +150,9 @@ function DashboardOverview({ role }: { role: OnboardingRole }) {
 
   return (
     <div>
-      <h1 className="text-[24px] font-bold tracking-tight">
+      <h1 className="text-[28px] font-bold tracking-tight">
         {firstName ? `Welcome back, ${firstName}` : "Welcome back"}
       </h1>
-      <p className="mt-1 max-w-2xl text-[15px] text-muted-foreground">
-        {content.description}
-      </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {content.stats(orders).map((stat) => (

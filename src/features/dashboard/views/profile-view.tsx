@@ -31,10 +31,7 @@ function ProfileView({ role }: { role: OnboardingRole }) {
 
   return (
     <div>
-      <h1 className="text-[24px] font-bold tracking-tight">Profile</h1>
-      <p className="mt-1 text-[15px] text-muted-foreground">
-        The details you gave us during onboarding.
-      </p>
+      <h1 className="text-[28px] font-bold tracking-tight">Profile</h1>
 
       <Panel title="Profile" className="mt-6">
         <div className="divide-y divide-border">

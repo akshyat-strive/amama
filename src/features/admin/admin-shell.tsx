@@ -10,16 +10,10 @@ import { Button } from "@/components/ui/button"
 import { LanguageSwitcher } from "@/features/i18n/components/language-switcher"
 import { NavList } from "@/features/dashboard/nav-list"
 import { useSidebarOpen } from "@/features/dashboard/sidebar-open-store"
-import { useKamIdentity } from "@/features/admin/kam-identity"
-import { adminNav, type AdminRole } from "@/features/admin/admin-nav-config"
-
-/** `name` only covers `master`, which has no per-account identity — `kam`'s
- *  is read live from `useKamIdentity()` below instead, since it's no longer
- *  one fixed person. */
-const roleContent: Record<AdminRole, { label: string; name?: string; icon: typeof ShieldCheckIcon }> = {
-  kam: { label: "KAM", icon: ShieldCheckIcon },
-  master: { label: "Master Admin", name: "Master Admin", icon: CrownIcon },
-}
+import { visibleAdminNav } from "@/features/admin/admin-nav-config"
+import { useCurrentAdmin } from "@/features/admin/current-admin"
+import { isFullAccess } from "@/features/admin/permissions"
+import { seedAdminDemoData } from "@/features/admin/seed-data"
 
 /** Same rail-width constant and rationale as `DashboardShell` — see there
  *  for why one `sidebarOpen` boolean resolves to three different visual
@@ -30,56 +24,56 @@ const RAIL_WIDTH_MD = "md:w-[66px]"
  * The admin module's own shell — same popover-sidebar-over-flat-canvas shape
  * as the buyer/seller dashboards (`DashboardShell`), so moving between "what
  * does the applicant-facing app look like" and "my own queue" isn't context-
- * switching between two different products. Shared by every admin role
- * (KAM, master admin, whichever comes next) rather than forked per role: the
- * only things that change are the nav items and the topbar identity chip.
+ * switching between two different products. One shell for every business-
+ * side role now (not forked per role) — the only things that change are the
+ * nav items (filtered by permission) and the topbar identity chip.
  *
  * Kept as its own component rather than reusing `DashboardShell` directly:
  * that one is wired to an onboarding-draft identity (a buyer or seller's own
- * name), and admin staff have neither — just a fixed identity per role.
+ * name), and admin staff have neither — just a signed-in `AdminUser`.
  */
-function AdminShell({ role, children }: { role: AdminRole; children: React.ReactNode }) {
+function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const content = roleContent[role]
-  const Icon = content.icon
-  const storageKey = `amama.admin.${role}.sidebarOpen`
-  const homeHref = role === "kam" ? "/admin/kam" : "/admin/master"
 
-  // A KAM's identity is set at sign-in (see `admin-login-screen.tsx`) and
-  // every moderation/verification action attributes to it — so unlike
-  // `master` (one fixed identity, no sign-in gate needed), a KAM route
-  // with nobody signed in has nowhere to attribute an action to. Bounce
-  // back to sign-in rather than letting the console render with no name.
+  // A signed-in identity is required to attribute every moderation/
+  // verification/deal action to someone real — a route with nobody signed
+  // in has nowhere to attribute an action to. Bounce back to sign-in
+  // rather than letting the console render with no identity.
   //
-  // On a real (non-client-routed) navigation, `useKamIdentity` renders
+  // On a real (non-client-routed) navigation, `useCurrentAdmin` renders
   // `null` on the hydration-matching pass even when localStorage really
-  // does have an identity — the store's own post-hydration correction
-  // effect fires and fixes it a moment later, but only *after* this
-  // effect (registered later in this same component) has already run
+  // does have a session — the underlying stores' own post-hydration
+  // correction effect fires and fixes it a moment later, but only *after*
+  // this effect (registered later in this same component) has already run
   // once with that stale `null`. Deferring the redirect through a
-  // cancelled-by-cleanup microtask lets that correction win the race:
-  // if `signedOut` flips back to `false` on the very next render, cleanup
+  // cancelled-by-cleanup microtask lets that correction win the race: if
+  // `signedOut` flips back to `false` on the very next render, cleanup
   // cancels the still-pending redirect before it fires.
-  const identity = useKamIdentity()
-  const signedOut = role === "kam" && identity === null
+  const admin = useCurrentAdmin()
+  const signedOut = admin === null
   React.useEffect(() => {
     if (!signedOut) return
     let cancelled = false
     queueMicrotask(() => {
-      if (!cancelled) router.replace("/admin/kam/login")
+      if (!cancelled) router.replace("/admin/login")
     })
     return () => {
       cancelled = true
     }
   }, [signedOut, router])
 
-  const [sidebarOpen, setSidebarOpen] = useSidebarOpen(storageKey)
+  React.useEffect(() => {
+    if (admin) seedAdminDemoData()
+  }, [admin])
+
+  const [sidebarOpen, setSidebarOpen] = useSidebarOpen("amama.admin.sidebarOpen")
 
   // Every hook above must still run before this — the redirect itself is
   // fired from the effect above, this just skips the flash of an
   // unattributed console while that navigation is in flight.
   if (signedOut) return null
 
+  const Icon = isFullAccess(admin.role.permissions) ? CrownIcon : ShieldCheckIcon
   const toggleSidebar = () => {
     setSidebarOpen((open) => !open)
   }
@@ -97,19 +91,19 @@ function AdminShell({ role, children }: { role: AdminRole; children: React.React
         >
           <ChartNoAxesGantt />
         </Button>
-        <Link href={homeHref} className="text-xl font-bold tracking-tight text-amama-deep">
+        <Link href="/admin" className="text-xl font-bold tracking-tight text-amama-deep">
           amama
         </Link>
         <span className="hidden items-center gap-2 sm:flex">
           <span aria-hidden className="h-4 w-px bg-border" />
-          <span className="text-[15px] font-medium text-muted-foreground">{content.label}</span>
+          <span className="text-[15px] font-medium text-muted-foreground">{admin.role.name}</span>
         </span>
 
         <div className="ms-auto flex items-center gap-3">
           <LanguageSwitcher variant="inline" />
           <span
             className="grid size-10 place-items-center rounded-full bg-amama-deep text-[14px] font-semibold text-white shadow-floating"
-            title={content.name ?? identity?.name}
+            title={admin.user.name}
           >
             <Icon className="size-4.5" />
           </span>
@@ -143,7 +137,7 @@ function AdminShell({ role, children }: { role: AdminRole; children: React.React
             )}
           >
             <NavList
-              items={adminNav[role]}
+              items={visibleAdminNav(admin.can)}
               expanded={sidebarOpen}
               onNavigate={() => {
                 if (window.matchMedia("(max-width: 767px)").matches) {

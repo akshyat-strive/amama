@@ -18,10 +18,7 @@ function SettingsView({ role }: { role: OnboardingRole }) {
 
   return (
     <div>
-      <h1 className="text-[24px] font-bold tracking-tight">Settings</h1>
-      <p className="mt-1 text-[15px] text-muted-foreground">
-        Your account, as we have it on file.
-      </p>
+      <h1 className="text-[28px] font-bold tracking-tight">Settings</h1>
 
       <Panel
         title="Verification"

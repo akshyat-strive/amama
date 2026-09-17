@@ -6,10 +6,14 @@ import { ShipIcon } from "lucide-react"
 import { Panel, StatusPill } from "@/features/dashboard/dashboard-ui"
 import { buildOrderBook, buildShipments } from "@/features/dashboard/demo-data"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
+import { buyerIdentity } from "@/features/marketplace/identity"
+import { useDeals } from "@/features/marketplace/deal-store"
+import { ShipmentTracker } from "@/features/marketplace/shipment-tracker"
 
 function ShipmentsView() {
   const { draft } = useOnboarding()
   const buyer = draft.buyer
+  const deals = useDeals()
 
   const shipments = React.useMemo(() => {
     const orders = buildOrderBook({
@@ -21,12 +25,29 @@ function ShipmentsView() {
     return buildShipments(orders)
   }, [buyer.sourcing, buyer.country, buyer.companyName])
 
+  const myId = buyerIdentity(buyer).id
+  const trackedShipments = React.useMemo(
+    () => deals.filter((deal) => deal.buyerId === myId).flatMap((deal) => deal.shipments),
+    [deals, myId]
+  )
+
   return (
     <div>
-      <h1 className="text-[24px] font-bold tracking-tight">Shipments</h1>
-      <p className="mt-1 text-[15px] text-muted-foreground">
-        Every shipment on the water or on its way to it, vessel by vessel.
-      </p>
+      <h1 className="text-[28px] font-bold tracking-tight">Shipments</h1>
+
+      {trackedShipments.length > 0 ? (
+        <Panel
+          title="Your tracked shipments"
+          subtitle="Real-time updates from the team handling your deal"
+          className="mt-6"
+        >
+          <div className="flex flex-col gap-3 p-5">
+            {trackedShipments.map((shipment) => (
+              <ShipmentTracker key={shipment.id} shipment={shipment} />
+            ))}
+          </div>
+        </Panel>
+      ) : null}
 
       <Panel title={`${shipments.length} shipments`} className="mt-6" subtitle="By nearest ETA">
         <ul className="divide-y divide-border">

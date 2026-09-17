@@ -46,8 +46,7 @@ function OrdersView({ role }: { role: OnboardingRole }) {
 
   return (
     <div>
-      <h1 className="text-[24px] font-bold tracking-tight">{content.title}</h1>
-      <p className="mt-1 text-[15px] text-muted-foreground">{content.description}</p>
+      <h1 className="text-[28px] font-bold tracking-tight">{content.title}</h1>
 
       <Panel title={`${orders.length} orders`} className="mt-6" subtitle="Newest first">
         <ul className="divide-y divide-border">

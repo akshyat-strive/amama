@@ -58,7 +58,7 @@ export type Submission = {
   reviewedByKamName: string | null
 }
 
-type Store = Record<OnboardingRole, Submission | null>
+export type Store = Record<OnboardingRole, Submission | null>
 
 const emptyStore: Store = { buyer: null, seller: null }
 
@@ -260,4 +260,12 @@ function useVerification() {
   )
 }
 
-export { useVerification }
+/** Seeds a fixed pair of submissions, but only if the store is genuinely
+ *  empty — see `seed-data.ts`. */
+function seedSubmissionsIfEmpty(store: Partial<Store>) {
+  restoreOnce()
+  if (snapshot.buyer || snapshot.seller) return
+  write({ ...emptyStore, ...store })
+}
+
+export { useVerification, seedSubmissionsIfEmpty }

@@ -5,17 +5,10 @@ import { Trash2Icon } from "lucide-react"
 
 import { cropLabels } from "@/features/dashboard/demo-data"
 import { cropImageUrl } from "@/features/onboarding/steps"
+import { formatInr } from "@/features/marketplace/currency"
 import { GradeBadge } from "@/features/marketplace/grade-badge"
 import { ProximityMap } from "@/features/marketplace/proximity-map"
 import type { Listing } from "@/features/marketplace/listing-store"
-
-function formatUsd(amount: number) {
-  return new Intl.NumberFormat("en", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 /**
  * The product's own page content — everything that used to be crammed
@@ -58,7 +51,7 @@ function ProductInfoPanel({ listing }: { listing: Listing }) {
       ) : null}
 
       <p className="text-[24px] font-extrabold tracking-tight text-foreground tabular-nums">
-        {formatUsd(listing.pricePerTonneUsd)}
+        {formatInr(listing.pricePerTonneUsd)}
         <span className="ms-1.5 text-[13px] font-medium text-muted-foreground">/ tonne</span>
       </p>
 
@@ -91,4 +84,4 @@ function ProductInfoPanel({ listing }: { listing: Listing }) {
   )
 }
 
-export { ProductInfoPanel, formatUsd }
+export { ProductInfoPanel }

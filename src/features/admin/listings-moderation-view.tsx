@@ -11,6 +11,7 @@ import { AdminEmptyState } from "@/features/admin/admin-ui"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { cropLabels } from "@/features/dashboard/demo-data"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
+import { formatInr } from "@/features/marketplace/currency"
 import { notifyFromKam } from "@/features/marketplace/kam-thread-store"
 import {
   moderateListing,
@@ -23,14 +24,6 @@ const moderationStyles: Record<ModerationStatus, { label: string; className: str
   unverified: { label: "Unverified", className: "bg-muted text-muted-foreground" },
   verified: { label: "Verified", className: "bg-amama-subtle text-amama-deep" },
   flagged: { label: "Flagged", className: "bg-destructive/10 text-destructive" },
-}
-
-function formatUsd(amount: number) {
-  return new Intl.NumberFormat("en", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(amount)
 }
 
 function ListingModerationCard({ listing, reviewerName }: { listing: Listing; reviewerName: string }) {
@@ -62,7 +55,7 @@ function ListingModerationCard({ listing, reviewerName }: { listing: Listing; re
           </h2>
           <p className="mt-0.5 truncate text-[13px] text-muted-foreground">
             {listing.sellerName} · {listing.grade} · {listing.quantityMt} MT ·{" "}
-            {formatUsd(listing.pricePerTonneUsd)}/t
+            {formatInr(listing.pricePerTonneUsd)}/t
           </p>
           <p className="mt-1 text-[12px] text-muted-foreground">
             {country ? `${countryCodeToFlag(country.code)} ${country.name}` : listing.country}

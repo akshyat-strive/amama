@@ -28,7 +28,7 @@ function ListingsView() {
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-[28px] font-bold tracking-tight">Listings</h1>
+        <h1 className="text-[28px] font-bold tracking-tight">My listings</h1>
         <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"

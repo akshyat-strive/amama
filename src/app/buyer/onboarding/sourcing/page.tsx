@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowRightIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -34,22 +34,31 @@ export default function BuyerSourcingPage() {
         : [...prev.sourcing, id],
     }))
 
+  // Reached from the Profile page's "Edit product list" link, rather than
+  // walking the wizard in order — every pick already saves immediately (see
+  // `toggle` above), so there's nothing left to "continue" into. Both the
+  // back arrow and the primary button return straight to Profile instead of
+  // the next/previous onboarding step.
+  const fromProfile = useSearchParams().get("from") === "profile"
+  const profileHref = "/buyer/dashboard/profile"
+
   const target = nextStep("buyer", "sourcing", entityType)
   const back = previousStep("buyer", "sourcing", entityType)
+  const continueHref = fromProfile ? profileHref : target?.href
 
   return (
     <StepShell
       step={stepIndex("buyer", "sourcing", entityType) + 1}
       totalSteps={effectiveSteps("buyer", entityType).length}
-      backHref={back?.href ?? "/"}
+      backHref={fromProfile ? profileHref : back?.href ?? "/"}
       title={t("onboarding.sourcing.title")}
       description={t("onboarding.sourcing.description")}
-      skipHref={target?.href}
+      skipHref={continueHref}
       footer={
         <Button
           size="xl"
           className="w-full"
-          onClick={() => target && router.push(target.href)}
+          onClick={() => continueHref && router.push(continueHref)}
         >
           {picked.length > 0
             ? t("common.continueWithCount", { count: picked.length })

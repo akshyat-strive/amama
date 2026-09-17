@@ -29,15 +29,8 @@ import {
 } from "@/features/contracts/contract-store"
 import { TermSheetDialog } from "@/features/contracts/term-sheet-dialog"
 import type { ChatParty } from "@/features/marketplace/conversation-store"
+import { formatInr } from "@/features/marketplace/currency"
 import { useDeals, type NegotiationRound } from "@/features/marketplace/deal-store"
-
-function formatUsd(amount: number) {
-  return new Intl.NumberFormat("en", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric" })
@@ -185,11 +178,11 @@ function ContractDetail({
         </div>
 
         <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Term label="Price" value={`${formatUsd(contract.terms.pricePerTonneUsd)}/t`} />
+          <Term label="Price" value={`${formatInr(contract.terms.pricePerTonneUsd)}/t`} />
           <Term label="Quantity" value={`${contract.terms.quantityMt} MT`} />
           <Term
             label="Total value"
-            value={formatUsd(contract.terms.pricePerTonneUsd * contract.terms.quantityMt)}
+            value={formatInr(contract.terms.pricePerTonneUsd * contract.terms.quantityMt)}
           />
           <Term label="Incoterm" value={contract.terms.incoterm ?? "—"} />
           <Term label="Payment" value={contract.terms.paymentTerm ?? "—"} />
@@ -341,7 +334,7 @@ function RoundRow({ round }: { round: NegotiationRound }) {
     <li className="flex flex-wrap items-center gap-2 rounded-[14px] bg-muted px-3 py-2.5 text-[13px]">
       <span className="font-semibold text-foreground">{round.byName}</span>
       <span className="tabular-nums text-foreground">
-        {formatUsd(round.pricePerTonneUsd)}/t × {round.quantityMt} MT
+        {formatInr(round.pricePerTonneUsd)}/t × {round.quantityMt} MT
       </span>
       {round.incoterm ? <span className="text-muted-foreground">{round.incoterm}</span> : null}
       <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", roundOutcomeStyles[round.outcome])}>

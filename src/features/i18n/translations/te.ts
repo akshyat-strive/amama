@@ -219,6 +219,7 @@ const te: TranslationShape = {
         tea: "టీ",
         grains: "ధాన్యాలు",
         pulses: "పప్పుధాన్యాలు",
+        apple: "ఆపిల్",
         "fresh-fruit": "తాజా పండ్లు",
         "dried-fruit": "ఎండు పండ్లు",
         vegetables: "కూరగాయలు",

@@ -4,19 +4,12 @@ import * as React from "react"
 
 import { GateBar, Panel, StatusPill } from "@/features/dashboard/dashboard-ui"
 import { buildOrderBook, TOTAL_GATES } from "@/features/dashboard/demo-data"
+import { formatInr } from "@/features/marketplace/currency"
 import { buyerIdentity, sellerIdentity } from "@/features/marketplace/identity"
 import { ORDER_STAGE_LABELS, useDeals } from "@/features/marketplace/deal-store"
 import { OrderJourney } from "@/features/orders/order-journey"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
-
-function formatUsd(amount: number) {
-  return new Intl.NumberFormat("en", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 const copy: Record<OnboardingRole, { title: string; description: string }> = {
   buyer: {
@@ -84,7 +77,7 @@ function OrdersView({ role }: { role: OnboardingRole }) {
                     {ORDER_STAGE_LABELS[deal.orderStage!]}
                   </span>
                   <span className="ms-auto shrink-0 text-[13px] font-semibold tabular-nums text-foreground">
-                    {formatUsd(deal.agreedPricePerTonneUsd * deal.agreedQuantityMt)}
+                    {formatInr(deal.agreedPricePerTonneUsd * deal.agreedQuantityMt)}
                   </span>
                 </div>
                 <p className="mt-0.5 text-[13px] text-muted-foreground">

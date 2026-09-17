@@ -10,6 +10,8 @@ import { LanguageSwitcher } from "@/features/i18n/components/language-switcher"
 import { NavList } from "@/features/dashboard/nav-list"
 import { dashboardNav } from "@/features/dashboard/nav-config"
 import { useSidebarOpen } from "@/features/dashboard/sidebar-open-store"
+import { upsertBuyerProfile } from "@/features/marketplace/buyer-directory"
+import { buyerIdentity } from "@/features/marketplace/identity"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
 
@@ -61,6 +63,23 @@ function DashboardShell({
   const toggleSidebar = () => {
     setSidebarOpen((open) => !open)
   }
+
+  // Keeps the shared buyer directory current with whatever this buyer's
+  // own session draft says right now — the only way a seller in another
+  // tab/account can see a sourcing-crop edit made here (see
+  // `buyer-directory.ts`). Fires on every page under `/buyer/dashboard`,
+  // so it catches "Edit product list" the moment it routes back here.
+  React.useEffect(() => {
+    if (role !== "buyer") return
+    const identity = buyerIdentity(draft.buyer)
+    if (identity.id === "you") return
+    upsertBuyerProfile({
+      id: identity.id,
+      name: identity.name,
+      country: draft.buyer.country,
+      sourcing: draft.buyer.sourcing,
+    })
+  }, [role, draft.buyer])
 
   const person = role === "buyer" ? draft.buyer : draft.seller
   const displayName = person.fullName.trim() || "Your account"

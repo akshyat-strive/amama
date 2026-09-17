@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { cropLabels } from "@/features/dashboard/demo-data"
-import { convertToUsd, currencies, suggestRoundedUsd } from "@/features/marketplace/currency"
+import { convertToUsd, currencies, inrToUsd, suggestRoundedUsd, usdToInr } from "@/features/marketplace/currency"
 import { logListingChange } from "@/features/marketplace/conversation-store"
 import { GradeInfoTrigger } from "@/features/marketplace/grade-badge"
 import {
@@ -39,7 +39,9 @@ type FormState = {
   quantityMt: string
   currency: string
   localPrice: string
-  usdPrice: string
+  /** What buyers actually see, in rupees — converted to the stored USD
+   *  figure only at submit time (see `handleSubmit`). */
+  inrPrice: string
   country: string
   region: string
   description: string
@@ -49,7 +51,7 @@ type FormState = {
 
 /**
  * The "add a listing" surface — a full page rather than a dialog, since a
- * seller placing their farm on a map and working out a USD price from
+ * seller placing their farm on a map and working out a rupee price from
  * their own currency needs room, not a 480px popup. Doubles as the edit
  * form: same fields, pre-filled from the existing listing, the only real
  * difference being what happens on submit.
@@ -63,15 +65,15 @@ function ListingFormView({ listingId }: { listingId?: string }) {
 
   const [form, setForm] = React.useState<FormState>(() => {
     if (editing) {
-      const currency = currencies[0].code
+      const inrPrice = String(Math.round(usdToInr(editing.pricePerTonneUsd)))
       return {
         cropId: editing.cropId,
         variety: editing.variety,
         grade: editing.grade,
         quantityMt: String(editing.quantityMt),
-        currency,
-        localPrice: String(editing.pricePerTonneUsd),
-        usdPrice: String(editing.pricePerTonneUsd),
+        currency: "INR",
+        localPrice: inrPrice,
+        inrPrice,
         country: editing.country,
         region: editing.region,
         description: editing.description,
@@ -84,9 +86,9 @@ function ListingFormView({ listingId }: { listingId?: string }) {
       variety: "",
       grade: gradeOptions[0],
       quantityMt: "",
-      currency: "USD",
+      currency: "INR",
       localPrice: "",
-      usdPrice: "",
+      inrPrice: "",
       country: draft.seller.country,
       region: draft.seller.region,
       description: "",
@@ -110,16 +112,23 @@ function ListingFormView({ listingId }: { listingId?: string }) {
 
   const patchForm = (patch: Partial<FormState>) => setForm((previous) => ({ ...previous, ...patch }))
 
+  // The seller can type in whatever currency they think in; what lands in
+  // "Listing price" — and what actually gets stored — is always the
+  // rupee-rounded USD equivalent, since that's the one figure every other
+  // screen in the app (marketplace, deals, contracts) is built around.
+  const suggestInrPrice = (amount: number, currency: string) =>
+    Number.isFinite(amount) && amount > 0
+      ? String(Math.round(usdToInr(suggestRoundedUsd(convertToUsd(amount, currency)))))
+      : ""
+
   const onLocalPriceChange = (value: string) => {
-    const amount = Number(value)
-    const suggested = Number.isFinite(amount) && amount > 0 ? suggestRoundedUsd(convertToUsd(amount, form.currency)) : ""
-    patchForm({ localPrice: value, usdPrice: suggested === "" ? "" : String(suggested) })
+    const suggested = suggestInrPrice(Number(value), form.currency)
+    patchForm({ localPrice: value, inrPrice: suggested === "" ? "" : suggested })
   }
 
   const onCurrencyChange = (currency: string) => {
-    const amount = Number(form.localPrice)
-    const suggested = Number.isFinite(amount) && amount > 0 ? suggestRoundedUsd(convertToUsd(amount, currency)) : form.usdPrice
-    patchForm({ currency, usdPrice: suggested === "" ? "" : String(suggested) })
+    const suggested = suggestInrPrice(Number(form.localPrice), currency)
+    patchForm({ currency, inrPrice: suggested === "" ? "" : suggested })
   }
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -132,7 +141,7 @@ function ListingFormView({ listingId }: { listingId?: string }) {
     const missing: string[] = []
     if (!form.variety.trim()) missing.push("variety")
     if (!(Number(form.quantityMt) > 0)) missing.push("quantity")
-    if (!(Number(form.usdPrice) > 0)) missing.push("price")
+    if (!(Number(form.inrPrice) > 0)) missing.push("price")
     if (!form.country) missing.push("country")
     if (missing.length > 0) {
       setSubmitError(`Fill in ${missing.join(", ")} before ${editing ? "saving" : "publishing"}.`)
@@ -147,7 +156,7 @@ function ListingFormView({ listingId }: { listingId?: string }) {
       variety: form.variety.trim(),
       grade: form.grade,
       quantityMt: Number(form.quantityMt),
-      pricePerTonneUsd: Number(form.usdPrice),
+      pricePerTonneUsd: Math.round(inrToUsd(Number(form.inrPrice))),
       country: form.country,
       region: form.region.trim(),
       description: form.description.trim(),
@@ -264,7 +273,7 @@ function ListingFormView({ listingId }: { listingId?: string }) {
 
         <FormSection
           title="Price"
-          subtitle="Price it in your own currency — we'll suggest a rounded USD listing price, since that's what buyers see."
+          subtitle="Price it in your own currency — we'll suggest a rounded listing price in rupees, since that's what buyers see."
         >
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1.5 text-[13px] font-medium text-foreground">
@@ -296,13 +305,13 @@ function ListingFormView({ listingId }: { listingId?: string }) {
             </label>
           </div>
           <label className="mt-3 flex flex-col gap-1.5 text-[13px] font-medium text-foreground">
-            Listing price (USD / tonne)
+            Listing price (₹ / tonne)
             <Input
               type="number"
               min={1}
-              value={form.usdPrice}
-              onChange={(event) => patchForm({ usdPrice: event.target.value })}
-              placeholder="800"
+              value={form.inrPrice}
+              onChange={(event) => patchForm({ inrPrice: event.target.value })}
+              placeholder="66400"
             />
           </label>
         </FormSection>

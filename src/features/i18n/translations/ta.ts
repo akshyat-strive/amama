@@ -219,6 +219,7 @@ const ta: TranslationShape = {
         tea: "தேயிலை",
         grains: "தானியங்கள்",
         pulses: "பருப்பு வகைகள்",
+        apple: "ஆப்பிள்",
         "fresh-fruit": "புதிய பழங்கள்",
         "dried-fruit": "உலர் பழங்கள்",
         vegetables: "காய்கறிகள்",

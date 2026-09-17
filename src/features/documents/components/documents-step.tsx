@@ -121,7 +121,10 @@ function DocumentsStep({ role }: { role: OnboardingRole }) {
     return Object.fromEntries(
       submission.documents
         .filter((document) => !rejectedIds.has(document.id))
-        .map((document) => [document.id, { name: document.name, size: document.size }])
+        .map((document) => [
+          document.id,
+          { name: document.name, size: document.size, dataUrl: document.dataUrl ?? undefined },
+        ])
     )
   }, [submission, rejectedIds])
 
@@ -180,6 +183,7 @@ function DocumentsStep({ role }: { role: OnboardingRole }) {
             required: entry.required,
             reviewStatus: "pending" as const,
             reviewNote: null,
+            dataUrl: uploads[entry.id].dataUrl ?? null,
           }))
       )
       router.push(target.href)
@@ -204,6 +208,7 @@ function DocumentsStep({ role }: { role: OnboardingRole }) {
           required: entry.required,
           reviewStatus: "pending" as const,
           reviewNote: null,
+          dataUrl: uploads[entry.id].dataUrl ?? null,
         }))
     )
     clearDraft()

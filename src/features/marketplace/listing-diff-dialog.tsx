@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { cropLabels } from "@/features/dashboard/demo-data"
 import { cropImageUrl } from "@/features/onboarding/steps"
+import { formatInr } from "@/features/marketplace/currency"
 import { GradeBadge } from "@/features/marketplace/grade-badge"
-import { formatUsd } from "@/features/marketplace/listing-card"
 import type { ListingDiff } from "@/features/marketplace/conversation-store"
 import type { Listing } from "@/features/marketplace/listing-store"
 
@@ -66,7 +66,7 @@ function SnapshotCard({
             isChanged("pricePerTonneUsd") && "text-status-warning"
           )}
         >
-          {formatUsd(listing.pricePerTonneUsd)}
+          {formatInr(listing.pricePerTonneUsd)}
           <span className="ms-1 text-[11px] font-medium text-muted-foreground">/ tonne</span>
         </p>
         <p className={cn("text-[12px] text-muted-foreground", isChanged("quantityMt") && "font-bold text-status-warning")}>

@@ -25,6 +25,39 @@ export function convertToUsd(amount: number, code: string): number {
   return amount / currency.rate
 }
 
+const INR_RATE = currencies.find((entry) => entry.code === "INR")!.rate
+
+/** Every price in the app is stored in USD internally (see `Listing`,
+ *  `Deal`) — these two convert between that canonical figure and the
+ *  rupees a person actually reads or types, using the same indicative
+ *  rate as the currency picker above. */
+export function usdToInr(usdAmount: number): number {
+  return usdAmount * INR_RATE
+}
+
+export function inrToUsd(inrAmount: number): number {
+  return inrAmount / INR_RATE
+}
+
+const inrFormatter = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+})
+
+/** Formats an amount already denominated in rupees — for the rare spot
+ *  (a negotiation dialog) that works in rupees the whole way through. */
+export function formatRupees(amount: number): string {
+  return inrFormatter.format(amount)
+}
+
+/** The one display formatter for every USD-denominated amount stored in
+ *  the app — replaces what used to be a `formatUsd` redefined in a dozen
+ *  files. */
+export function formatInr(usdAmount: number): string {
+  return formatRupees(usdToInr(usdAmount))
+}
+
 /** Rounds to a number a price list actually looks like — the nearest 50
  *  above a thousand, the nearest 10 below it — rather than handing back
  *  something like $812.36. */

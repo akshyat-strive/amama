@@ -6,8 +6,12 @@ import {
   MessagesSquareIcon,
   PackageSearchIcon,
   SettingsIcon,
+  ShipIcon,
+  StoreIcon,
   UsersRoundIcon,
+  UserRoundCheckIcon,
   UserRoundIcon,
+  WalletIcon,
 } from "lucide-react"
 
 import type { Permission } from "@/features/admin/permissions"
@@ -32,9 +36,13 @@ const adminNavItems: AdminNavItem[] = [
   { label: "Chat", href: "/admin/chat", icon: MessagesSquareIcon, group: "activity" },
   { label: "Announcements", href: "/admin/announcements", icon: MegaphoneIcon, group: "activity" },
   { label: "Home", href: "/admin", icon: HouseIcon, group: "menu" },
+  { label: "Buyer queue", href: "/admin/review-queue/buyer", icon: UserRoundCheckIcon, group: "menu", permission: "onboarding.review" },
+  { label: "Seller queue", href: "/admin/review-queue/seller", icon: StoreIcon, group: "menu", permission: "onboarding.review" },
   { label: "Deals", href: "/admin/deals", icon: HandshakeIcon, group: "menu", permission: ["deals.work", "deals.viewAll"] },
   { label: "Contracts", href: "/admin/contracts", icon: FileSignatureIcon, group: "menu", permission: "deals.work" },
   { label: "Listings", href: "/admin/listings", icon: PackageSearchIcon, group: "menu", permission: "listings.moderate" },
+  { label: "Logistics", href: "/admin/logistics", icon: ShipIcon, group: "logistics", permission: ["deals.work", "deals.viewAll"] },
+  { label: "Finance", href: "/admin/finance", icon: WalletIcon, group: "finance", permission: ["deals.work", "deals.viewAll"] },
   { label: "Team", href: "/admin/team", icon: UsersRoundIcon, group: "general", permission: ["users.manage", "roles.manage"] },
   { label: "Profile", href: "/admin/profile", icon: UserRoundIcon, group: "general" },
   { label: "Settings", href: "/admin/settings", icon: SettingsIcon, group: "general" },

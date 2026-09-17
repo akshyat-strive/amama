@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangleIcon, PackageIcon, SendIcon, ShieldCheckIcon } from "lucide-react"
+import { AlertTriangleIcon, HandshakeIcon, PackageIcon, PlusIcon, SendIcon, ShieldCheckIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { ChatCard } from "@/features/marketplace/chat-cards"
@@ -11,6 +11,12 @@ import {
   type ConversationCard,
   type ListingDiff,
 } from "@/features/marketplace/conversation-store"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { ListingDiffDialog } from "@/features/marketplace/listing-diff-dialog"
 
 export type ThreadMessage = {
@@ -56,6 +62,7 @@ function ConversationThread({
   readOnly = false,
   viewer = "buyer",
   viewerName = "",
+  onProposeDeal,
   className,
 }: {
   header?: React.ReactNode
@@ -71,6 +78,10 @@ function ConversationThread({
    *  "waiting…" line to the side that asked. */
   viewer?: ChatParty
   viewerName?: string
+  /** Adds a "+" menu to the composer with a "Proposal" option — only
+   *  meaningful where the caller actually has a listing to propose terms
+   *  against, so it's opt-in rather than always-on. */
+  onProposeDeal?: () => void
   className?: string
 }) {
   const [draftText, setDraftText] = React.useState("")
@@ -138,6 +149,22 @@ function ConversationThread({
                 }}
                 className="flex shrink-0 items-center gap-2 border-t border-border p-3"
               >
+                {onProposeDeal ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      aria-label="More options"
+                      className="grid size-10 shrink-0 place-items-center rounded-full border border-border text-foreground/70 transition-colors hover:bg-muted"
+                    >
+                      <PlusIcon className="size-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" side="top">
+                      <DropdownMenuItem onClick={onProposeDeal}>
+                        <HandshakeIcon className="size-4" />
+                        Proposal
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : null}
                 <input
                   value={draftText}
                   onChange={(event) => {

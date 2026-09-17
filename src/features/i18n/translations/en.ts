@@ -217,6 +217,7 @@ export type TranslationShape = {
         | "tea"
         | "grains"
         | "pulses"
+        | "apple"
         | "fresh-fruit"
         | "dried-fruit"
         | "vegetables"
@@ -470,6 +471,7 @@ const en: TranslationShape = {
         tea: "Tea",
         grains: "Grains & cereals",
         pulses: "Pulses & legumes",
+        apple: "Apple",
         "fresh-fruit": "Fresh fruit",
         "dried-fruit": "Dried fruit",
         vegetables: "Vegetables",

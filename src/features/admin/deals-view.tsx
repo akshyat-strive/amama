@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import {
   ArrowRightIcon,
   ChevronDownIcon,
@@ -30,6 +31,7 @@ import { ADMIN_SELECTED_CLASS, AdminEmptyState, AdminPanel, AdminStatCard } from
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { useUsers, type AdminUser } from "@/features/admin/user-store"
 import { contractForDeal, createContract, useContracts } from "@/features/contracts/contract-store"
+import { formatInr } from "@/features/marketplace/currency"
 import { ShipmentTracker } from "@/features/marketplace/shipment-tracker"
 import { OrderJourney } from "@/features/orders/order-journey"
 import {
@@ -55,14 +57,6 @@ import {
   type ShipmentEventType,
   type ShipmentStatus,
 } from "@/features/marketplace/deal-store"
-
-function formatUsd(amount: number) {
-  return new Intl.NumberFormat("en", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 function formatDate(iso: string | null) {
   if (!iso) return "—"
@@ -137,7 +131,7 @@ function DealsView() {
 type Filter = "needs-a-team-member" | DealStatus
 
 const filters: { id: Filter; label: string }[] = [
-  { id: "needs-a-team-member", label: "Needs a team member" },
+  { id: "needs-a-team-member", label: "Assign a team member" },
   { id: "active", label: "Active" },
   { id: "proposed", label: "Proposed" },
   { id: "declined", label: "Declined" },
@@ -166,7 +160,14 @@ function EveryDealSection({
 }) {
   const deals = useDeals()
   const users = useUsers()
-  const [filter, setFilter] = React.useState<Filter>("needs-a-team-member")
+  // Lets a link (the Home page's own deal preview cards, say) land
+  // straight on a specific filter — `?filter=active` — rather than
+  // always opening on the default "needs a team member" one.
+  const searchParams = useSearchParams()
+  const requestedFilter = searchParams.get("filter")
+  const [filter, setFilter] = React.useState<Filter>(
+    filters.some((entry) => entry.id === requestedFilter) ? (requestedFilter as Filter) : "needs-a-team-member"
+  )
   const [expandedId, setExpandedId] = React.useState<string | null>(null)
 
   const activeDeals = deals.filter((deal) => deal.status === "active")
@@ -201,12 +202,12 @@ function EveryDealSection({
         />
         <AdminStatCard
           label="Pipeline value"
-          value={formatUsd(pipelineValue)}
+          value={formatInr(pipelineValue)}
           tone="brand"
           caption="Across every active deal"
         />
         <AdminStatCard
-          label="Needs a team member"
+          label="Assign a team member"
           value={String(needsTeamMember.length)}
           tone={needsTeamMember.length > 0 ? "warning" : "plain"}
           caption={needsTeamMember.length > 0 ? "Waiting to be assigned" : "Nothing waiting"}
@@ -317,8 +318,8 @@ function DealCard({
           {deal.buyerName} ↔ {deal.sellerName}
         </p>
         <p className="mt-1 text-[13px] font-semibold tracking-tight text-foreground tabular-nums">
-          {formatUsd(deal.agreedPricePerTonneUsd)}/t × {deal.agreedQuantityMt} MT
-          <span className="ms-1.5 font-normal text-muted-foreground">— {formatUsd(dealValue(deal))} total</span>
+          {formatInr(deal.agreedPricePerTonneUsd)}/t × {deal.agreedQuantityMt} MT
+          <span className="ms-1.5 font-normal text-muted-foreground">— {formatInr(dealValue(deal))} total</span>
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
@@ -557,7 +558,7 @@ function MyDealsSection({ myUserId, myUserName }: { myUserId: string; myUserName
                         active ? "text-amama-foreground" : "text-foreground"
                       )}
                     >
-                      {formatUsd(dealValue(deal))}
+                      {formatInr(dealValue(deal))}
                     </p>
                     <p
                       className={cn(
@@ -615,10 +616,10 @@ function DealDetail({ deal, myUserName }: { deal: Deal; myUserName: string }) {
           </div>
           <div className="shrink-0 text-end">
             <p className="text-[15px] font-extrabold tabular-nums text-foreground">
-              {formatUsd(deal.agreedPricePerTonneUsd)}/t × {deal.agreedQuantityMt} MT
+              {formatInr(deal.agreedPricePerTonneUsd)}/t × {deal.agreedQuantityMt} MT
             </p>
             <p className="mt-0.5 text-[13px] font-semibold tabular-nums text-amama-deep">
-              {formatUsd(dealValue(deal))} total
+              {formatInr(dealValue(deal))} total
             </p>
           </div>
         </div>

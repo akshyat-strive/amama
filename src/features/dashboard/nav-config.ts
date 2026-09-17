@@ -9,12 +9,13 @@ import {
   StoreIcon,
   SproutIcon,
   UserRoundIcon,
+  UsersIcon,
   WalletIcon,
 } from "lucide-react"
 
 import type { OnboardingRole } from "@/features/onboarding/types"
 
-export type DashboardNavGroup = "activity" | "menu" | "general"
+export type DashboardNavGroup = "activity" | "menu" | "logistics" | "finance" | "general"
 
 export type DashboardNavItem = {
   label: string
@@ -30,6 +31,8 @@ export const dashboardNavGroupLabels: Record<DashboardNavGroup, string> = {
   // static ones.
   activity: "Activity",
   menu: "Menu",
+  logistics: "Logistics",
+  finance: "Finance",
   general: "General",
 }
 
@@ -67,7 +70,8 @@ export const dashboardNav: Record<OnboardingRole, DashboardNavItem[]> = {
     },
   ],
   seller: [
-    { label: "Listings", href: "/seller/dashboard/listings", icon: SproutIcon, group: "activity" },
+    { label: "My listings", href: "/seller/dashboard/listings", icon: SproutIcon, group: "activity" },
+    { label: "Buyers", href: "/seller/dashboard/buyers", icon: UsersIcon, group: "activity" },
     {
       label: "Messages",
       href: "/seller/dashboard/messages",

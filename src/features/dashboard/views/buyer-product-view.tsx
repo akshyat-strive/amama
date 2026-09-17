@@ -20,6 +20,7 @@ import { DealStatusFooter } from "@/features/marketplace/deal-status-footer"
 import { latestDealForConversation, useDeals } from "@/features/marketplace/deal-store"
 import { useListings } from "@/features/marketplace/listing-store"
 import { ProductInfoPanel } from "@/features/marketplace/product-info-panel"
+import { ProposeDealDialog } from "@/features/marketplace/propose-deal-dialog"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 
 /** Same viewport-relative height on every full-height chat surface in the
@@ -67,6 +68,11 @@ function BuyerProductView({ listingId }: { listingId: string }) {
   const conversation = conversations.find((entry) => entry.id === id) ?? null
   const deals = useDeals()
   const deal = id ? latestDealForConversation(deals, id) : null
+  // Same rule the deal footer already follows — once a deal is proposed or
+  // agreed, that's the one place to move it forward, not a second proposal
+  // started from the composer.
+  const canPropose = !!conversation && (!deal || deal.status === "declined")
+  const [proposing, setProposing] = React.useState(false)
 
   if (!listing) {
     return (
@@ -164,6 +170,7 @@ function BuyerProductView({ listingId }: { listingId: string }) {
           viewer="buyer"
           viewerName={buyer.name}
           placeholder={`Message ${listing.sellerName}…`}
+          onProposeDeal={canPropose ? () => setProposing(true) : undefined}
         />
       </div>
 
@@ -227,11 +234,23 @@ function BuyerProductView({ listingId }: { listingId: string }) {
                 viewer="buyer"
                 viewerName={buyer.name}
                 placeholder={`Message ${listing.sellerName}…`}
+                onProposeDeal={canPropose ? () => setProposing(true) : undefined}
               />
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {conversation ? (
+        <ProposeDealDialog
+          open={proposing}
+          onOpenChange={setProposing}
+          listing={listing}
+          conversation={conversation}
+          role="buyer"
+          myName={buyer.name}
+        />
+      ) : null}
     </div>
   )
 }

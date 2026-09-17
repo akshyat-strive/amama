@@ -9,7 +9,10 @@ import { buildMessageThreads } from "@/features/dashboard/demo-data"
 import { buyerIdentity, sellerIdentity } from "@/features/marketplace/identity"
 import { ConversationThread, type ThreadMessage } from "@/features/marketplace/conversation-thread"
 import { sendMessage, toThreadMessages, useConversations } from "@/features/marketplace/conversation-store"
+import { latestDealForConversation, useDeals } from "@/features/marketplace/deal-store"
 import { sendToKam, useKamThread } from "@/features/marketplace/kam-thread-store"
+import { useListings } from "@/features/marketplace/listing-store"
+import { ProposeDealDialog } from "@/features/marketplace/propose-deal-dialog"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
 
@@ -123,6 +126,23 @@ function MessagesView({ role }: { role: OnboardingRole }) {
     }
   }
 
+  // The "+" menu's Proposal option needs the raw conversation (for the
+  // buyer/seller ids the deal is logged under) and the listing it's
+  // actually about — neither of which the KAM channel has, so it simply
+  // doesn't get the option.
+  const activeConversation = myConversations.find((conversation) => conversation.id === active?.id) ?? null
+  const listings = useListings()
+  const activeListing = activeConversation
+    ? listings.find((listing) => listing.id === activeConversation.listingId) ?? null
+    : null
+  const deals = useDeals()
+  const activeDeal = activeConversation ? latestDealForConversation(deals, activeConversation.id) : null
+  // Same rule the product page's own deal footer follows — once a deal is
+  // proposed or agreed, that's the one place to move it forward, not a
+  // second proposal started from the inbox.
+  const canPropose = !!activeListing && (!activeDeal || activeDeal.status === "declined")
+  const [proposing, setProposing] = React.useState(false)
+
   const backButton = (
     <button
       type="button"
@@ -217,10 +237,22 @@ function MessagesView({ role }: { role: OnboardingRole }) {
             onSend={handleSend}
             viewer={role}
             viewerName={identity.name}
+            onProposeDeal={canPropose ? () => setProposing(true) : undefined}
             className="min-h-[420px] flex-1 bg-card lg:min-h-0"
           />
         </div>
       </div>
+
+      {activeListing && activeConversation ? (
+        <ProposeDealDialog
+          open={proposing}
+          onOpenChange={setProposing}
+          listing={activeListing}
+          conversation={activeConversation}
+          role={role}
+          myName={identity.name}
+        />
+      ) : null}
     </div>
   )
 }

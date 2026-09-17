@@ -10,6 +10,7 @@ import {
   buildPayments,
   type PaymentStatus,
 } from "@/features/dashboard/demo-data"
+import { formatInr } from "@/features/marketplace/currency"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 
 const statusMeta: Record<
@@ -27,12 +28,6 @@ const statusMeta: Record<
     icon: ClockIcon,
     className: "bg-status-warning/10 text-status-warning",
   },
-}
-
-function formatUsd(amount: number) {
-  return new Intl.NumberFormat("en", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(
-    amount
-  )
 }
 
 function PaymentsView() {
@@ -59,10 +54,10 @@ function PaymentsView() {
       <h1 className="text-[28px] font-bold tracking-tight">Payments</h1>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <StatCard label="Paid out" value={formatUsd(paid)} caption="Season to date" />
+        <StatCard label="Paid out" value={formatInr(paid)} caption="Season to date" />
         <StatCard
           label="Outstanding"
-          value={formatUsd(outstanding)}
+          value={formatInr(outstanding)}
           caption="Processing or pending"
           tone="warning"
         />
@@ -95,7 +90,7 @@ function PaymentsView() {
                 </div>
                 <div className="shrink-0 text-end">
                   <p className="text-[14px] font-semibold text-foreground tabular-nums">
-                    {formatUsd(payment.amountUsd)}
+                    {formatInr(payment.amountUsd)}
                   </p>
                   <p className="text-[12px] text-muted-foreground">{meta.label}</p>
                 </div>

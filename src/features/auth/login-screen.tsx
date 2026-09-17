@@ -17,10 +17,11 @@ import { EditorialImage } from "@/components/ui/editorial-image"
 import { useI18n } from "@/features/i18n/i18n-context"
 import { GoogleIcon, MicrosoftIcon, AppleIcon } from "@/features/auth/oauth-icons"
 import { loginContent } from "@/features/auth/login-content"
-import { demoDraftFor } from "@/features/auth/demo-accounts"
+import { demoDraftFor, demoKashmirSellerDraft } from "@/features/auth/demo-accounts"
 import { seedAdminDemoData } from "@/features/admin/seed-data"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
+import { useVerification } from "@/features/verification/verification-context"
 
 // Provider names are brand names, not translated — only the surrounding
 // "Continue with {provider}" template comes from the dictionary.
@@ -36,20 +37,32 @@ function LoginScreen({ role }: { role: OnboardingRole }) {
   const router = useRouter()
   const { t } = useI18n()
   const { loadDraft } = useOnboarding()
+  const { submissions } = useVerification()
   const content = loginContent[role]
   const [submitting, setSubmitting] = React.useState(false)
   const [email, setEmail] = React.useState("")
   const [showPassword, setShowPassword] = React.useState(false)
 
-  // No auth backend yet: every sign-in path (password or provider) drops the
-  // visitor into onboarding, since there's nowhere else authenticated to send
-  // them and nothing yet to say "this account already finished setup".
+  // No auth backend yet, so a provider button (no email to check against)
+  // still just drops the visitor into onboarding — nothing to look up.
   const enterApp = () => router.push(content.onboardingHref)
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
     setSubmitting(true)
-    window.setTimeout(enterApp, 500)
+    window.setTimeout(() => {
+      // The one thing a real backend would answer for us: has *this* email
+      // already applied? The verification store is the only place that
+      // survives across tabs/sessions (`draft.buyer`/`draft.seller` is
+      // per-tab `sessionStorage`), so it's what a returning applicant's
+      // login actually has to check — otherwise they land back on step
+      // one of onboarding instead of the "your application is pending"
+      // screen `ReviewGate` already shows once they reach the dashboard.
+      const submission = submissions[role]
+      const isReturningApplicant =
+        submission && submission.applicant.email.trim().toLowerCase() === email.trim().toLowerCase()
+      router.push(isReturningApplicant ? `/${role}/dashboard` : content.onboardingHref)
+    }, 500)
   }
 
   // The one door a demo actually walks through: skip the form, skip the
@@ -57,8 +70,8 @@ function LoginScreen({ role }: { role: OnboardingRole }) {
   // a finished draft and seeding its data (idempotent, safe to call from
   // here even if `/admin` was never visited first) before routing in.
   const demoDraft = demoDraftFor(role)
-  const enterDemoAccount = () => {
-    loadDraft(demoDraft)
+  const enterDemoAccount = (draft: typeof demoDraft = demoDraft) => {
+    loadDraft(draft)
     seedAdminDemoData()
     router.push(`/${role}/dashboard`)
   }
@@ -194,7 +207,7 @@ function LoginScreen({ role }: { role: OnboardingRole }) {
 
             <button
               type="button"
-              onClick={enterDemoAccount}
+              onClick={() => enterDemoAccount()}
               className="mt-4 flex w-full items-center gap-3 rounded-[16px] border border-dashed border-border px-4 py-3 text-start transition-colors hover:border-foreground/30 hover:bg-muted"
             >
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-amama-deep text-white">
@@ -209,6 +222,26 @@ function LoginScreen({ role }: { role: OnboardingRole }) {
                 </span>
               </span>
             </button>
+
+            {role === "seller" ? (
+              <button
+                type="button"
+                onClick={() => enterDemoAccount(demoKashmirSellerDraft)}
+                className="mt-2 flex w-full items-center gap-3 rounded-[16px] border border-dashed border-border px-4 py-3 text-start transition-colors hover:border-foreground/30 hover:bg-muted"
+              >
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-amama-deep text-white">
+                  <KeyRoundIcon className="size-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-semibold text-foreground">
+                    Continue as Kashmir Valley Growers
+                  </span>
+                  <span className="block truncate text-[12px] text-muted-foreground">
+                    {demoKashmirSellerDraft.seller.email} — the apple listing a buyer demo can message
+                  </span>
+                </span>
+              </button>
+            ) : null}
 
             <p className="mt-6 text-center text-[14px] text-muted-foreground">
               {t("auth.newToAmama")}{" "}

@@ -172,6 +172,10 @@ export const crops = [
     },
   },
   {
+    id: "apple",
+    photo: "photo-1560806887-1e4cd0b6cbd6",
+  },
+  {
     id: "fresh-fruit",
     photo: "photo-1619566636858-adf3ef46400b",
     credit: { name: "Jkakaroto", profileUrl: "https://unsplash.com/@jkakaroto" },

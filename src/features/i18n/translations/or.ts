@@ -219,6 +219,7 @@ const or: TranslationShape = {
         tea: "ଚା",
         grains: "ଶସ୍ୟ",
         pulses: "ଡାଲି",
+        apple: "ଆପେଲ",
         "fresh-fruit": "ତାଜା ଫଳ",
         "dried-fruit": "ଶୁଖିଲା ଫଳ",
         vegetables: "ପନିପରିବା",

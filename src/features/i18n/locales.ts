@@ -19,11 +19,18 @@ export type Locale = {
   nameIn: Partial<Record<LocaleCode, string>>
   /**
    * A short sample from this language's own script/alphabet — "Abc" for
-   * Latin, "क ख ग" for Devanagari — used only on the switcher's trigger
-   * button. A locale *code* ("en", "te") means nothing to someone who
-   * can't read Latin letters; a glyph from their own script does.
+   * Latin, "क ख ग" for Devanagari — kept for anywhere a compact glyph is
+   * more useful than a full name (not the switcher's trigger, which shows
+   * the language's own name instead — see `LanguageSwitcher`).
    */
   sample: string
+  /** Whether choosing this language actually does anything yet. Only
+   *  `"active"` locales have a real translation dictionary worth switching
+   *  to right now — the rest exist in `translations/*.ts` (so nothing here
+   *  breaks when one graduates) but show as disabled, "coming soon" rows
+   *  in the switcher rather than silently landing on half-translated
+   *  screens. */
+  status: "active" | "comingSoon"
 }
 
 export const locales: Locale[] = [
@@ -33,6 +40,7 @@ export const locales: Locale[] = [
     dir: "ltr",
     nameIn: { en: "English", hi: "अंग्रेज़ी", ur: "انگریزی" },
     sample: "Abc",
+    status: "active",
   },
   {
     code: "hi",
@@ -40,6 +48,7 @@ export const locales: Locale[] = [
     dir: "ltr",
     nameIn: { en: "Hindi", hi: "हिन्दी", ur: "ہندی" },
     sample: "क ख ग",
+    status: "active",
   },
   {
     code: "mr",
@@ -47,6 +56,7 @@ export const locales: Locale[] = [
     dir: "ltr",
     nameIn: { en: "Marathi", hi: "मराठी", mr: "मराठी" },
     sample: "क ख ग",
+    status: "active",
   },
   {
     code: "te",
@@ -54,6 +64,7 @@ export const locales: Locale[] = [
     dir: "ltr",
     nameIn: { en: "Telugu", hi: "तेलुगु", te: "తెలుగు" },
     sample: "క ఖ గ",
+    status: "comingSoon",
   },
   {
     code: "ta",
@@ -61,6 +72,7 @@ export const locales: Locale[] = [
     dir: "ltr",
     nameIn: { en: "Tamil", hi: "तमिल", ta: "தமிழ்" },
     sample: "க ங ச",
+    status: "comingSoon",
   },
   {
     code: "gu",
@@ -68,6 +80,7 @@ export const locales: Locale[] = [
     dir: "ltr",
     nameIn: { en: "Gujarati", hi: "गुजराती", gu: "ગુજરાતી" },
     sample: "ક ખ ગ",
+    status: "comingSoon",
   },
   {
     code: "or",
@@ -75,6 +88,7 @@ export const locales: Locale[] = [
     dir: "ltr",
     nameIn: { en: "Odia", hi: "ओड़िया", or: "ଓଡ଼ିଆ" },
     sample: "କ ଖ ଗ",
+    status: "comingSoon",
   },
   {
     code: "kn",
@@ -82,6 +96,7 @@ export const locales: Locale[] = [
     dir: "ltr",
     nameIn: { en: "Kannada", hi: "कन्नड़", kn: "ಕನ್ನಡ" },
     sample: "ಕ ಖ ಗ",
+    status: "comingSoon",
   },
   {
     code: "ur",
@@ -89,6 +104,7 @@ export const locales: Locale[] = [
     dir: "rtl",
     nameIn: { en: "Urdu", hi: "उर्दू", ur: "اردو" },
     sample: "ا ب پ",
+    status: "comingSoon",
   },
 ]
 

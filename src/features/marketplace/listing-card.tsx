@@ -14,17 +14,10 @@ import {
 import { cn } from "@/lib/utils"
 import { cropLabels } from "@/features/dashboard/demo-data"
 import { cropImageUrl } from "@/features/onboarding/steps"
+import { formatInr } from "@/features/marketplace/currency"
 import { GradeBadge } from "@/features/marketplace/grade-badge"
 import { toggleWishlist, useWishlist } from "@/features/marketplace/wishlist-store"
 import type { Listing } from "@/features/marketplace/listing-store"
-
-function formatUsd(amount: number) {
-  return new Intl.NumberFormat("en", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 /**
  * One catalog tile — shared between the seller's own catalog and the
@@ -90,7 +83,7 @@ function ListingCard({
 
           <div className="mt-1.5 flex items-center justify-between gap-1.5 sm:mt-2 sm:gap-2">
             <p className="text-[13px] font-extrabold tracking-tight text-foreground tabular-nums sm:text-[18px]">
-              {formatUsd(listing.pricePerTonneUsd)}
+              {formatInr(listing.pricePerTonneUsd)}
               <span className="ms-1 hidden text-[12px] font-medium text-muted-foreground sm:inline">
                 / tonne
               </span>
@@ -197,4 +190,4 @@ function ModerationNote({ listing }: { listing: Listing }) {
   )
 }
 
-export { ListingCard, formatUsd }
+export { ListingCard }

@@ -5,6 +5,7 @@ import { MessageSquareIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import type { Conversation } from "@/features/marketplace/conversation-store"
+import { formatInr } from "@/features/marketplace/currency"
 import {
   awaitingResponseFrom,
   DEAL_STAGE_LABELS,
@@ -13,14 +14,6 @@ import {
 } from "@/features/marketplace/deal-store"
 import { ProposeDealDialog } from "@/features/marketplace/propose-deal-dialog"
 import type { Listing } from "@/features/marketplace/listing-store"
-
-function formatUsd(amount: number) {
-  return new Intl.NumberFormat("en", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 /**
  * The one footer slot both product-view pages already reserve for their
@@ -78,7 +71,7 @@ function DealStatusFooter({
 
   if (deal.status === "proposed") {
     const round = latestRound(deal)
-    const terms = `${formatUsd(round.pricePerTonneUsd)}/t × ${round.quantityMt} MT`
+    const terms = `${formatInr(round.pricePerTonneUsd)}/t × ${round.quantityMt} MT`
     const yourMove = awaitingResponseFrom(deal) === role
 
     return (

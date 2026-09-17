@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowRightIcon } from "lucide-react"
 
@@ -20,7 +21,17 @@ import {
   stepIndex,
 } from "@/features/onboarding/steps"
 
+// `useSearchParams` (for the "Edit product list" deep link) opts this route
+// out of static rendering unless it sits under a boundary.
 export default function BuyerSourcingPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <BuyerSourcingPageInner />
+    </React.Suspense>
+  )
+}
+
+function BuyerSourcingPageInner() {
   const router = useRouter()
   const { t } = useI18n()
   const { draft, updateBuyer } = useOnboarding()

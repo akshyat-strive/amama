@@ -112,12 +112,17 @@ function DealsView() {
 
       <div className="mt-6 flex flex-col gap-8">
         {canViewAll ? (
-          <EveryDealSection
-            canAssign={admin.can("deals.assign")}
-            canWork={canWork}
-            me={{ id: admin.user.id, name: admin.user.name }}
-            assignedBy={admin.user.name}
-          />
+          // `EveryDealSection` reads `useSearchParams` (for the Home page's
+          // deep-linked filter) — that opts the route out of static
+          // rendering unless it sits under a boundary.
+          <React.Suspense fallback={<div className="h-40 animate-pulse rounded-3xl bg-muted" />}>
+            <EveryDealSection
+              canAssign={admin.can("deals.assign")}
+              canWork={canWork}
+              me={{ id: admin.user.id, name: admin.user.name }}
+              assignedBy={admin.user.name}
+            />
+          </React.Suspense>
         ) : null}
         {canWork ? <MyDealsSection myUserId={admin.user.id} myUserName={admin.user.name} /> : null}
         {!canViewAll && !canWork ? (

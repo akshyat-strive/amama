@@ -50,6 +50,25 @@ function initial(name: string) {
  * conversation; this is the wide-angle version across all of them.
  */
 function MessagesView({ role }: { role: OnboardingRole }) {
+  // `useSearchParams` opts a route out of static rendering unless it sits
+  // under a boundary — same reasoning as `ContractsView`'s own split.
+  return (
+    <React.Suspense fallback={<MessagesSkeleton />}>
+      <MessagesViewInner role={role} />
+    </React.Suspense>
+  )
+}
+
+function MessagesSkeleton() {
+  return (
+    <div>
+      <h1 className="text-[28px] font-bold tracking-tight">Messages</h1>
+      <div className="mt-6 h-40 animate-pulse rounded-3xl bg-muted" />
+    </div>
+  )
+}
+
+function MessagesViewInner({ role }: { role: OnboardingRole }) {
   const { draft } = useOnboarding()
   const identity = role === "buyer" ? buyerIdentity(draft.buyer) : sellerIdentity(draft.seller)
   const searchParams = useSearchParams()

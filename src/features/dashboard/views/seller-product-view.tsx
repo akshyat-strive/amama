@@ -103,7 +103,10 @@ function SellerProductView({ listingId }: { listingId: string }) {
 
   const cropLabel = cropLabels[listing.cropId] ?? listing.cropId
   const messages = selected ? toThreadMessages(selected.messages, "seller") : null
-  const lastMessage = selected?.messages[selected.messages.length - 1] ?? null
+  // Off the filtered list — the newest raw message may be the KAM's
+  // private chase to the buyer, which must not surface in the seller's
+  // dock preview.
+  const lastMessage = messages?.[messages.length - 1] ?? null
 
   const handleRemove = () => {
     softDeleteListing(listing.id)
@@ -145,6 +148,8 @@ function SellerProductView({ listingId }: { listingId: string }) {
           }
           messages={messages}
           onSend={(text) => selected && sendMessage(selected.id, "seller", text)}
+          viewer="seller"
+          viewerName={seller.name}
           placeholder={selected ? `Message ${selected.buyerName}…` : undefined}
           emptyState={<p className="text-[13px] text-muted-foreground">Pick a buyer to reply.</p>}
         />
@@ -306,7 +311,9 @@ function BuyerList({
       ) : (
         <ul className="flex-1 divide-y divide-border overflow-y-auto">
           {conversations.map((conversation) => {
-            const last = conversation.messages[conversation.messages.length - 1]
+            // Filtered, so a KAM's buyer-only message never previews here.
+            const visible = toThreadMessages(conversation.messages, "seller")
+            const last = visible[visible.length - 1]
             return (
               <li key={conversation.id}>
                 <button

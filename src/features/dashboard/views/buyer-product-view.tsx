@@ -82,7 +82,10 @@ function BuyerProductView({ listingId }: { listingId: string }) {
 
   const cropLabel = cropLabels[listing.cropId] ?? listing.cropId
   const messages = conversation ? toThreadMessages(conversation.messages, "buyer") : []
-  const lastMessage = conversation?.messages[conversation.messages.length - 1] ?? null
+  // Off the filtered list — the newest raw message may be the KAM's
+  // private chase to the seller, which must not surface in the buyer's
+  // dock preview.
+  const lastMessage = messages[messages.length - 1] ?? null
 
   const conversationHeader = (
     <div>
@@ -158,6 +161,8 @@ function BuyerProductView({ listingId }: { listingId: string }) {
           header={conversationHeader}
           messages={messages}
           onSend={handleSend}
+          viewer="buyer"
+          viewerName={buyer.name}
           placeholder={`Message ${listing.sellerName}…`}
         />
       </div>
@@ -216,7 +221,13 @@ function BuyerProductView({ listingId }: { listingId: string }) {
               transition={{ delay: 0.1 }}
               className="flex-1 overflow-hidden"
             >
-              <ConversationThread messages={messages} onSend={handleSend} placeholder={`Message ${listing.sellerName}…`} />
+              <ConversationThread
+                messages={messages}
+                onSend={handleSend}
+                viewer="buyer"
+                viewerName={buyer.name}
+                placeholder={`Message ${listing.sellerName}…`}
+              />
             </motion.div>
           </motion.div>
         )}

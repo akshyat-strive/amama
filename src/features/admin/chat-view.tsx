@@ -17,7 +17,13 @@ import {
   type StaffChatSender,
 } from "@/features/admin/staff-chat-store"
 import { ConversationThread } from "@/features/marketplace/conversation-thread"
-import { useConversations, type Conversation } from "@/features/marketplace/conversation-store"
+import {
+  sendMessage,
+  toThreadMessages,
+  useConversations,
+  type Conversation,
+} from "@/features/marketplace/conversation-store"
+import { conversationIsAgreed, useDeals } from "@/features/marketplace/deal-store"
 
 type StaffChannel = {
   kind: "staff"
@@ -95,6 +101,7 @@ function ChatView() {
   const admin = useCurrentAdmin()
   const users = useUsers()
   const conversations = useConversations()
+  const deals = useDeals()
   const staffStore = useStaffChatStore()
   const [tab, setTab] = React.useState<Tab>("external")
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
@@ -118,11 +125,18 @@ function ChatView() {
       ),
   ]
 
-  const conversationRows: ConversationRow[] = conversations.map((conversation) => ({
-    kind: "conversation",
-    id: conversation.id,
-    conversation,
-  }))
+  // The privacy gate. Two parties haggling over a price are doing it
+  // between themselves; the desk only gets the thread once they've shaken
+  // hands on it and there's an actual deal to manage. Everything before
+  // that — including declined attempts that never became a deal — stays
+  // off this list entirely.
+  const conversationRows: ConversationRow[] = conversations
+    .filter((conversation) => conversationIsAgreed(deals, conversation.id))
+    .map((conversation) => ({
+      kind: "conversation",
+      id: conversation.id,
+      conversation,
+    }))
 
   const items: ChatItem[] = tab === "external" ? conversationRows : staffChannels
   // What to *render* in the thread pane — falls back to the tab's first
@@ -171,7 +185,9 @@ function ChatView() {
           <div className="flex flex-1 flex-col gap-1 overflow-y-auto">
             {items.length === 0 ? (
               <p className="px-3 py-4 text-[13px] text-muted-foreground">
-                {tab === "external" ? "No conversations yet." : "Nobody else has signed in yet."}
+                {tab === "external"
+                  ? "No agreed deals yet. Buyer–seller conversations open to the desk once both sides accept a deal."
+                  : "Nobody else has signed in yet."}
               </p>
             ) : tab === "external" ? (
               conversationRows.map((row) => (
@@ -203,7 +219,11 @@ function ChatView() {
           )}
         >
           {selected?.kind === "conversation" ? (
-            <ConversationPane conversation={selected.conversation} backButton={backButton} />
+            <ConversationPane
+              conversation={selected.conversation}
+              kamName={admin.user.name}
+              backButton={backButton}
+            />
           ) : selected?.kind === "staff" ? (
             <StaffChannelPane
               channel={selected}
@@ -326,34 +346,43 @@ function StaffChannelRowButton({
   )
 }
 
-/** Read-only, on purpose — anyone signed in can see every product
- *  conversation to step in if something looks wrong, but this isn't
- *  another inbox to reply from. */
+/**
+ * The KAM's seat in a buyer–seller thread. They only ever reach this for a
+ * deal both sides have already agreed (see the filter in `ChatView`), and
+ * at that point they're not an observer any more — they're the person who
+ * has to drive the contract, so the composer is live and everything they
+ * post lands as the account manager rather than as either party.
+ */
 function ConversationPane({
   conversation,
+  kamName,
   backButton,
 }: {
   conversation: Conversation
+  kamName: string
   backButton: React.ReactNode
 }) {
-  // Neither party is "you" here — this is a KAM reading someone else's
-  // conversation, not one of the two people in it — so buyer and seller
-  // each get a fixed, named side (buyer left, seller right) instead of
-  // the usual "me"/"them" a first-person inbox would use.
-  const messages = conversation.messages.map((message) => {
+  // Neither trading party is "you" here — this is a KAM in someone else's
+  // conversation — so buyer and seller each get a fixed, named side
+  // (buyer left, seller right) instead of the "me"/"them" a first-person
+  // inbox would use. `toThreadMessages` also drops anything scoped away
+  // from the KAM, and carries the interactive cards through.
+  const messages = toThreadMessages(conversation.messages, "kam").map((message) => {
     if (message.from === "system") {
       const side = message.text.startsWith(conversation.buyerName)
         ? ("left" as const)
         : message.text.startsWith(conversation.sellerName)
           ? ("right" as const)
           : undefined
-      return { from: "system" as const, text: message.text, diff: message.diff, side }
+      return { ...message, side }
     }
-    return {
-      from: message.from,
-      text: message.text,
-      senderName: message.from === "buyer" ? conversation.buyerName : conversation.sellerName,
+    if (message.from === "buyer" || message.from === "seller") {
+      return {
+        ...message,
+        senderName: message.from === "buyer" ? conversation.buyerName : conversation.sellerName,
+      }
     }
+    return message
   })
 
   return (
@@ -370,8 +399,10 @@ function ConversationPane({
         </div>
       }
       messages={messages}
-      onSend={() => {}}
-      readOnly
+      viewer="kam"
+      viewerName={kamName}
+      placeholder="Message both sides…"
+      onSend={(text) => sendMessage(conversation.id, "kam", text, { fromName: kamName })}
       className="min-h-[420px] flex-1 bg-card lg:min-h-0"
     />
   )

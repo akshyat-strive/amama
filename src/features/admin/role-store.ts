@@ -18,20 +18,33 @@ export type Role = {
 const STORAGE_KEY = "amama.admin.roles"
 
 /**
- * Three roles out of the box, deliberately not just the old two — Master
+ * Four roles out of the box, deliberately not just the old two — Master
  * Admin holds every permission (the same `"*"` wildcard the client's own
  * reference backend uses for its admin role), KAM keeps today's real
- * capabilities, and Compliance is new: it can review onboarding and
- * moderate listings but can't touch deals, users, or roles at all. Nothing
- * else in this app forces exactly two roles to exist — this is what makes
- * that visible.
+ * capabilities, Master KAM is a KAM who can also hand work out, and
+ * Compliance can review onboarding and moderate listings but can't touch
+ * deals, users, or roles at all. Nothing else in this app forces exactly
+ * two roles to exist — this is what makes that visible.
  */
 const SEED_ROLES: Role[] = [
   { id: "master-admin", name: "Master Admin", permissions: ["*"], createdAt: "2026-08-01T09:00:00.000Z", isSystem: true },
   {
+    id: "master-kam",
+    name: "Master KAM",
+    /** Everything a KAM can do, plus the two things that make them the
+     *  desk lead: seeing every agreed deal rather than only their own,
+     *  and allocating them to the KAMs who'll work them. */
+    permissions: ["onboarding.review", "listings.moderate", "deals.work", "deals.viewAll", "deals.assign"],
+    createdAt: "2026-08-01T09:00:00.000Z",
+    isSystem: true,
+  },
+  {
     id: "kam",
     name: "KAM",
-    permissions: ["onboarding.review", "listings.moderate", "deals.work"],
+    /** `deals.viewAll` is what lets a KAM see the unassigned pool and pick
+     *  work up themselves — assignment still needs `deals.assign`, which
+     *  they don't have, so they can claim but not allocate. */
+    permissions: ["onboarding.review", "listings.moderate", "deals.work", "deals.viewAll"],
     createdAt: "2026-08-01T09:00:00.000Z",
     isSystem: true,
   },
@@ -49,13 +62,35 @@ let restored = false
 const listeners = new Set<() => void>()
 const emptyRoles: Role[] = []
 
+/**
+ * A browser that seeded roles before "Master KAM" existed has a
+ * `localStorage` snapshot frozen at the old two/three-role shape —
+ * `restoreOnce` only writes `SEED_ROLES` when the key is empty, so a new
+ * role added to that constant later never reaches an existing browser on
+ * its own. This backfills just the missing system role into an already-
+ * seeded list, preserving every role a real admin has since added or
+ * edited, rather than overwriting their data wholesale.
+ */
+function backfillSeedRoles(roles: Role[]): Role[] {
+  if (roles.some((role) => role.id === "master-kam")) return roles
+  const masterKam = SEED_ROLES.find((role) => role.id === "master-kam")
+  if (!masterKam) return roles
+  // Insert right after Master Admin, matching where a fresh seed puts it.
+  const adminIndex = roles.findIndex((role) => role.id === "master-admin")
+  const next = [...roles]
+  next.splice(adminIndex === -1 ? 0 : adminIndex + 1, 0, masterKam)
+  return next
+}
+
 function restoreOnce() {
   if (restored || typeof window === "undefined") return
   restored = true
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (raw) {
-      snapshot = JSON.parse(raw) as Role[]
+      const restoredRoles = backfillSeedRoles(JSON.parse(raw) as Role[])
+      snapshot = restoredRoles
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(restoredRoles))
     } else {
       snapshot = SEED_ROLES
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))

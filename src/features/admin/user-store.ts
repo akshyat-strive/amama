@@ -42,7 +42,7 @@ const SEED_USERS: AdminUser[] = [
     name: "Priya Nair",
     email: "priya@amama.com",
     password: DEMO_PASSWORD,
-    roleId: "kam",
+    roleId: "master-kam",
     createdAt: "2026-08-01T09:05:00.000Z",
     createdBy: null,
   },
@@ -71,13 +71,29 @@ let restored = false
 const listeners = new Set<() => void>()
 const emptyUsers: AdminUser[] = []
 
+/**
+ * A browser that onboarded before "Master KAM" existed has Priya's seeded
+ * record frozen on the old `roleId: "kam"` — `restoreOnce` only writes
+ * `SEED_USERS` when the key is empty, so her promotion in that constant
+ * never reaches an already-seeded browser on its own (see the matching
+ * backfill in `role-store.ts`). Upgrades just her row, by id, so any real
+ * account someone has since created or edited is left untouched.
+ */
+function backfillSeedUsers(users: AdminUser[]): AdminUser[] {
+  const masterKam = SEED_USERS.find((user) => user.roleId === "master-kam")
+  if (!masterKam) return users
+  return users.map((user) => (user.id === masterKam.id ? { ...user, roleId: "master-kam" } : user))
+}
+
 function restoreOnce() {
   if (restored || typeof window === "undefined") return
   restored = true
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (raw) {
-      snapshot = JSON.parse(raw) as AdminUser[]
+      const restoredUsers = backfillSeedUsers(JSON.parse(raw) as AdminUser[])
+      snapshot = restoredUsers
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(restoredUsers))
     } else {
       snapshot = SEED_USERS
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))

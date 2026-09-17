@@ -115,6 +115,10 @@ function useOnboarding() {
         write({ ...snapshot, buyer: applyUpdater(snapshot.buyer, patch) }),
       updateSeller: (patch: Updater<SellerDraft>) =>
         write({ ...snapshot, seller: applyUpdater(snapshot.seller, patch) }),
+      /** Drops in a whole finished draft at once — what a demo "quick
+       *  login" button uses to skip the wizard entirely, rather than
+       *  replaying every step's `updateBuyer`/`updateSeller` call. */
+      loadDraft: (next: OnboardingDraft) => write(next),
       reset: () => {
         try {
           window.sessionStorage.removeItem(STORAGE_KEY)

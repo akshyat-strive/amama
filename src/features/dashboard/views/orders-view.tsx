@@ -4,8 +4,19 @@ import * as React from "react"
 
 import { GateBar, Panel, StatusPill } from "@/features/dashboard/dashboard-ui"
 import { buildOrderBook, TOTAL_GATES } from "@/features/dashboard/demo-data"
+import { buyerIdentity, sellerIdentity } from "@/features/marketplace/identity"
+import { ORDER_STAGE_LABELS, useDeals } from "@/features/marketplace/deal-store"
+import { OrderJourney } from "@/features/orders/order-journey"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
+
+function formatUsd(amount: number) {
+  return new Intl.NumberFormat("en", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
 
 const copy: Record<OnboardingRole, { title: string; description: string }> = {
   buyer: {
@@ -44,9 +55,50 @@ function OrdersView({ role }: { role: OnboardingRole }) {
     ]
   )
 
+  // Orders that came from a real agreed deal, as opposed to the synthetic
+  // order book below — these are the ones with a live journey to follow.
+  const identity = role === "buyer" ? buyerIdentity(draft.buyer) : sellerIdentity(draft.seller)
+  const deals = useDeals()
+  const liveOrders = deals.filter(
+    (deal) =>
+      deal.orderStage !== null &&
+      (role === "buyer" ? deal.buyerId === identity.id : deal.sellerId === identity.id)
+  )
+
   return (
     <div>
       <h1 className="text-[28px] font-bold tracking-tight">{content.title}</h1>
+
+      {liveOrders.length > 0 ? (
+        <Panel
+          title="Live orders"
+          className="mt-6"
+          subtitle="Agreed deals your account manager is running"
+        >
+          <ul className="divide-y divide-border">
+            {liveOrders.map((deal) => (
+              <li key={deal.id} className="px-5 py-4">
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <span className="text-[14px] font-semibold text-foreground">{deal.listingTitle}</span>
+                  <span className="rounded-full bg-amama-subtle px-2 py-0.5 text-[11px] font-semibold text-amama-deep">
+                    {ORDER_STAGE_LABELS[deal.orderStage!]}
+                  </span>
+                  <span className="ms-auto shrink-0 text-[13px] font-semibold tabular-nums text-foreground">
+                    {formatUsd(deal.agreedPricePerTonneUsd * deal.agreedQuantityMt)}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-[13px] text-muted-foreground">
+                  {role === "buyer" ? deal.sellerName : deal.buyerName} · {deal.agreedQuantityMt} MT
+                  {deal.assignedKamName ? ` · ${deal.assignedKamName}` : ""}
+                </p>
+                <div className="mt-3.5">
+                  <OrderJourney deal={deal} defaultExpanded />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : null}
 
       <Panel title={`${orders.length} orders`} className="mt-6" subtitle="Newest first">
         <ul className="divide-y divide-border">

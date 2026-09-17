@@ -1,10 +1,16 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangleIcon, PackageIcon, SendIcon } from "lucide-react"
+import { AlertTriangleIcon, PackageIcon, SendIcon, ShieldCheckIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { containsContactInfo, type ListingDiff } from "@/features/marketplace/conversation-store"
+import { ChatCard } from "@/features/marketplace/chat-cards"
+import {
+  containsContactInfo,
+  type ChatParty,
+  type ConversationCard,
+  type ListingDiff,
+} from "@/features/marketplace/conversation-store"
 import { ListingDiffDialog } from "@/features/marketplace/listing-diff-dialog"
 
 export type ThreadMessage = {
@@ -13,10 +19,15 @@ export type ThreadMessage = {
    *  third-party observer view (a KAM reading someone else's
    *  conversation) — neither side is "you", so it names them directly and
    *  fixes buyer-left/seller-right instead. Both alias to the same
-   *  left/right styling in `MessageBubble` (`them`≈`buyer`, `me`≈`seller`). */
-  from: "me" | "them" | "buyer" | "seller" | "system"
+   *  left/right styling in `MessageBubble` (`them`≈`buyer`, `me`≈`seller`).
+   *  `kam` is the account manager seen by a buyer or seller — a third
+   *  voice in what was a two-party thread, so it gets its own treatment
+   *  rather than being flattened into "them". */
+  from: "me" | "them" | "kam" | "buyer" | "seller" | "system"
   text: string
   diff?: ListingDiff
+  /** An interactive widget to render in place of a plain bubble. */
+  card?: ConversationCard
   /** A small caption above the first bubble in a run — only meaningful
    *  for the third-party `buyer`/`seller` view, which (unlike `me`/`them`)
    *  has no other way to say who's speaking. */
@@ -43,6 +54,8 @@ function ConversationThread({
   placeholder = "Write a message…",
   emptyState,
   readOnly = false,
+  viewer = "buyer",
+  viewerName = "",
   className,
 }: {
   header?: React.ReactNode
@@ -53,6 +66,11 @@ function ConversationThread({
   /** Hides the composer entirely — the KAM console's oversight view reads
    *  every conversation but never replies from inside it. */
   readOnly?: boolean
+  /** Who is reading, which decides what a card lets them actually do:
+   *  the same proposal card offers Accept to the side being asked and a
+   *  "waiting…" line to the side that asked. */
+  viewer?: ChatParty
+  viewerName?: string
   className?: string
 }) {
   const [draftText, setDraftText] = React.useState("")
@@ -86,13 +104,20 @@ function ConversationThread({
         <>
           <div ref={scrollRef} className="flex flex-1 flex-col gap-2 overflow-y-auto px-5 py-4">
             {messages.map((message, index) =>
-              message.from === "system" ? (
+              message.card ? (
+                <div
+                  key={index}
+                  className={cn("my-1.5 flex", message.from === "me" ? "justify-end" : "justify-start")}
+                >
+                  <ChatCard card={message.card} viewer={viewer} viewerName={viewerName} />
+                </div>
+              ) : message.from === "system" ? (
                 <SystemLogLine key={index} message={message} onOpenDiff={setOpenDiff} />
               ) : (
                 <MessageBubble
                   key={index}
                   message={message}
-                  grouped={index > 0 && messages[index - 1].from === message.from}
+                  grouped={index > 0 && messages[index - 1].from === message.from && !messages[index - 1].card}
                 />
               )
             )}
@@ -190,15 +215,26 @@ function SystemLogLine({
  *  three messages reads as one breath, not three separate turns. */
 function MessageBubble({ message, grouped }: { message: ThreadMessage; grouped: boolean }) {
   const alignRight = message.from === "me" || message.from === "seller"
+  // The account manager is a third voice in what was a two-party thread,
+  // so they get the platform's own tint rather than the counterparty's
+  // grey — a buyer should never mistake their KAM for the seller.
+  const isKam = message.from === "kam"
   return (
     <div className={cn("flex flex-col", alignRight ? "items-end" : "items-start", grouped ? "mt-0.5" : "mt-2 first:mt-0")}>
-      {message.senderName && !grouped ? (
-        <p className="mb-1 px-1 text-[11px] font-medium text-muted-foreground">{message.senderName}</p>
+      {(message.senderName || isKam) && !grouped ? (
+        <p className="mb-1 flex items-center gap-1 px-1 text-[11px] font-medium text-muted-foreground">
+          {isKam ? <ShieldCheckIcon className="size-3" /> : null}
+          {message.senderName ?? "Account manager"}
+        </p>
       ) : null}
       <p
         className={cn(
           "max-w-[75%] rounded-3xl px-4 py-2 text-[14px] leading-relaxed",
-          alignRight ? "bg-amama-deep text-white" : "bg-muted text-foreground"
+          isKam
+            ? "bg-amama-subtle text-foreground"
+            : alignRight
+              ? "bg-amama-deep text-white"
+              : "bg-muted text-foreground"
         )}
       >
         {message.text}

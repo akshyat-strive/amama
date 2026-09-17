@@ -1,7 +1,16 @@
 "use client"
 
 import * as React from "react"
-import { ArrowRightIcon, ChevronDownIcon, ClockIcon, HandshakeIcon, PlusIcon, ShipIcon } from "lucide-react"
+import Link from "next/link"
+import {
+  ArrowRightIcon,
+  ChevronDownIcon,
+  ClockIcon,
+  FileSignatureIcon,
+  HandshakeIcon,
+  PlusIcon,
+  ShipIcon,
+} from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -20,10 +29,17 @@ import { GateBar } from "@/features/dashboard/dashboard-ui"
 import { ADMIN_SELECTED_CLASS, AdminEmptyState, AdminPanel, AdminStatCard } from "@/features/admin/admin-ui"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { useUsers, type AdminUser } from "@/features/admin/user-store"
+import { contractForDeal, createContract, useContracts } from "@/features/contracts/contract-store"
 import { ShipmentTracker } from "@/features/marketplace/shipment-tracker"
+import { OrderJourney } from "@/features/orders/order-journey"
 import {
   DEAL_STAGE_LABELS,
   DEAL_STAGE_ORDER,
+  LOGISTICS_MODE_LABELS,
+  ORDER_STAGE_LABELS,
+  ORDER_STAGE_ORDER,
+  setOrderStage,
+  type LogisticsMode,
   addShipment,
   addShipmentEvent,
   advanceStage,
@@ -102,7 +118,12 @@ function DealsView() {
 
       <div className="mt-6 flex flex-col gap-8">
         {canViewAll ? (
-          <EveryDealSection canAssign={admin.can("deals.assign")} assignedBy={admin.user.name} />
+          <EveryDealSection
+            canAssign={admin.can("deals.assign")}
+            canWork={canWork}
+            me={{ id: admin.user.id, name: admin.user.name }}
+            assignedBy={admin.user.name}
+          />
         ) : null}
         {canWork ? <MyDealsSection myUserId={admin.user.id} myUserName={admin.user.name} /> : null}
         {!canViewAll && !canWork ? (
@@ -128,11 +149,21 @@ const statusStyles: Record<DealStatus, { label: string; className: string }> = {
   declined: { label: "Declined", className: "bg-destructive/10 text-destructive" },
 }
 
-/** Oversight, not execution — sees every deal across every team member and
- *  assigns/reassigns who's driving it. The reassign control itself is
- *  further gated on `deals.assign` — someone with `deals.viewAll` but not
- *  `deals.assign` sees this section read-only. */
-function EveryDealSection({ canAssign, assignedBy }: { canAssign: boolean; assignedBy: string }) {
+/** Oversight, and the pool work gets claimed from. Reassigning someone
+ *  else is gated on `deals.assign` (the Master KAM's job); claiming an
+ *  unassigned deal for yourself only needs `deals.work`, so any KAM can
+ *  pick up work without waiting to be handed it. */
+function EveryDealSection({
+  canAssign,
+  canWork,
+  me,
+  assignedBy,
+}: {
+  canAssign: boolean
+  canWork: boolean
+  me: { id: string; name: string }
+  assignedBy: string
+}) {
   const deals = useDeals()
   const users = useUsers()
   const [filter, setFilter] = React.useState<Filter>("needs-a-team-member")
@@ -213,6 +244,8 @@ function EveryDealSection({ canAssign, assignedBy }: { canAssign: boolean; assig
               deal={deal}
               users={users}
               canAssign={canAssign}
+              canWork={canWork}
+              me={me}
               assignedBy={assignedBy}
               expanded={expandedId === deal.id}
               onToggle={() => setExpandedId((id) => (id === deal.id ? null : deal.id))}
@@ -224,10 +257,41 @@ function EveryDealSection({ canAssign, assignedBy }: { canAssign: boolean; assig
   )
 }
 
+/**
+ * The bridge from an agreed deal to its paperwork. Shown only to the KAM
+ * who owns the deal: a contract is drafted by the person accountable for
+ * it, not by whoever happens to be looking at the pipeline.
+ */
+function DealContractAction({ deal, me }: { deal: Deal; me: { id: string; name: string } }) {
+  const contracts = useContracts()
+  const contract = contractForDeal(contracts, deal.id)
+
+  if (contract) {
+    return (
+      <Link
+        href={`/admin/contracts?contract=${contract.id}`}
+        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted"
+      >
+        <FileSignatureIcon className="size-3.5" />
+        Open {contract.reference}
+      </Link>
+    )
+  }
+
+  return (
+    <Button size="sm" onClick={() => createContract(deal, me)}>
+      <FileSignatureIcon className="size-4" />
+      Create contract
+    </Button>
+  )
+}
+
 function DealCard({
   deal,
   users,
   canAssign,
+  canWork,
+  me,
   assignedBy,
   expanded,
   onToggle,
@@ -235,6 +299,8 @@ function DealCard({
   deal: Deal
   users: AdminUser[]
   canAssign: boolean
+  canWork: boolean
+  me: { id: string; name: string }
   assignedBy: string
   expanded: boolean
   onToggle: () => void
@@ -315,10 +381,19 @@ function DealCard({
         ) : null}
 
         {deal.status === "active" ? (
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
             <span className="text-[13px] font-medium text-muted-foreground">
               {deal.assignedKamName ? `Owner: ${deal.assignedKamName}` : "Unassigned"}
             </span>
+            {/* Claiming is not assigning: it needs no `deals.assign`,
+                because taking work off an open pile isn't the same
+                authority as handing it to someone else. */}
+            {canWork && deal.assignedKamId !== me.id ? (
+              <Button size="sm" variant="outline" onClick={() => assignKam(deal.id, me, me.name)}>
+                {deal.assignedKamId ? "Take over" : "Assign to me"}
+              </Button>
+            ) : null}
+            {deal.assignedKamId === me.id ? <DealContractAction deal={deal} me={me} /> : null}
             {canAssign ? (
               <Select
                 value={deal.assignedKamId ?? undefined}
@@ -328,7 +403,11 @@ function DealCard({
                 }}
               >
                 <SelectTrigger size="sm">
-                  <SelectValue placeholder={deal.assignedKamId ? "Reassign" : "Assign someone"} />
+                  {/* Users are keyed by email, which is not what anyone
+                      wants to read back as the current owner. */}
+                  <SelectValue placeholder={deal.assignedKamId ? "Reassign" : "Assign someone"}>
+                    {(value) => users.find((user) => user.id === value)?.name ?? "Assign someone"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {users.length === 0 ? (
@@ -443,7 +522,7 @@ function MyDealsSection({ myUserId, myUserName }: { myUserId: string; myUserName
         <AdminEmptyState
           icon={HandshakeIcon}
           title="No deals assigned to you yet"
-          description="Once someone with assign permission gives you a confirmed deal, it'll show up here."
+          description="Claim an agreed deal from Every deal above, or wait to be given one — either way it shows up here."
         />
       ) : (
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
@@ -556,6 +635,8 @@ function DealDetail({ deal, myUserName }: { deal: Deal; myUserName: string }) {
           </div>
         </div>
       </div>
+
+      <OrderJourneyPanel deal={deal} myUserName={myUserName} />
 
       {deal.stage === "costing" ? <CostingForm deal={deal} /> : null}
       {deal.stage === "contracting" ? <ContractingForm deal={deal} /> : null}
@@ -783,8 +864,40 @@ function PaymentForm({ deal }: { deal: Deal }) {
   )
 }
 
+/**
+ * The journey as the buyer and seller see it, plus the buttons that move
+ * it. Kept separate from "Advance the pipeline" because the two genuinely
+ * are separate: the desk's internal stage and the customer-facing one move
+ * on different beats, and conflating them is how a buyer ends up told
+ * their order shipped because a KAM ticked off some paperwork.
+ */
+function OrderJourneyPanel({ deal, myUserName }: { deal: Deal; myUserName: string }) {
+  if (!deal.orderStage) return null
+
+  return (
+    <AdminPanel title="Order journey" subtitle="What the buyer and seller see">
+      <div className="flex flex-col gap-4 p-5">
+        <OrderJourney deal={deal} />
+        <div className="flex flex-wrap gap-1.5">
+          {ORDER_STAGE_ORDER.map((stage) => (
+            <Button
+              key={stage}
+              size="sm"
+              variant={stage === deal.orderStage ? "default" : "outline"}
+              onClick={() => setOrderStage(deal.id, stage, myUserName)}
+            >
+              {ORDER_STAGE_LABELS[stage]}
+            </Button>
+          ))}
+        </div>
+      </div>
+    </AdminPanel>
+  )
+}
+
 function ShipmentsPanel({ deal }: { deal: Deal }) {
   const [adding, setAdding] = React.useState(false)
+  const [mode, setMode] = React.useState<LogisticsMode>("ocean")
   const [carrier, setCarrier] = React.useState("")
   const [documentNumber, setDocumentNumber] = React.useState("")
   const [origin, setOrigin] = React.useState("")
@@ -794,6 +907,7 @@ function ShipmentsPanel({ deal }: { deal: Deal }) {
   const submit = () => {
     if (!carrier.trim()) return
     addShipment(deal.id, {
+      mode,
       carrier: carrier.trim(),
       documentNumber: documentNumber.trim(),
       status: "booked",
@@ -804,6 +918,7 @@ function ShipmentsPanel({ deal }: { deal: Deal }) {
       currentLocation: null,
       events: [],
     })
+    setMode("ocean")
     setCarrier("")
     setDocumentNumber("")
     setOrigin("")
@@ -825,6 +940,18 @@ function ShipmentsPanel({ deal }: { deal: Deal }) {
       <div className="flex flex-col gap-4 p-5">
         {adding ? (
           <div className="grid grid-cols-1 gap-2 rounded-[14px] border border-dashed border-border p-3 sm:grid-cols-3">
+            <Select value={mode} onValueChange={(value) => setMode((value as LogisticsMode) ?? "ocean")}>
+              <SelectTrigger>
+                <SelectValue>{(value) => LOGISTICS_MODE_LABELS[value as LogisticsMode]}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(LOGISTICS_MODE_LABELS) as LogisticsMode[]).map((entry) => (
+                  <SelectItem key={entry} value={entry}>
+                    {LOGISTICS_MODE_LABELS[entry]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Input placeholder="Carrier" value={carrier} onChange={(event) => setCarrier(event.target.value)} />
             <Input
               placeholder="BL / AWB no."

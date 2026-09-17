@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react"
 import {
-  LayoutDashboardIcon,
+  FileSignatureIcon,
+  HouseIcon,
   MessageCircleIcon,
   PackageIcon,
   SettingsIcon,
@@ -53,7 +54,8 @@ export const dashboardNav: Record<OnboardingRole, DashboardNavItem[]> = {
       icon: MessageCircleIcon,
       group: "activity",
     },
-    { label: "Overview", href: "/buyer/dashboard", icon: LayoutDashboardIcon, group: "menu" },
+    { label: "Home", href: "/buyer/dashboard", icon: HouseIcon, group: "menu" },
+    { label: "Contracts", href: "/buyer/dashboard/contracts", icon: FileSignatureIcon, group: "menu" },
     { label: "Orders", href: "/buyer/dashboard/orders", icon: PackageIcon, group: "menu" },
     { label: "Shipments", href: "/buyer/dashboard/shipments", icon: ShipIcon, group: "menu" },
     { label: "Profile", href: "/buyer/dashboard/profile", icon: UserRoundIcon, group: "general" },
@@ -72,7 +74,8 @@ export const dashboardNav: Record<OnboardingRole, DashboardNavItem[]> = {
       icon: MessageCircleIcon,
       group: "activity",
     },
-    { label: "Overview", href: "/seller/dashboard", icon: LayoutDashboardIcon, group: "menu" },
+    { label: "Home", href: "/seller/dashboard", icon: HouseIcon, group: "menu" },
+    { label: "Contracts", href: "/seller/dashboard/contracts", icon: FileSignatureIcon, group: "menu" },
     { label: "Orders", href: "/seller/dashboard/orders", icon: PackageIcon, group: "menu" },
     { label: "Shipments", href: "/seller/dashboard/shipments", icon: ShipIcon, group: "menu" },
     { label: "Payments", href: "/seller/dashboard/payments", icon: WalletIcon, group: "menu" },

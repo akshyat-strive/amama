@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowRightIcon, EyeIcon, EyeOffIcon } from "lucide-react"
+import { ArrowRightIcon, EyeIcon, EyeOffIcon, KeyRoundIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -17,6 +17,9 @@ import { EditorialImage } from "@/components/ui/editorial-image"
 import { useI18n } from "@/features/i18n/i18n-context"
 import { GoogleIcon, MicrosoftIcon, AppleIcon } from "@/features/auth/oauth-icons"
 import { loginContent } from "@/features/auth/login-content"
+import { demoDraftFor } from "@/features/auth/demo-accounts"
+import { seedAdminDemoData } from "@/features/admin/seed-data"
+import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
 
 // Provider names are brand names, not translated — only the surrounding
@@ -32,6 +35,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 function LoginScreen({ role }: { role: OnboardingRole }) {
   const router = useRouter()
   const { t } = useI18n()
+  const { loadDraft } = useOnboarding()
   const content = loginContent[role]
   const [submitting, setSubmitting] = React.useState(false)
   const [email, setEmail] = React.useState("")
@@ -46,6 +50,17 @@ function LoginScreen({ role }: { role: OnboardingRole }) {
     event.preventDefault()
     setSubmitting(true)
     window.setTimeout(enterApp, 500)
+  }
+
+  // The one door a demo actually walks through: skip the form, skip the
+  // wizard, land straight on a dashboard that's already mid-deal — loading
+  // a finished draft and seeding its data (idempotent, safe to call from
+  // here even if `/admin` was never visited first) before routing in.
+  const demoDraft = demoDraftFor(role)
+  const enterDemoAccount = () => {
+    loadDraft(demoDraft)
+    seedAdminDemoData()
+    router.push(`/${role}/dashboard`)
   }
 
   const emailValid = EMAIL_PATTERN.test(email.trim())
@@ -176,6 +191,24 @@ function LoginScreen({ role }: { role: OnboardingRole }) {
                 {!submitting && <ArrowRightIcon />}
               </Button>
             </form>
+
+            <button
+              type="button"
+              onClick={enterDemoAccount}
+              className="mt-4 flex w-full items-center gap-3 rounded-[16px] border border-dashed border-border px-4 py-3 text-start transition-colors hover:border-foreground/30 hover:bg-muted"
+            >
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-amama-deep text-white">
+                <KeyRoundIcon className="size-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[13px] font-semibold text-foreground">
+                  Continue as demo {role}
+                </span>
+                <span className="block truncate text-[12px] text-muted-foreground">
+                  {role === "buyer" ? demoDraft.buyer.email : demoDraft.seller.email} — skips onboarding, already mid-deal
+                </span>
+              </span>
+            </button>
 
             <p className="mt-6 text-center text-[14px] text-muted-foreground">
               {t("auth.newToAmama")}{" "}

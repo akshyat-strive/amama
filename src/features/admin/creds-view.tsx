@@ -33,10 +33,17 @@ function CredsView() {
           </p>
           <p className="flex items-start gap-2 text-[13px] leading-relaxed text-muted-foreground">
             <InfoIcon className="mt-0.5 size-4 shrink-0" />
-            <span className="font-mono text-foreground">buyer@amama.com</span> and{" "}
-            <span className="font-mono text-foreground">seller@amama.com</span>&apos;s onboarding applications are
-            seeded and awaiting review — approve them from Home, then onboard as either email to reach a dashboard
-            with a real, already-shipping deal on its Shipments page.
+            <span className="font-mono text-foreground">buyer@amama.in</span> and{" "}
+            <span className="font-mono text-foreground">seller@amama.in</span> are pre-verified demo accounts, already
+            mid-deal — use the &quot;Continue as demo buyer/seller&quot; button on{" "}
+            <Link href="/buyer/login" className="font-medium text-amama-deep underline underline-offset-4">
+              /buyer/login
+            </Link>{" "}
+            or{" "}
+            <Link href="/seller/login" className="font-medium text-amama-deep underline underline-offset-4">
+              /seller/login
+            </Link>{" "}
+            to jump straight to their dashboard, no onboarding required.
           </p>
         </div>
         <div className="overflow-x-auto">

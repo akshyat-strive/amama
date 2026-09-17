@@ -1,6 +1,7 @@
 import {
+  FileSignatureIcon,
   HandshakeIcon,
-  InboxIcon,
+  HouseIcon,
   MegaphoneIcon,
   MessagesSquareIcon,
   PackageSearchIcon,
@@ -30,8 +31,9 @@ type AdminNavItem = DashboardNavItem & {
 const adminNavItems: AdminNavItem[] = [
   { label: "Chat", href: "/admin/chat", icon: MessagesSquareIcon, group: "activity" },
   { label: "Announcements", href: "/admin/announcements", icon: MegaphoneIcon, group: "activity" },
-  { label: "Home", href: "/admin", icon: InboxIcon, group: "menu" },
+  { label: "Home", href: "/admin", icon: HouseIcon, group: "menu" },
   { label: "Deals", href: "/admin/deals", icon: HandshakeIcon, group: "menu", permission: ["deals.work", "deals.viewAll"] },
+  { label: "Contracts", href: "/admin/contracts", icon: FileSignatureIcon, group: "menu", permission: "deals.work" },
   { label: "Listings", href: "/admin/listings", icon: PackageSearchIcon, group: "menu", permission: "listings.moderate" },
   { label: "Team", href: "/admin/team", icon: UsersRoundIcon, group: "general", permission: ["users.manage", "roles.manage"] },
   { label: "Profile", href: "/admin/profile", icon: UserRoundIcon, group: "general" },

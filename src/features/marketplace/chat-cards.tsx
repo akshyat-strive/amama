@@ -74,7 +74,7 @@ function ProposalCard({
 
   const tone: CardTone =
     round.outcome === "accepted" ? "success" : round.outcome === "declined" ? "danger" : "brand"
-  const showBand = round.outcome === "pending" && canRespond
+  const canAccept = round.outcome === "pending" && canRespond
 
   return (
     <>
@@ -114,45 +114,29 @@ function ProposalCard({
             <RoundComments dealId={deal.id} round={round} viewer={viewer} viewerName={viewerName} />
           </div>
         }
-        band={
-          showBand ? (
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[10px] font-semibold tracking-wide text-white/70 uppercase">Total value</p>
-                <p className="truncate text-[20px] font-extrabold tracking-tight text-white">{formatUsd(total)}</p>
-              </div>
-              <Button
-                size="sm"
-                className="shrink-0 bg-white text-amama-deep hover:bg-white/90"
-                onClick={() => confirmDeal(deal.id, viewer, viewerName)}
-              >
-                <CheckIcon className="size-4" />
-                Accept
-              </Button>
-            </div>
-          ) : null
-        }
       >
-        {/* Two columns, not four — the card itself caps at 420px
-            regardless of viewport, so a `sm:` breakpoint (which reads the
-            viewport, not this card) would cram "$96,300" into a column
-            too narrow to show it. */}
-        <div className="grid grid-cols-2 divide-x divide-y divide-border/70 overflow-hidden rounded-2xl border border-border/70">
-          <div className="p-3">
-            <Figure label="Price" value={`${formatUsd(round.pricePerTonneUsd)}/t`} />
-          </div>
-          <div className="p-3">
-            <Figure label="Quantity" value={`${round.quantityMt} MT`} />
-          </div>
-          <div className="p-3">
-            <Figure label="Total value" value={formatUsd(total)} />
-          </div>
-          <div className="p-3">
-            <Figure label="Terms" value={round.incoterm ?? "—"} hint={round.deliveryWindow} />
-          </div>
+        {/* The number that matters most, bare and bold — no box, no
+            tinted band, the same treatment a clean dashboard gives its
+            one headline figure. Accept sits right beside it, since it's
+            the one action that answers this exact number. */}
+        <div className="flex items-end justify-between gap-3">
+          <Figure label="Total value" value={formatUsd(total)} size="hero" />
+          {canAccept ? (
+            <Button size="sm" className="shrink-0" onClick={() => confirmDeal(deal.id, viewer, viewerName)}>
+              <CheckIcon className="size-4" />
+              Accept
+            </Button>
+          ) : null}
         </div>
+
+        <div className="mt-3.5 grid grid-cols-3 gap-3 border-t border-border pt-3.5">
+          <Figure label="Price" value={`${formatUsd(round.pricePerTonneUsd)}/t`} />
+          <Figure label="Quantity" value={`${round.quantityMt} MT`} />
+          <Figure label="Terms" value={round.incoterm ?? "—"} hint={round.deliveryWindow} />
+        </div>
+
         {round.note ? (
-          <p className="mt-2.5 rounded-2xl bg-card/70 px-3 py-2 text-[13px] leading-relaxed text-foreground">
+          <p className="mt-2.5 rounded-2xl bg-muted px-3 py-2 text-[13px] leading-relaxed text-foreground">
             “{round.note}”
           </p>
         ) : null}
@@ -246,7 +230,7 @@ function RoundComments({
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl bg-card/70 p-2.5">
+    <div className="flex flex-col gap-2 rounded-2xl bg-muted p-2.5">
       {round.comments.map((comment) => (
         <div key={comment.id} className="text-[12px] leading-relaxed">
           <span className="font-semibold text-foreground">{comment.byName}</span>{" "}

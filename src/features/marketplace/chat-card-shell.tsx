@@ -12,44 +12,20 @@ function formatUsd(amount: number) {
   }).format(amount)
 }
 
-const toneStyles = {
-  brand: "border-amama-deep/25 bg-amama-subtle",
-  neutral: "border-border bg-card",
-  success: "border-amama-deep/30 bg-amama-subtle",
-  warning: "border-status-warning/30 bg-status-warning/5",
-  danger: "border-destructive/25 bg-destructive/5",
-} as const
+export type CardTone = "brand" | "neutral" | "success" | "warning" | "danger"
 
-export type CardTone = keyof typeof toneStyles
-
+/** The icon badge's fill. Neutral in every case but one: a plain light-gray
+ *  circle with a black icon, the same restrained mark a clean dashboard
+ *  uses for "Google" or "Send" or "Request" regardless of what the action
+ *  actually does. Color is reserved for the one state that's genuinely a
+ *  problem — declined, delayed — and even then it's a solid red disc with
+ *  a white icon, not a tint. Tinting every icon by its "type" is exactly
+ *  the generic-SaaS tell this was rebuilt to get away from. */
 const iconToneStyles: Record<CardTone, string> = {
-  brand: "bg-amama-deep text-white",
+  brand: "bg-muted text-foreground",
   neutral: "bg-muted text-foreground",
-  success: "bg-amama-deep text-white",
-  warning: "bg-status-warning text-white",
-  danger: "bg-destructive text-white",
-}
-
-/** The card's own "ticket stub" spine — a solid bar across the top, the
- *  same cue a boarding pass or freight-load card uses to say "this is a
- *  document, not a chat bubble" before you've read a word of it. */
-const barStyles: Record<CardTone, string> = {
-  brand: "bg-amama-deep",
-  neutral: "bg-border",
-  success: "bg-amama-deep",
-  warning: "bg-status-warning",
-  danger: "bg-destructive",
-}
-
-/** The colored strip a `band` renders in — the same move as a freight
- *  card's price bar or a boarding pass's gate strip: the one number that
- *  matters gets its own solid-color band instead of sitting in the same
- *  neutral card as everything else. */
-const bandStyles: Record<CardTone, string> = {
-  brand: "bg-amama-deep text-white",
-  neutral: "bg-foreground text-background",
-  success: "bg-amama-deep text-white",
-  warning: "bg-status-warning text-white",
+  success: "bg-muted text-foreground",
+  warning: "bg-muted text-foreground",
   danger: "bg-destructive text-white",
 }
 
@@ -57,11 +33,13 @@ const bandStyles: Record<CardTone, string> = {
  * The frame every interactive card in a thread shares. Cards deliberately
  * don't look like message bubbles: a bubble is something someone said, a
  * card is something you can act on, and blurring the two is how people end
- * up scrolling past the thing that needs them. Styled like a boarding
- * pass or a freight load card on purpose — a top spine in the card's own
- * tone, and an optional solid-color `band` at the bottom for the one
- * number (and one button) that matters most, separated from the rest by
- * a dashed ticket-stub seam.
+ * up scrolling past the thing that needs them.
+ *
+ * Plain white card, one thin neutral border. No tinted background wash and
+ * no colored top spine — a card that announces "I am a brand-colored
+ * object" before you've read a word of it is what makes a UI feel
+ * AI-generated. The only color left is the icon badge's, and only for a
+ * real danger state.
  *
  * Sized wider than a bubble's 75% because these carry tabular numbers that
  * shouldn't wrap.
@@ -76,7 +54,6 @@ function CardShell({
   subtitle,
   children,
   footer,
-  band,
 }: {
   icon: React.ComponentType<{ className?: string }>
   tone?: CardTone
@@ -84,14 +61,9 @@ function CardShell({
   subtitle?: string | null
   children?: React.ReactNode
   footer?: React.ReactNode
-  /** A solid-color strip pinned to the bottom, below a dashed seam — the
-   *  headline number and primary action, given its own visual weight
-   *  instead of blending into the neutral card above it. */
-  band?: React.ReactNode
 }) {
   return (
-    <div className={cn("w-full max-w-[92%] overflow-hidden rounded-[20px] border sm:max-w-[420px]", toneStyles[tone])}>
-      <span aria-hidden className={cn("block h-[3px] w-full", barStyles[tone])} />
+    <div className="w-full max-w-[92%] overflow-hidden rounded-[20px] border border-border bg-card sm:max-w-[420px]">
       <div className="p-4">
         <div className="flex items-start gap-3">
           <span className={cn("grid size-9 shrink-0 place-items-center rounded-full", iconToneStyles[tone])}>
@@ -105,21 +77,38 @@ function CardShell({
         {children ? <div className="mt-3.5">{children}</div> : null}
         {footer ? <div className="mt-3.5">{footer}</div> : null}
       </div>
-      {band ? (
-        <div className={cn("border-t border-dashed border-border/60 px-4 py-3.5", bandStyles[tone])}>{band}</div>
-      ) : null}
     </div>
   )
 }
 
 /** A labelled number, big enough to read at a glance. Price and quantity
  *  are the two things a non-technical trader checks first, so they get
- *  headline treatment instead of sitting in a sentence. */
-function Figure({ label, value, hint }: { label: string; value: string; hint?: string | null }) {
+ *  headline treatment instead of sitting in a sentence. `size="hero"` is
+ *  for the one figure on the card that matters most — sized like the big
+ *  bare number on a clean analytics card, not boxed or tinted, just bold
+ *  black type given room to be the first thing you read. */
+function Figure({
+  label,
+  value,
+  hint,
+  size = "default",
+}: {
+  label: string
+  value: string
+  hint?: string | null
+  size?: "default" | "hero"
+}) {
   return (
     <div className="min-w-0">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="truncate text-[18px] font-extrabold tracking-tight text-foreground">{value}</p>
+      <p
+        className={cn(
+          "truncate font-extrabold tracking-tight text-foreground",
+          size === "hero" ? "text-[26px]" : "text-[18px]"
+        )}
+      >
+        {value}
+      </p>
       {hint ? <p className="truncate text-[11px] text-muted-foreground">{hint}</p> : null}
     </div>
   )

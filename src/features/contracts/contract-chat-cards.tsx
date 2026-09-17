@@ -102,7 +102,7 @@ function ContractOpenedCard({ contract, viewer }: { contract: Contract; viewer: 
         </Link>
       }
     >
-      <div className="flex flex-col gap-2 rounded-2xl bg-card/70 p-3">
+      <div className="flex flex-col gap-2 rounded-2xl bg-muted p-3">
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
             Current step
@@ -165,7 +165,7 @@ function RequestCard({
           </Button>
         }
       >
-        <div className="flex flex-col gap-2 rounded-2xl bg-card/70 p-3">
+        <div className="flex flex-col gap-2 rounded-2xl bg-muted p-3">
           <CardProgress done={progress.done} total={progress.total} label="done" />
           <p className="text-[12px] text-muted-foreground">
             {request.fields.length} {request.fields.length === 1 ? "question" : "questions"} ·{" "}
@@ -252,7 +252,7 @@ function FinalDraftCard({
           </div>
         }
       >
-        <div className="flex flex-col gap-1.5 rounded-2xl bg-card/70 p-3">
+        <div className="flex flex-col gap-1.5 rounded-2xl bg-muted p-3">
           <ApprovalRow name={contract.buyerName} label="Buyer" approval={state.buyer} />
           <ApprovalRow name={contract.sellerName} label="Seller" approval={state.seller} />
         </div>

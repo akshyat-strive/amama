@@ -182,14 +182,24 @@ function ShipmentTracker({ shipment }: { shipment: Shipment }) {
               aria-hidden
               className="absolute top-1/2 right-0 size-1.5 -translate-y-1/2 rounded-full border border-foreground bg-card"
             />
-            <ModeIcon
+            {/* The backing disc is the card's own background, not a
+                colored badge — its only job is to mask the dashed line
+                directly behind the icon's strokes, so the line looks
+                like it passes behind a gap rather than showing through
+                the icon. Delayed is the one exception: the disc itself
+                turns solid red with a white icon, the same alarm treatment
+                a maps app gives a blocked route rather than just tinting
+                the icon and hoping it reads as urgent. */}
+            <span
               aria-hidden
               className={cn(
-                "absolute top-1/2 size-6 -translate-x-1/2 -translate-y-1/2 transition-[left] duration-500",
-                isDelayed ? "text-destructive" : "text-amama-deep"
+                "absolute top-1/2 grid size-8 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full transition-[left] duration-500",
+                isDelayed ? "bg-destructive" : "bg-card"
               )}
               style={{ left: `${Math.min(96, Math.max(4, progress))}%` }}
-            />
+            >
+              <ModeIcon className={cn("size-6", isDelayed ? "text-white" : "text-foreground")} />
+            </span>
           </div>
 
           <p className="shrink-0 text-[26px] font-extrabold tracking-tight text-foreground tabular-nums">

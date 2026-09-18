@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import type { ChatParty, ConversationCard } from "@/features/marketplace/conversation-store"
-import { CardShell, Figure, formatUsd, type CardTone } from "@/features/marketplace/chat-card-shell"
+import { CardShell, Figure, type CardTone } from "@/features/marketplace/chat-card-shell"
+import { formatInr } from "@/features/marketplace/currency"
 import { DealTermsDialog } from "@/features/marketplace/deal-terms-dialog"
 import {
   commentOnRound,
@@ -120,7 +121,7 @@ function ProposalCard({
             one headline figure. Accept sits right beside it, since it's
             the one action that answers this exact number. */}
         <div className="flex items-end justify-between gap-3">
-          <Figure label="Total value" value={formatUsd(total)} size="hero" />
+          <Figure label="Total value" value={formatInr(total)} size="hero" />
           {canAccept ? (
             <Button size="sm" className="shrink-0" onClick={() => confirmDeal(deal.id, viewer, viewerName)}>
               <CheckIcon className="size-4" />
@@ -130,7 +131,7 @@ function ProposalCard({
         </div>
 
         <div className="mt-3.5 grid grid-cols-3 gap-3 border-t border-border pt-3.5">
-          <Figure label="Price" value={`${formatUsd(round.pricePerTonneUsd)}/t`} />
+          <Figure label="Price" value={`${formatInr(round.pricePerTonneUsd)}/t`} />
           <Figure label="Quantity" value={`${round.quantityMt} MT`} />
           <Figure label="Terms" value={round.incoterm ?? "—"} hint={round.deliveryWindow} />
         </div>

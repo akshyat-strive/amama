@@ -219,6 +219,7 @@ const kn: TranslationShape = {
         tea: "ಚಹಾ",
         grains: "ಧಾನ್ಯಗಳು",
         pulses: "ಬೇಳೆಕಾಳುಗಳು",
+        apple: "ಸೇಬು",
         "fresh-fruit": "ತಾಜಾ ಹಣ್ಣುಗಳು",
         "dried-fruit": "ಒಣ ಹಣ್ಣುಗಳು",
         vegetables: "ತರಕಾರಿಗಳು",

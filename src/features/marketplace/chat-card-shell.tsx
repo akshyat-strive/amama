@@ -4,14 +4,6 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function formatUsd(amount: number) {
-  return new Intl.NumberFormat("en", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
-
 export type CardTone = "brand" | "neutral" | "success" | "warning" | "danger"
 
 /** The icon badge's fill. Neutral in every case but one: a plain light-gray
@@ -153,4 +145,4 @@ function CardProgress({
   )
 }
 
-export { CardShell, CardProgress, Figure, formatUsd }
+export { CardShell, CardProgress, Figure }

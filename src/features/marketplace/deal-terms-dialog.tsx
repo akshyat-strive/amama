@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { formatRupees, inrToUsd, usdToInr } from "@/features/marketplace/currency"
 
 export type DealTerms = {
   pricePerTonneUsd: number
@@ -97,8 +98,11 @@ function TermsFields({
   submitLabel: string
   onSubmit: (terms: DealTerms) => void
 }) {
+  // The field reads and writes rupees — the one currency a person here
+  // actually thinks in — while `initial`/`onSubmit` stay on the USD figure
+  // every other store (deals, listings) is built around.
   const [price, setPrice] = React.useState(() =>
-    initial.pricePerTonneUsd ? String(initial.pricePerTonneUsd) : ""
+    initial.pricePerTonneUsd ? String(Math.round(usdToInr(initial.pricePerTonneUsd))) : ""
   )
   const [quantity, setQuantity] = React.useState(() =>
     initial.quantityMt ? String(initial.quantityMt) : ""
@@ -118,7 +122,7 @@ function TermsFields({
       return
     }
     onSubmit({
-      pricePerTonneUsd: priceNum,
+      pricePerTonneUsd: Math.round(inrToUsd(priceNum)),
       quantityMt: quantityNum,
       incoterm: incoterm ?? null,
       deliveryWindow: deliveryWindow.trim() || null,
@@ -133,7 +137,7 @@ function TermsFields({
       <div className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1.5 text-[13px] font-medium text-foreground">
-            Price (USD / tonne)
+            Price (₹ / tonne)
             <Input type="number" min={1} value={price} onChange={(event) => setPrice(event.target.value)} />
           </label>
           <label className="flex flex-col gap-1.5 text-[13px] font-medium text-foreground">
@@ -148,13 +152,7 @@ function TermsFields({
         {total > 0 ? (
           <div className="flex items-baseline justify-between rounded-2xl bg-amama-subtle px-4 py-3">
             <span className="text-[12px] font-medium text-muted-foreground">Total contract value</span>
-            <span className="text-[18px] font-bold text-amama-deep">
-              {new Intl.NumberFormat("en", {
-                style: "currency",
-                currency: "USD",
-                maximumFractionDigits: 0,
-              }).format(total)}
-            </span>
+            <span className="text-[18px] font-bold text-amama-deep">{formatRupees(total)}</span>
           </div>
         ) : null}
 

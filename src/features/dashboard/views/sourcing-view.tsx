@@ -1,9 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { HeartIcon, StoreIcon } from "lucide-react"
+import { HeartIcon, SearchIcon, StoreIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import {
   Select,
   SelectContent,
@@ -39,9 +40,16 @@ function SourcingView() {
     () => allListings.filter((listing) => listing.moderationStatus !== "flagged" && !listing.deletedAt),
     [allListings]
   )
-  const [cropFilter, setCropFilter] = React.useState<string>("all")
+  // `null` means "the buyer hasn't touched the dropdown yet" — the actual
+  // selected value is derived below, so it can default to the buyer's own
+  // sourcing picks the moment the onboarding draft (restored from
+  // `sessionStorage` after mount) is actually available, rather than
+  // freezing on "all" from whatever the very first render saw.
+  const [cropFilter, setCropFilter] = React.useState<string | null>(null)
   const [wishlistOnly, setWishlistOnly] = React.useState(false)
+  const [query, setQuery] = React.useState("")
   const wishlist = useWishlist(buyer.id)
+  const mySourcing = draft.buyer.sourcing
 
   const cropsInCatalog = React.useMemo(() => {
     const seen = new Set(listings.map((listing) => listing.cropId))
@@ -50,11 +58,30 @@ function SourcingView() {
     )
   }, [listings])
 
+  const effectiveCropFilter = cropFilter ?? (mySourcing.length > 0 ? "mine" : "all")
+
   const visible = React.useMemo(() => {
-    let result = cropFilter === "all" ? listings : listings.filter((listing) => listing.cropId === cropFilter)
+    let result =
+      effectiveCropFilter === "all"
+        ? listings
+        : effectiveCropFilter === "mine"
+          ? listings.filter((listing) => mySourcing.includes(listing.cropId))
+          : listings.filter((listing) => listing.cropId === effectiveCropFilter)
     if (wishlistOnly) result = result.filter((listing) => wishlist.includes(listing.id))
+    // Product names only — the crop and the seller's own variety name for
+    // it — plus who's selling it. A listing's description is deliberately
+    // left out: it's prose, not something a buyer would type into search.
+    const term = query.trim().toLowerCase()
+    if (term) {
+      result = result.filter((listing) => {
+        const haystack = [cropLabels[listing.cropId] ?? listing.cropId, listing.variety, listing.sellerName]
+          .join(" ")
+          .toLowerCase()
+        return haystack.includes(term)
+      })
+    }
     return result
-  }, [listings, cropFilter, wishlistOnly, wishlist])
+  }, [listings, effectiveCropFilter, mySourcing, wishlistOnly, wishlist, query])
 
   return (
     <div>
@@ -62,6 +89,18 @@ function SourcingView() {
         <h1 className="text-[28px] font-bold tracking-tight">Marketplace</h1>
 
         <div className="flex items-center gap-2">
+          <InputGroup className="h-9 w-44 sm:w-56">
+            <InputGroupAddon>
+              <SearchIcon className="size-3.5" />
+            </InputGroupAddon>
+            <InputGroupInput
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search sellers, crops…"
+              className="text-[13px]"
+            />
+          </InputGroup>
+
           <button
             type="button"
             onClick={() => setWishlistOnly((value) => !value)}
@@ -78,15 +117,20 @@ function SourcingView() {
           </button>
 
           {cropsInCatalog.length > 0 ? (
-            <Select value={cropFilter} onValueChange={(value) => setCropFilter(value as string)}>
+            <Select value={effectiveCropFilter} onValueChange={(value) => setCropFilter(value as string)}>
               <SelectTrigger className="w-44">
                 <SelectValue>
                   {(value) =>
-                    value === "all" ? "All crops" : cropLabels[value as string] ?? (value as string)
+                    value === "all"
+                      ? "All crops"
+                      : value === "mine"
+                        ? "My products"
+                        : cropLabels[value as string] ?? (value as string)
                   }
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
+                {mySourcing.length > 0 ? <SelectItem value="mine">My products</SelectItem> : null}
                 <SelectItem value="all">All crops</SelectItem>
                 {cropsInCatalog.map((cropId) => (
                   <SelectItem key={cropId} value={cropId}>
@@ -106,9 +150,13 @@ function SourcingView() {
           </span>
           <h2 className="text-[17px] font-bold">Nothing here yet</h2>
           <p className="max-w-xs text-[14px] leading-relaxed text-muted-foreground">
-            {wishlistOnly
-              ? "Nothing saved to your wishlist yet."
-              : "No sellers have listed this crop yet — try another one."}
+            {query.trim()
+              ? `No sellers match "${query.trim()}".`
+              : wishlistOnly
+                ? "Nothing saved to your wishlist yet."
+                : effectiveCropFilter === "mine"
+                  ? "No sellers list your selected products yet — try All crops."
+                  : "No sellers have listed this crop yet — try another one."}
           </p>
         </div>
       ) : (

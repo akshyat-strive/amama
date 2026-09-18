@@ -146,6 +146,11 @@ function seedConversationsIfEmpty(conversations: Conversation[]) {
  * or after a reload, finds the existing thread with that seller rather than
  * starting a duplicate one. Returns the conversation id either way, so the
  * caller can navigate straight to it.
+ *
+ * `openingMessageFrom` defaults to `"buyer"` — a buyer contacting a seller
+ * off a product page is the common case — but a seller reaching out first
+ * to a buyer lead (see `buyer-leads.ts`) passes `"seller"` so the very
+ * first bubble in the thread attributes to whoever actually sent it.
  */
 function startConversation(input: {
   buyerId: string
@@ -155,6 +160,7 @@ function startConversation(input: {
   listingId: string
   listingTitle: string
   openingMessage: string
+  openingMessageFrom?: "buyer" | "seller"
 }): string {
   restoreOnce()
   const id = conversationId(input.buyerId, input.sellerId, input.listingId)
@@ -170,7 +176,11 @@ function startConversation(input: {
     listingId: input.listingId,
     listingTitle: input.listingTitle,
     messages: [
-      { from: "buyer", text: input.openingMessage, at: new Date().toISOString() },
+      {
+        from: input.openingMessageFrom ?? "buyer",
+        text: input.openingMessage,
+        at: new Date().toISOString(),
+      },
     ],
   }
   write([conversation, ...snapshot])

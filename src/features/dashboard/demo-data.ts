@@ -52,6 +52,7 @@ export const cropLabels: Record<string, string> = {
   tea: "Tea",
   grains: "Grains",
   pulses: "Pulses",
+  apple: "Apple",
   "fresh-fruit": "Fresh fruit",
   "dried-fruit": "Dried fruit",
   vegetables: "Vegetables",

@@ -1,6 +1,7 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import * as React from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowRightIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -20,7 +21,17 @@ import {
   stepIndex,
 } from "@/features/onboarding/steps"
 
+// `useSearchParams` (for the "Edit product list" deep link) opts this route
+// out of static rendering unless it sits under a boundary.
 export default function SellerProducePage() {
+  return (
+    <React.Suspense fallback={null}>
+      <SellerProducePageInner />
+    </React.Suspense>
+  )
+}
+
+function SellerProducePageInner() {
   const router = useRouter()
   const { t } = useI18n()
   const { draft, updateSeller } = useOnboarding()
@@ -34,22 +45,31 @@ export default function SellerProducePage() {
         : [...prev.produce, id],
     }))
 
+  // Reached from the Profile page's "Edit product list" link, rather than
+  // walking the wizard in order — every pick already saves immediately (see
+  // `toggle` above), so there's nothing left to "continue" into. Both the
+  // back arrow and the primary button return straight to Profile instead of
+  // the next/previous onboarding step.
+  const fromProfile = useSearchParams().get("from") === "profile"
+  const profileHref = "/seller/dashboard/profile"
+
   const target = nextStep("seller", "produce", entityType)
   const back = previousStep("seller", "produce", entityType)
+  const continueHref = fromProfile ? profileHref : target?.href
 
   return (
     <StepShell
       step={stepIndex("seller", "produce", entityType) + 1}
       totalSteps={effectiveSteps("seller", entityType).length}
-      backHref={back?.href ?? "/"}
+      backHref={fromProfile ? profileHref : back?.href ?? "/"}
       title={t("onboarding.produce.title")}
       description={t("onboarding.produce.description")}
-      skipHref={target?.href}
+      skipHref={continueHref}
       footer={
         <Button
           size="xl"
           className="w-full"
-          onClick={() => target && router.push(target.href)}
+          onClick={() => continueHref && router.push(continueHref)}
         >
           {picked.length > 0
             ? t("common.continueWithCount", { count: picked.length })

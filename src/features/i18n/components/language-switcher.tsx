@@ -16,9 +16,12 @@ import { locales, nameFor } from "@/features/i18n/locales"
  * Fixed in the same corner on every screen that doesn't already have its own
  * chrome to put it in — login, onboarding — because a language choice needs
  * to be visible before anyone reads anything else in the wrong language. The
- * trigger itself is almost no text at all: just `[code]` in the app's mono
- * font, so it reads as a quiet utility control rather than competing with
- * the page underneath it.
+ * trigger shows the current language's own name ("English", "हिन्दी"), so
+ * it reads as a label for what's active rather than an unlabelled icon.
+ *
+ * Only `"active"` locales (see `locales.ts`) are offered at all — the rest
+ * don't have anywhere in the app that actually renders in them yet, so
+ * listing them would just be a dead end.
  *
  * The dashboard topbar has its own row of floating chips for this exact
  * purpose, so it renders this with `variant="inline"` instead of letting the
@@ -45,10 +48,10 @@ function LanguageSwitcher({
             : "bg-card px-3 py-1.5 shadow-floating hover:bg-muted"
         )}
       >
-        {locale.sample}
+        {nameFor(locale, locale.code)}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-40 p-1">
-        {locales.map((option) => {
+        {locales.filter((option) => option.status === "active").map((option) => {
           const selected = option.code === locale.code
           // Every language's own name, written in its own script first —
           // "हिन्दी", not "Hindi" — so someone can recognise their own

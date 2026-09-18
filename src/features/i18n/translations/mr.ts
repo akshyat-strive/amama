@@ -219,6 +219,7 @@ const mr: TranslationShape = {
         tea: "चहा",
         grains: "धान्य",
         pulses: "कडधान्ये",
+        apple: "सफरचंद",
         "fresh-fruit": "ताजी फळे",
         "dried-fruit": "सुका मेवा",
         vegetables: "भाज्या",

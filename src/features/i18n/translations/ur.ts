@@ -220,6 +220,7 @@ const ur: TranslationShape = {
         tea: "چائے",
         grains: "اناج",
         pulses: "دالیں",
+        apple: "سیب",
         "fresh-fruit": "تازہ پھل",
         "dried-fruit": "خشک میوہ جات",
         vegetables: "سبزیاں",

@@ -2,11 +2,13 @@
 
 import Link from "next/link"
 
+import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Panel } from "@/features/dashboard/dashboard-ui"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
+import { useVerification } from "@/features/verification/verification-context"
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
@@ -28,6 +30,11 @@ function ProfileView({ role }: { role: OnboardingRole }) {
   const { draft } = useOnboarding()
   const person = role === "buyer" ? draft.buyer : draft.seller
   const country = countries.find((entry) => entry.code === person.country)
+  // A reupload is only ever meaningful once a KAM has actually asked for
+  // one — otherwise there's nothing to fix, and the button says so by
+  // being unclickable rather than sending someone to re-submit documents
+  // that are already fine.
+  const canReupload = useVerification().statusFor(role) === "changes-requested"
 
   return (
     <div>
@@ -72,13 +79,30 @@ function ProfileView({ role }: { role: OnboardingRole }) {
             </>
           )}
         </div>
-        <div className="border-t border-border px-5 py-3.5">
+        <div className="flex items-center justify-between gap-4 border-t border-border px-5 py-3.5">
           <Link
-            href={`/${role}/onboarding/country`}
-            className={cn("text-[13px] font-medium text-amama-deep underline underline-offset-4")}
+            href={`/${role}/onboarding/${role === "buyer" ? "sourcing" : "produce"}?from=profile`}
+            className="text-[13px] font-medium text-amama-deep underline underline-offset-4"
           >
-            Edit in onboarding
+            Edit product list
           </Link>
+
+          {canReupload ? (
+            <Link
+              href={`/${role}/onboarding/documents`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            >
+              Reupload documents
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            >
+              Reupload documents
+            </button>
+          )}
         </div>
       </Panel>
     </div>

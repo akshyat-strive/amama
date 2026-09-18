@@ -71,8 +71,47 @@ const demoSellerDraft: OnboardingDraft = {
   },
 }
 
+/**
+ * A second seller demo, alongside `demoSellerDraft` — the counterparty
+ * behind the "Kashmir Valley Growers" apple listing (`seed-9` in
+ * `listing-store.ts`) a buyer demo can already message and propose a deal
+ * to. `email` has to match that listing's `sellerId` exactly, since that's
+ * the only thing that ties this draft's identity to those apples and to
+ * whatever conversation a buyer demo already started about them.
+ */
+const demoKashmirSellerDraft: OnboardingDraft = {
+  role: "seller",
+  buyer: {
+    email: "",
+    fullName: "",
+    entityType: "",
+    dateOfBirth: null,
+    companyName: "",
+    country: "",
+    businessType: "",
+    importLicence: "",
+    sourcing: [],
+    annualVolume: "",
+    incoterm: "",
+  },
+  seller: {
+    email: "kashmir@amama.in",
+    fullName: "Aamir Wani",
+    entityType: "organization",
+    sellerSubType: "producer",
+    dateOfBirth: null,
+    farmName: "Kashmir Valley Growers",
+    country: "IN",
+    region: "Shopian, Jammu & Kashmir",
+    farmSize: "",
+    producerType: "",
+    produce: ["apple"],
+    certifications: [],
+  },
+}
+
 function demoDraftFor(role: OnboardingRole): OnboardingDraft {
   return role === "buyer" ? demoBuyerDraft : demoSellerDraft
 }
 
-export { demoDraftFor }
+export { demoDraftFor, demoKashmirSellerDraft }

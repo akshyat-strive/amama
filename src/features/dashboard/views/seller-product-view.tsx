@@ -33,6 +33,7 @@ import {
   type ModerationStatus,
 } from "@/features/marketplace/listing-store"
 import { ProductInfoPanel } from "@/features/marketplace/product-info-panel"
+import { ProposeDealDialog } from "@/features/marketplace/propose-deal-dialog"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 
 /** The header's status pill, one entry per `ModerationStatus` — unlike the
@@ -88,6 +89,12 @@ function SellerProductView({ listingId }: { listingId: string }) {
   const selected = productConversations.find((entry) => entry.id === selectedId) ?? null
   const [mobileChatOpen, setMobileChatOpen] = React.useState(false)
   const deals = useDeals()
+  const selectedDeal = selected ? latestDealForConversation(deals, selected.id) : null
+  // Same rule the deal footer already follows — once a deal is proposed or
+  // agreed, that's the one place to move it forward, not a second proposal
+  // started from the composer.
+  const canPropose = !!selected && (!selectedDeal || selectedDeal.status === "declined")
+  const [proposing, setProposing] = React.useState(false)
 
   if (!listing) {
     return (
@@ -152,6 +159,7 @@ function SellerProductView({ listingId }: { listingId: string }) {
           viewerName={seller.name}
           placeholder={selected ? `Message ${selected.buyerName}…` : undefined}
           emptyState={<p className="text-[13px] text-muted-foreground">Pick a buyer to reply.</p>}
+          onProposeDeal={canPropose ? () => setProposing(true) : undefined}
         />
       </div>
     </div>
@@ -189,7 +197,7 @@ function SellerProductView({ listingId }: { listingId: string }) {
 
         {selected ? (
           <DealStatusFooter
-            deal={latestDealForConversation(deals, selected.id)}
+            deal={selectedDeal}
             conversation={selected}
             listing={listing}
             role="seller"
@@ -284,6 +292,17 @@ function SellerProductView({ listingId }: { listingId: string }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {selected ? (
+        <ProposeDealDialog
+          open={proposing}
+          onOpenChange={setProposing}
+          listing={listing}
+          conversation={selected}
+          role="seller"
+          myName={seller.name}
+        />
+      ) : null}
     </div>
   )
 }

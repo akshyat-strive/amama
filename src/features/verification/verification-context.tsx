@@ -34,6 +34,12 @@ export type SubmittedDocument = {
    *  back, rather than the whole application. */
   reviewStatus: DocumentReviewStatus
   reviewNote: string | null
+  /** The file's own contents, as a data URL — `null` if it was over
+   *  `PREVIEW_CAP_BYTES` (see `document-upload-card.tsx`) or predates this
+   *  field. A KAM's review view needs to actually open what was uploaded,
+   *  not just its name and size, and this is the only thing here that
+   *  survives from the applicant's tab into a KAM's own. */
+  dataUrl: string | null
 }
 
 export type Submission = {
@@ -81,7 +87,7 @@ const listeners = new Set<() => void>()
  *  `localStorage` before they existed — same one-level merge every other
  *  store here does for exactly this reason. */
 function normalizeDocument(document: Partial<SubmittedDocument>): SubmittedDocument {
-  return { reviewStatus: "pending", reviewNote: null, ...document } as SubmittedDocument
+  return { reviewStatus: "pending", reviewNote: null, dataUrl: null, ...document } as SubmittedDocument
 }
 
 function normalizeSubmission(submission: Partial<Submission> | null): Submission | null {

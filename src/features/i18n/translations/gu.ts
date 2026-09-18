@@ -219,6 +219,7 @@ const gu: TranslationShape = {
         tea: "ચા",
         grains: "અનાજ",
         pulses: "કઠોળ",
+        apple: "સફરજન",
         "fresh-fruit": "તાજા ફળ",
         "dried-fruit": "સૂકો મેવો",
         vegetables: "શાકભાજી",

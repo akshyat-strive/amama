@@ -4,6 +4,7 @@ import * as React from "react"
 
 import { logSystemMessageForConversation, postCard } from "@/features/marketplace/conversation-store"
 import type { ChatParty } from "@/features/marketplace/conversation-store"
+import { formatInr } from "@/features/marketplace/currency"
 import type { TradeStatus } from "@/features/dashboard/dashboard-ui"
 
 const STORAGE_KEY = "amama.marketplace.deals"
@@ -425,10 +426,6 @@ function generateId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-function formatUsd(amount: number) {
-  return new Intl.NumberFormat("en", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(amount)
-}
-
 /**
  * Always creates a **new** row, never edits an existing one — a decline
  * doesn't block trying again, it just leaves the old attempt as history
@@ -516,7 +513,7 @@ function proposeDeal(input: {
   postCard({
     conversationId: input.conversationId,
     from: input.proposedBy,
-    text: `${input.proposerName} proposed a deal: ${formatUsd(input.agreedPricePerTonneUsd)}/t × ${input.agreedQuantityMt} MT.`,
+    text: `${input.proposerName} proposed a deal: ${formatInr(input.agreedPricePerTonneUsd)}/t × ${input.agreedQuantityMt} MT.`,
     card: { kind: "proposal", dealId: deal.id, roundId: openingRound.id },
   })
   return deal
@@ -602,7 +599,7 @@ function counterProposal(
   postCard({
     conversationId: deal.conversationId,
     from: by,
-    text: `${byName} countered: ${formatUsd(terms.pricePerTonneUsd)}/t × ${terms.quantityMt} MT.`,
+    text: `${byName} countered: ${formatInr(terms.pricePerTonneUsd)}/t × ${terms.quantityMt} MT.`,
     card: { kind: "proposal", dealId, roundId: round.id },
   })
 }
@@ -658,7 +655,7 @@ function confirmDeal(dealId: string, confirmedBy: "buyer" | "seller", confirmerN
   })
   logSystemMessageForConversation(
     deal.conversationId,
-    `${confirmerName} accepted the deal — both sides are agreed at ${formatUsd(round.pricePerTonneUsd)}/t × ${round.quantityMt} MT. An account manager will take it from here.`
+    `${confirmerName} accepted the deal — both sides are agreed at ${formatInr(round.pricePerTonneUsd)}/t × ${round.quantityMt} MT. An account manager will take it from here.`
   )
 }
 

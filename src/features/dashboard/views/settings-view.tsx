@@ -3,6 +3,7 @@
 import { CheckCircle2Icon, ClockIcon } from "lucide-react"
 
 import { Panel } from "@/features/dashboard/dashboard-ui"
+import { PlansPanel } from "@/features/dashboard/plans-panel"
 import { useVerification } from "@/features/verification/verification-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
 
@@ -43,6 +44,8 @@ function SettingsView({ role }: { role: OnboardingRole }) {
             : "Your key account manager is still reviewing the documents you submitted."}
         </div>
       </Panel>
+
+      <PlansPanel role={role} />
     </div>
   )
 }

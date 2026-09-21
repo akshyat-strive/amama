@@ -27,13 +27,15 @@ import { useCurrentAdmin } from "@/features/admin/current-admin"
 import en from "@/features/i18n/translations/en"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
 import type { OnboardingRole } from "@/features/onboarding/types"
+import type { DocumentReviewStatus, ReviewStatus } from "@/features/verification/verification-context"
 import {
-  useVerification,
-  type DocumentReviewStatus,
-  type ReviewStatus,
-  type Submission,
-  type SubmittedDocument,
-} from "@/features/verification/verification-context"
+  approveApplication,
+  documentPreviewUrl,
+  requestApplicationChanges,
+  setDocumentStatus,
+  useVerificationQueue,
+  type AdminSubmission,
+} from "@/features/verification/admin-verification"
 
 export const statusStyles: Record<ReviewStatus, { label: string; className: string }> = {
   "not-submitted": { label: "Not submitted", className: "bg-muted text-muted-foreground" },
@@ -57,55 +59,40 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-/** The short file-type word an attachment caption shows next to size —
- *  read straight off the data URL's own MIME type rather than threaded
- *  through as a separate field. */
-function describeFileType(dataUrl: string) {
-  const mime = dataUrl.match(/^data:([^;]+);/)?.[1] ?? ""
-  if (mime === "application/pdf") return "PDF"
-  if (mime.startsWith("image/")) return mime.slice("image/".length).toUpperCase()
-  return "FILE"
-}
-
-export function describeApplicant(submission: Submission) {
-  const country = countries.find((entry) => entry.code === submission.applicant.country)
+export function describeApplicant(submission: AdminSubmission) {
+  const country = countries.find((entry) => entry.code === submission.country)
   const parts = [
     submission.role === "seller" ? "Seller" : "Buyer",
-    submission.applicant.entityType === "organization" ? "Organisation" : "Individual",
-    submission.applicant.sellerSubType
-      ? submission.applicant.sellerSubType === "producer"
-        ? "Producer"
-        : "Trader"
-      : null,
+    submission.entityType === "organization" ? "Organisation" : "Individual",
+    submission.sellerSubType ? (submission.sellerSubType === "producer" ? "Producer" : "Trader") : null,
     country ? `${countryCodeToFlag(country.code)} ${country.name}` : null,
   ]
   return parts.filter(Boolean).join(" · ")
 }
 
-/** Inline for whatever the browser can actually render on its own — an
- *  image, or a PDF via the browser's native viewer in an `iframe` — and a
- *  plain "can't preview this" note for anything else. Download works
- *  either way, since that's just the same data URL as an `href`. */
-function DocumentPreview({ dataUrl, name }: { dataUrl: string; name: string }) {
-  if (dataUrl.startsWith("data:image/")) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={dataUrl} alt={name} className="max-h-[65vh] w-full rounded-2xl object-contain" />
-    )
+/** Inline for whatever the browser can render on its own — an image, or a
+ *  PDF via the native viewer in an `iframe` — fetched as a presigned URL
+ *  only once the dialog actually opens, never eagerly for every row. */
+function DocumentPreview({ documentId, name }: { documentId: string; name: string }) {
+  const [url, setUrl] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    let cancelled = false
+    documentPreviewUrl(documentId).then((value) => {
+      if (!cancelled) setUrl(value)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [documentId])
+
+  if (!url) {
+    return <div className="flex h-40 items-center justify-center text-[13px] text-muted-foreground">Loading…</div>
   }
-  if (dataUrl.startsWith("data:application/pdf")) {
-    return <iframe src={dataUrl} title={name} className="h-[65vh] w-full rounded-2xl border border-border" />
-  }
-  return (
-    <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border text-center">
-      <FileText className="size-6 text-muted-foreground" />
-      <p className="text-[13px] text-muted-foreground">Preview isn&apos;t available for this file type.</p>
-    </div>
-  )
+  return <iframe src={url} title={name} className="h-[65vh] w-full rounded-2xl border border-border" />
 }
 
-function DocumentRow({ role, document }: { role: OnboardingRole; document: SubmittedDocument }) {
-  const { setDocumentStatus } = useVerification()
+function DocumentRow({ role, document }: { role: OnboardingRole; document: AdminSubmission["documents"][number] }) {
   const [rejecting, setRejecting] = React.useState(false)
   const [note, setNote] = React.useState("")
   const status = documentStyles[document.reviewStatus]
@@ -125,48 +112,24 @@ function DocumentRow({ role, document }: { role: OnboardingRole; document: Submi
             </span>
           ) : null}
         </span>
-        {document.dataUrl ? (
-          <Dialog>
-            <DialogTrigger
-              render={<Attachment className="shrink-0 cursor-pointer hover:border-amama-deep/40" />}
-            >
-              <AttachmentMedia
-                src={document.dataUrl.startsWith("data:image/") ? document.dataUrl : undefined}
-                alt={document.name}
-              />
-              <AttachmentContent>
-                <AttachmentTitle>{document.name}</AttachmentTitle>
-                <AttachmentDescription>
-                  {describeFileType(document.dataUrl)} · {formatBytes(document.size)}
-                </AttachmentDescription>
-              </AttachmentContent>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>{document.name}</DialogTitle>
-              </DialogHeader>
-              <DocumentPreview dataUrl={document.dataUrl} name={document.name} />
-              <DialogFooter>
-                <a
-                  href={document.dataUrl}
-                  download={document.name}
-                  className={cn(buttonVariants({ variant: "outline" }))}
-                >
-                  <DownloadIcon className="size-4" />
-                  Download
-                </a>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        ) : (
-          <Attachment className="shrink-0 opacity-60">
+        <Dialog>
+          <DialogTrigger render={<Attachment className="shrink-0 cursor-pointer hover:border-amama-deep/40" />}>
             <AttachmentMedia alt={document.name} />
             <AttachmentContent>
               <AttachmentTitle>{document.name}</AttachmentTitle>
               <AttachmentDescription>{formatBytes(document.size)}</AttachmentDescription>
             </AttachmentContent>
-          </Attachment>
-        )}
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{document.name}</DialogTitle>
+            </DialogHeader>
+            <DocumentPreview documentId={document.id} name={document.name} />
+            <DialogFooter>
+              <DownloadDocumentLink documentId={document.id} name={document.name} />
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <Badge className={cn("shrink-0", status.className)}>{status.label}</Badge>
       </div>
 
@@ -224,11 +187,33 @@ function DocumentRow({ role, document }: { role: OnboardingRole; document: Submi
   )
 }
 
-function SubmissionCard({ submission, reviewer }: { submission: Submission; reviewer: { id: string; name: string } }) {
-  const { approve, requestChanges } = useVerification()
+function DownloadDocumentLink({ documentId, name }: { documentId: string; name: string }) {
+  const [url, setUrl] = React.useState<string | null>(null)
+  React.useEffect(() => {
+    documentPreviewUrl(documentId).then(setUrl)
+  }, [documentId])
+  return (
+    <a
+      href={url ?? undefined}
+      download={name}
+      className={cn(buttonVariants({ variant: "outline" }), !url && "pointer-events-none opacity-50")}
+    >
+      <DownloadIcon className="size-4" />
+      Download
+    </a>
+  )
+}
+
+/** One applicant, one plain surface — no colored header band sitting
+ *  over a white body (that split is what made this read as a generic
+ *  templated card rather than a considered review row). Name, status and
+ *  the who/when meta sit close together at the top since they're all the
+ *  same kind of fact; documents and the decision come after a single
+ *  hairline, not a second boxed section. */
+function SubmissionCard({ submission }: { submission: AdminSubmission }) {
   const [note, setNote] = React.useState("")
   const [showNote, setShowNote] = React.useState(false)
-  const status = statusStyles[submission.status]
+  const status = statusStyles[submission.reviewStatus]
 
   const submittedOn = submission.submittedAt
     ? new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(
@@ -237,91 +222,81 @@ function SubmissionCard({ submission, reviewer }: { submission: Submission; revi
     : null
 
   return (
-    <article className="overflow-hidden rounded-[20px] border border-border bg-muted">
-      <header className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
+    <article className="rounded-2xl border border-border bg-card p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="truncate text-[17px] font-bold tracking-tight">
-            {submission.applicant.fullName || "Unnamed applicant"}
+          <h2 className="truncate text-[15px] font-bold tracking-tight text-foreground">
+            {submission.fullName || "Unnamed applicant"}
           </h2>
-          <p className="truncate text-[13px] text-muted-foreground">
-            {submission.applicant.email}
+          <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
+            {submission.email} · {describeApplicant(submission)}
           </p>
-          <p className="mt-1 text-[13px] text-muted-foreground">
-            {describeApplicant(submission)}
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            {submittedOn ? `Submitted ${submittedOn}` : "Not yet submitted"}
+            {submission.reviewedByName ? ` · Reviewed by ${submission.reviewedByName}` : ""}
           </p>
         </div>
         <Badge className={cn("shrink-0", status.className)}>{status.label}</Badge>
-      </header>
+      </div>
 
-      <div className="flex flex-col gap-3 border-t border-border bg-card p-5">
-        {submittedOn ? (
-          <p className="text-[12px] text-muted-foreground">Submitted {submittedOn}</p>
-        ) : null}
-        {submission.reviewedByKamName ? (
-          <p className="-mt-1.5 text-[12px] text-muted-foreground">
-            Reviewed by {submission.reviewedByKamName}
-          </p>
-        ) : null}
+      <ul className="mt-3 flex flex-col gap-1.5 border-t border-border pt-3">
+        {submission.documents.map((document) => (
+          <DocumentRow key={document.id} role={submission.role} document={document} />
+        ))}
+      </ul>
 
-        <ul className="flex flex-col gap-1.5">
-          {submission.documents.map((document) => (
-            <DocumentRow key={document.id} role={submission.role} document={document} />
-          ))}
-        </ul>
+      {submission.reviewerNote ? (
+        <p className="mt-3 rounded-[14px] bg-muted px-3 py-2 text-[13px] text-muted-foreground">
+          Sent back: {submission.reviewerNote}
+        </p>
+      ) : null}
 
-        {submission.reviewerNote ? (
-          <p className="rounded-[14px] bg-muted px-3 py-2 text-[13px] text-muted-foreground">
-            Sent back: {submission.reviewerNote}
-          </p>
-        ) : null}
-
-        {showNote ? (
-          <div className="flex flex-col gap-2">
-            <label htmlFor={`note-${submission.role}`} className="text-[13px] font-medium">
-              What needs fixing?
-            </label>
-            <Textarea
-              id={`note-${submission.role}`}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              placeholder="The land record is too blurry to read the survey number."
-              rows={3}
-            />
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={note.trim().length === 0}
-                onClick={() => {
-                  requestChanges(submission.role, note.trim(), reviewer)
-                  setShowNote(false)
-                  setNote("")
-                }}
-              >
-                Send back
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setShowNote(false)}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-2">
+      {showNote ? (
+        <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+          <label htmlFor={`note-${submission.userId}`} className="text-[13px] font-medium">
+            What needs fixing?
+          </label>
+          <Textarea
+            id={`note-${submission.userId}`}
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder="The land record is too blurry to read the survey number."
+            rows={3}
+          />
+          <div className="flex gap-2">
             <Button
               size="sm"
-              disabled={submission.status === "approved"}
-              onClick={() => approve(submission.role, reviewer)}
+              variant="outline"
+              disabled={note.trim().length === 0}
+              onClick={() => {
+                requestApplicationChanges(submission.role, submission.userId, note.trim())
+                setShowNote(false)
+                setNote("")
+              }}
             >
-              <CheckCircle2 />
-              Approve
+              Send back
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowNote(true)}>
-              <RotateCcw />
-              Request changes
+            <Button size="sm" variant="ghost" onClick={() => setShowNote(false)}>
+              Cancel
             </Button>
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+          <Button
+            size="sm"
+            disabled={submission.reviewStatus === "approved"}
+            onClick={() => approveApplication(submission.role, submission.userId)}
+          >
+            <CheckCircle2 />
+            Approve
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setShowNote(true)}>
+            <RotateCcw />
+            Request changes
+          </Button>
+        </div>
+      )}
     </article>
   )
 }
@@ -336,22 +311,16 @@ const MODES: { id: Mode; label: string }[] = [
 ]
 
 /**
- * One role's own review page — split out of the combined queue so a
- * buyer application and a seller one each get their own URL (and their
- * own sidebar item) instead of always showing up bundled together.
- *
- * The toggle inside is a second, narrower split: "Queue" is only whoever
- * actually needs a decision right now (`pending`/`changes-requested`);
- * "Registered" is everyone who has ever gone through onboarding for this
- * role, whatever their current status — the roster, not the to-do list.
- *
- * Same defense-in-depth as `TeamManagementView`: the nav item is already
- * gated on `onboarding.review`, this re-checks it directly in case someone
- * hits the URL without it.
+ * One role's own review page. "Queue" is only whoever actually needs a
+ * decision right now (`pending`/`changes-requested`); "Registered" is
+ * everyone who has ever submitted for this role, whatever their current
+ * status — the roster, not the to-do list. Genuinely a list now (many
+ * buyers, many sellers), not the single global slot per role the old
+ * prototype's `localStorage` model was stuck with.
  */
 function ReviewQueueView({ role }: { role: OnboardingRole }) {
   const admin = useCurrentAdmin()
-  const { submissions } = useVerification()
+  const submissions = useVerificationQueue(role)
   const [mode, setMode] = React.useState<Mode>("queue")
   const roleLabel = role === "buyer" ? "Buyer" : "Seller"
 
@@ -370,9 +339,7 @@ function ReviewQueueView({ role }: { role: OnboardingRole }) {
     )
   }
 
-  const submission = submissions[role]
-  const visible =
-    submission && (mode === "registered" || QUEUE_STATUSES.includes(submission.status)) ? submission : null
+  const visible = mode === "registered" ? submissions : submissions.filter((entry) => QUEUE_STATUSES.includes(entry.reviewStatus))
 
   return (
     <div>
@@ -397,7 +364,7 @@ function ReviewQueueView({ role }: { role: OnboardingRole }) {
         ))}
       </div>
 
-      {!visible ? (
+      {visible.length === 0 ? (
         <AdminEmptyState
           icon={Inbox}
           title={mode === "queue" ? "Nothing waiting" : "No one registered yet"}
@@ -409,7 +376,9 @@ function ReviewQueueView({ role }: { role: OnboardingRole }) {
         />
       ) : (
         <div className="mt-4 flex flex-col gap-4">
-          <SubmissionCard submission={visible} reviewer={{ id: admin.user.id, name: admin.user.name }} />
+          {visible.map((submission) => (
+            <SubmissionCard key={submission.userId} submission={submission} />
+          ))}
         </div>
       )}
     </div>

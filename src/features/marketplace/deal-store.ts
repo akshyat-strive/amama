@@ -141,18 +141,94 @@ export const LOGISTICS_MODE_LABELS: Record<LogisticsMode, string> = {
 
 export type ShipmentStatus = "booked" | "in-transit" | "arrived" | "delayed"
 
+/** The full farm-to-delivery pipeline a shipment actually moves through —
+ *  not just "booked/in-transit/arrived", but the eleven stages that
+ *  precede and surround a container's own booking: dispatch off the farm,
+ *  through the warehouse and cold store, packed and export-QC'd, booked,
+ *  stuffed, documented, cleared, gated in, sailed, and delivered. `stage`
+ *  is the canonical "where is this right now"; `ShipmentStatus` stays a
+ *  coarser derived read of it for the board's own grouping. */
+export type LogisticsStage =
+  | "farm-pickup"
+  | "warehouse-inbound"
+  | "cold-storage"
+  | "packing-export-qc"
+  | "container-booked"
+  | "stuffing"
+  | "documentation"
+  | "customs"
+  | "gate-in"
+  | "vessel-transit"
+  | "arrived-delivered"
+
+export const LOGISTICS_STAGE_ORDER: LogisticsStage[] = [
+  "farm-pickup",
+  "warehouse-inbound",
+  "cold-storage",
+  "packing-export-qc",
+  "container-booked",
+  "stuffing",
+  "documentation",
+  "customs",
+  "gate-in",
+  "vessel-transit",
+  "arrived-delivered",
+]
+
+export const LOGISTICS_STAGE_LABELS: Record<LogisticsStage, string> = {
+  "farm-pickup": "Farm pickup",
+  "warehouse-inbound": "Warehouse inbound",
+  "cold-storage": "Cold storage",
+  "packing-export-qc": "Packing & export QC",
+  "container-booked": "Container booked",
+  stuffing: "Stuffing",
+  documentation: "Documentation",
+  customs: "Customs",
+  "gate-in": "Terminal gate-in",
+  "vessel-transit": "Vessel transit",
+  "arrived-delivered": "Arrived & delivered",
+}
+
+/** Whose job it is to move a shipment on while it sits at this stage — a
+ *  seller dispatches and preps the cargo, a KAM runs the booking-through-
+ *  gate-in export machinery, and delivery/claims are the buyer's to
+ *  confirm. Drives which role's screen surfaces a given shipment as
+ *  "yours to act on" rather than just "yours to watch." */
+export const LOGISTICS_STAGE_OWNER: Record<LogisticsStage, "seller" | "kam" | "buyer"> = {
+  "farm-pickup": "seller",
+  "warehouse-inbound": "seller",
+  "cold-storage": "seller",
+  "packing-export-qc": "seller",
+  "container-booked": "kam",
+  stuffing: "kam",
+  documentation: "kam",
+  customs: "kam",
+  "gate-in": "kam",
+  "vessel-transit": "kam",
+  "arrived-delivered": "buyer",
+}
+
 /** Real, named checkpoints a shipment actually passes through — "where it
  *  is, everything," not just a 4-value status flag. Ordered loosely by
  *  when they'd typically happen, though nothing enforces that order; a
- *  KAM logs whatever actually occurred. */
+ *  KAM logs whatever actually occurred. Each type that marks entry into a
+ *  `LogisticsStage` is named to match — see `STAGE_BY_EVENT` in
+ *  `logistics.ts`. */
 export type ShipmentEventType =
+  | "farm-pickup"
+  | "warehouse-inbound"
+  | "cold-storage-in"
+  | "export-qc-pass"
   | "booked"
   | "gate-in"
   | "loaded"
   | "departed"
   | "in-transit"
   | "arrived-port"
+  | "documentation"
   | "customs"
+  | "vgm-filed"
+  | "leo-issued"
   | "out-for-delivery"
   | "delivered"
   | "delayed"
@@ -166,6 +242,77 @@ export type ShipmentEvent = {
   note: string | null
 }
 
+/** Which `LogisticsStage` a given event type marks entry into — only the
+ *  types that actually represent a stage transition appear here; a mid-
+ *  stage checkpoint (a `delayed` note, an extra `in-transit` ping) doesn't
+ *  need its own entry, since `addShipmentEvent` falls back to leaving
+ *  `stage` unchanged for anything not listed. */
+const STAGE_BY_EVENT: Partial<Record<ShipmentEventType, LogisticsStage>> = {
+  "farm-pickup": "farm-pickup",
+  "warehouse-inbound": "warehouse-inbound",
+  "cold-storage-in": "cold-storage",
+  "export-qc-pass": "packing-export-qc",
+  booked: "container-booked",
+  loaded: "stuffing",
+  "vgm-filed": "stuffing",
+  documentation: "documentation",
+  customs: "customs",
+  "leo-issued": "customs",
+  "gate-in": "gate-in",
+  departed: "vessel-transit",
+  "in-transit": "vessel-transit",
+  "arrived-port": "vessel-transit",
+  "out-for-delivery": "arrived-delivered",
+  delivered: "arrived-delivered",
+}
+
+export type LogisticsDocumentStatus = "pending" | "submitted" | "verified" | "missing"
+
+/** One document gate at one stage — the reference this pipeline is built
+ *  from calls a document a *gate*, not an attachment: a missing mandatory
+ *  one is a literal blocker on the shipment, not a to-do. */
+export type LogisticsDocument = {
+  id: string
+  stage: LogisticsStage
+  name: string
+  mandatory: boolean
+  status: LogisticsDocumentStatus
+  issuer: string
+  note: string | null
+}
+
+/** One reading in a temperature time-series — a stream, not an attribute.
+ *  `leg` is free text ("orchard", "road", "cold store"…) rather than a
+ *  closed enum, since it's just a label on the chart, never branched on. */
+export type TemperatureSample = {
+  id: string
+  at: string
+  tempC: number
+  leg: string
+}
+
+export type ColdChainLog = {
+  setpointC: number
+  samples: TemperatureSample[]
+}
+
+export type ClaimStatus = "open" | "under-review" | "settled" | "rejected"
+
+/** A cargo claim — damage, shortage, quality dispute — raised against a
+ *  shipment once it's landed. Its own record rather than a shipment note,
+ *  because a claim has a party who raised it, a status that moves on its
+ *  own timeline, and (usually) money attached that Finance has to track
+ *  separately from the freight cost. */
+export type ShipmentClaim = {
+  reason: string
+  amountUsd: number
+  status: ClaimStatus
+  raisedBy: "buyer" | "seller"
+  raisedAt: string
+  resolvedAt: string | null
+  resolutionNote: string | null
+}
+
 export type Shipment = {
   id: string
   /** Which leg of the journey this is. Ocean is the default for anything
@@ -173,7 +320,19 @@ export type Shipment = {
   mode: LogisticsMode
   carrier: string
   documentNumber: string
+  /** The booking confirmation number a forwarder issues at container-booked
+   *  time — distinct from the container itself, which doesn't exist yet.
+   *  `null` until a container's actually booked. */
+  bookingReference: string | null
+  /** The physical container's own number (e.g. `MSKU7788123`) once it's
+   *  been assigned — `null` before stuffing, and always `null` for a
+   *  trucking-only leg that never gets its own container. */
+  containerId: string | null
   status: ShipmentStatus
+  /** Canonical current position in the full pipeline — see
+   *  `LOGISTICS_STAGE_ORDER`. Updated alongside `status` by whatever call
+   *  appends the event that moved it here. */
+  stage: LogisticsStage
   origin: string | null
   destination: string | null
   /** The one line a non-technical buyer/seller actually wants an answer
@@ -184,6 +343,30 @@ export type Shipment = {
   note: string | null
   /** Oldest → newest. The tracker's own timeline reads straight off this. */
   events: ShipmentEvent[]
+  /** The three hard, non-negotiable export deadlines a booking carries —
+   *  miss any one and the container rolls to the next sailing. `null`
+   *  fields simply haven't been booked/filed yet. */
+  cutoffs: { gateIn: string | null; vgm: string | null; shippingInstruction: string | null }
+  /** Every document gate this shipment needs, mandatory or not — a
+   *  mandatory one still `pending`/`missing` is a literal blocker, not
+   *  paperwork housekeeping. */
+  documents: LogisticsDocument[]
+  /** `null` for a leg that was never temperature-controlled (a document
+   *  courier run, an air-freight hop). Present only for cold-chain legs —
+   *  the set point plus the actual reading stream against it. */
+  coldChain: ColdChainLog | null
+  /** When the shelf-life clock actually started — harvest, not pickup —
+   *  and the budget it started with, for `shelfLifeRemaining()` in
+   *  `logistics.ts`. `null` for non-perishable or not-yet-known legs. */
+  harvestAt: string | null
+  shelfLifeBudgetDays: number | null
+  /** Container/port waiting charges — a cost line, not a workflow, so it's
+   *  just an amount rather than its own status machine. `null` until one's
+   *  actually been billed. */
+  demurrageUsd: number | null
+  /** `null` for the overwhelming majority of shipments — most cargo just
+   *  arrives. Set only when someone's actually disputing what showed up. */
+  claim: ShipmentClaim | null
   createdAt: string
   updatedAt: string
 }
@@ -191,14 +374,32 @@ export type Shipment = {
 /** Backfills a `Shipment` stored before the event-timeline fields existed
  *  — same convention as `listing-store.ts`'s `normalize`. Without this, a
  *  browser with old-shaped data in `localStorage` would crash the first
- *  time the tracker reads `shipment.events`. */
+ *  time the tracker reads `shipment.events`. A shipment saved before the
+ *  full pipeline existed only ever carried the four-value `status`, so
+ *  `stage` backfills from that rather than assuming stage one. */
 function normalizeShipment(raw: Partial<Shipment>): Shipment {
+  const stageFromStatus: Record<ShipmentStatus, LogisticsStage> = {
+    booked: "container-booked",
+    "in-transit": "vessel-transit",
+    arrived: "arrived-delivered",
+    delayed: "gate-in",
+  }
   return {
     mode: "ocean",
     origin: null,
     destination: null,
     currentLocation: null,
+    bookingReference: null,
+    containerId: null,
     events: [],
+    stage: raw.status ? stageFromStatus[raw.status] : "container-booked",
+    cutoffs: { gateIn: null, vgm: null, shippingInstruction: null },
+    documents: [],
+    coldChain: null,
+    harvestAt: null,
+    shelfLifeBudgetDays: null,
+    demurrageUsd: null,
+    claim: null,
     ...raw,
   } as Shipment
 }
@@ -246,11 +447,13 @@ function derivedOrderStage(deal: Deal): OrderStage | null {
   }
 }
 
-function normalizeDeal(raw: Partial<Deal>): Deal {
+function normalizeDeal(raw: Partial<Deal> | DealSeed): Deal {
   const deal = {
     ...raw,
     rounds: raw.rounds ?? [],
     shipments: (raw.shipments ?? []).map((shipment) => normalizeShipment(shipment as Partial<Shipment>)),
+    contractRequestedAt: raw.contractRequestedAt ?? null,
+    contractRequestedBy: raw.contractRequestedBy ?? null,
   } as Deal
   if (deal.rounds.length === 0) deal.rounds = [syntheticRound(deal)]
   if (deal.orderStage === undefined) deal.orderStage = derivedOrderStage(deal)
@@ -292,6 +495,14 @@ export type Deal = {
   assignedKamId: string | null
   assignedKamName: string | null
   assignmentHistory: DealAssignmentEntry[]
+
+  /** Set the moment a buyer or seller asks for this deal to be turned into
+   *  a contract — before any KAM owns it. `null` once nobody's asked, or
+   *  forever if a KAM opened the contract off their own back the old way
+   *  (see `DealContractAction` in `admin/deals-view.tsx`). This is the
+   *  queue `requestContract`/the "Term sheet requests" section reads. */
+  contractRequestedAt: string | null
+  contractRequestedBy: "buyer" | "seller" | null
 
   costing: {
     incoterm: string | null
@@ -352,9 +563,18 @@ function restoreOnce() {
  *  reconstructs the opening round from the headline terms the row already
  *  carries, and derives the order stage from the pipeline stage — so seed
  *  data doesn't have to state the same facts twice and drift. */
-export type DealSeed = Omit<Deal, "rounds" | "orderStage"> & {
+export type DealSeed = Omit<
+  Deal,
+  "rounds" | "orderStage" | "contractRequestedAt" | "contractRequestedBy" | "shipments"
+> & {
   rounds?: NegotiationRound[]
   orderStage?: OrderStage | null
+  contractRequestedAt?: string | null
+  contractRequestedBy?: "buyer" | "seller" | null
+  /** `normalizeShipment` backfills whatever a seed row leaves out (same as
+   *  every real shipment saved before `demurrageUsd`/`claim` existed) — so
+   *  a seed shipment only needs to state what's actually notable about it. */
+  shipments?: Partial<Shipment>[]
 }
 
 /** Seeds a fixed batch of deals straight into the store, but only if it's
@@ -492,6 +712,9 @@ function proposeDeal(input: {
     assignedKamId: null,
     assignedKamName: null,
     assignmentHistory: [],
+
+    contractRequestedAt: null,
+    contractRequestedBy: null,
 
     costing: { incoterm: null, paymentTerm: null, proformaInvoiceNo: null, notes: null },
     contracting: { contractRef: null, signedOff: false, notes: null },
@@ -713,6 +936,29 @@ function assignKam(dealId: string, kam: { id: string; name: string }, assignedBy
   })
 }
 
+/**
+ * The trader-side kickoff: "we're agreed, please turn this into a
+ * contract." Posts a card into the same conversation so a KAM sees it
+ * exactly where the negotiation happened, rather than only in a separate
+ * queue screen — `ContractRequestCard` reads this same field live, so the
+ * card and the queue never disagree about whether this is still open.
+ * A no-op if someone's already asked, or if the deal isn't agreed yet.
+ */
+function requestContract(dealId: string, party: "buyer" | "seller", partyName: string) {
+  restoreOnce()
+  const deal = findDeal(dealId)
+  if (!deal || deal.status !== "active" || deal.contractRequestedAt) return
+  const at = new Date().toISOString()
+  updateDeal(dealId, { contractRequestedAt: at, contractRequestedBy: party })
+  postCard({
+    conversationId: deal.conversationId,
+    from: party,
+    fromName: partyName,
+    text: `${partyName} asked for this deal to be turned into a contract.`,
+    card: { kind: "contract-request", dealId },
+  })
+}
+
 function advanceStage(dealId: string, by: string, note: string | null = null) {
   restoreOnce()
   const deal = findDeal(dealId)
@@ -773,12 +1019,43 @@ function updatePayment(dealId: string, patch: Partial<Deal["payment"]>) {
  *  pipeline visually reaching that stage, and this is the "major thing"
  *  a KAM needs to be able to track regardless of where the rest of the
  *  paperwork stands. */
-function addShipment(dealId: string, input: Omit<Shipment, "id" | "createdAt" | "updatedAt">): Shipment {
+type OptionalShipmentField =
+  | "demurrageUsd"
+  | "claim"
+  | "stage"
+  | "cutoffs"
+  | "documents"
+  | "coldChain"
+  | "harvestAt"
+  | "shelfLifeBudgetDays"
+  | "bookingReference"
+  | "containerId"
+
+function addShipment(
+  dealId: string,
+  input: Omit<Shipment, "id" | "createdAt" | "updatedAt" | OptionalShipmentField> &
+    Partial<Pick<Shipment, OptionalShipmentField>>
+): Shipment {
   restoreOnce()
   const deal = findDeal(dealId)
   if (!deal) throw new Error(`No deal ${dealId}`)
   const now = new Date().toISOString()
-  const shipment: Shipment = { ...input, id: generateId("ship"), createdAt: now, updatedAt: now }
+  const shipment: Shipment = {
+    demurrageUsd: null,
+    claim: null,
+    stage: "container-booked",
+    cutoffs: { gateIn: null, vgm: null, shippingInstruction: null },
+    documents: [],
+    coldChain: null,
+    harvestAt: null,
+    shelfLifeBudgetDays: null,
+    bookingReference: null,
+    containerId: null,
+    ...input,
+    id: generateId("ship"),
+    createdAt: now,
+    updatedAt: now,
+  }
   updateDeal(dealId, { shipments: [...deal.shipments, shipment] })
   return shipment
 }
@@ -816,10 +1093,73 @@ function addShipmentEvent(
   updateShipment(dealId, shipmentId, {
     events: [...shipment.events, event],
     status: derived.status ?? shipment.status,
+    stage: STAGE_BY_EVENT[input.type] ?? shipment.stage,
     currentLocation: derived.currentLocation ?? input.location ?? shipment.currentLocation,
     eta: derived.eta ?? shipment.eta,
   })
   return event
+}
+
+/** A fresh temperature/humidity reading on a shipment's cold-chain log —
+ *  appended, never edited, so a claim or an audit can trust the record
+ *  reflects what a sensor actually reported at the time. No-op on a
+ *  shipment with no `coldChain` set (a leg that was never temperature-
+ *  controlled has nothing to log). */
+function addTemperatureSample(
+  dealId: string,
+  shipmentId: string,
+  input: { tempC: number; leg: string }
+): void {
+  restoreOnce()
+  const deal = findDeal(dealId)
+  const shipment = deal?.shipments.find((entry) => entry.id === shipmentId)
+  if (!shipment?.coldChain) return
+  const sample: TemperatureSample = { ...input, id: generateId("temp"), at: new Date().toISOString() }
+  updateShipment(dealId, shipmentId, {
+    coldChain: { ...shipment.coldChain, samples: [...shipment.coldChain.samples, sample] },
+  })
+}
+
+/** Moves one document gate along — submitted, verified, or (rarely) back
+ *  to missing if something was rejected. The single mutation the reference
+ *  this pipeline is built from calls the whole job of a "document control"
+ *  stage: nothing here blocks anything by itself, `documentBlockers()` in
+ *  `logistics.ts` is what reads this list back as gates. */
+function setDocumentStatus(
+  dealId: string,
+  shipmentId: string,
+  documentId: string,
+  status: LogisticsDocumentStatus
+) {
+  restoreOnce()
+  const deal = findDeal(dealId)
+  const shipment = deal?.shipments.find((entry) => entry.id === shipmentId)
+  if (!shipment) return
+  updateShipment(dealId, shipmentId, {
+    documents: shipment.documents.map((doc) => (doc.id === documentId ? { ...doc, status } : doc)),
+  })
+}
+
+/** The buyer's (or, rarer, the seller's) dispute once cargo has actually
+ *  landed — a shipment can only ever carry one live claim at a time, same
+ *  as the seeded data already assumes. */
+function raiseClaim(
+  dealId: string,
+  shipmentId: string,
+  input: { reason: string; amountUsd: number; raisedBy: "buyer" | "seller" }
+) {
+  restoreOnce()
+  const deal = findDeal(dealId)
+  const shipment = deal?.shipments.find((entry) => entry.id === shipmentId)
+  if (!shipment || shipment.claim) return
+  const claim: ShipmentClaim = {
+    ...input,
+    status: "open",
+    raisedAt: new Date().toISOString(),
+    resolvedAt: null,
+    resolutionNote: null,
+  }
+  updateShipment(dealId, shipmentId, { claim })
 }
 
 /** `GateBar`-ready progress: how many of the fixed stages are behind this
@@ -848,6 +1188,7 @@ export {
   confirmDeal,
   declineDeal,
   assignKam,
+  requestContract,
   advanceStage,
   setOrderStage,
   updateCosting,
@@ -857,6 +1198,9 @@ export {
   addShipment,
   updateShipment,
   addShipmentEvent,
+  addTemperatureSample,
+  setDocumentStatus,
+  raiseClaim,
   dealStageProgress,
   seedDealsIfEmpty,
 }

@@ -6,6 +6,7 @@ import { AlertCircle, FileText, Hourglass, type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
+import { FullPageLoader } from "@/components/ui/full-page-loader"
 import { useI18n } from "@/features/i18n/i18n-context"
 import { useVerification } from "@/features/verification/verification-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
@@ -28,9 +29,15 @@ function ReviewGate({
   children: React.ReactNode
 }) {
   const { t, locale } = useI18n()
-  const { statusFor, submissions } = useVerification()
+  const { statusFor, submissions, isLoaded } = useVerification()
   const status = statusFor(role)
   const submission = submissions[role]
+
+  // Every fresh page load fetches this role's status over the network —
+  // show a spinner rather than the "not submitted" screen while that's
+  // still in flight, or an already-approved account would flash the wrong
+  // gate on every reload before settling on the real dashboard.
+  if (!isLoaded(role)) return <FullPageLoader />
 
   if (status === "approved") return <>{children}</>
 

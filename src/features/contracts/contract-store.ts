@@ -134,6 +134,82 @@ export type PartyApproval = {
   note: string | null
 }
 
+/**
+ * The fixed set of clauses every term sheet negotiates, straight off the
+ * standard agro-export checklist (spec, packaging, price, payment,
+ * Incoterms, delivery window, QC, dispute resolution). Fixed rather than
+ * free-form so both sides — and the KAM reading across many contracts —
+ * always find the same clause in the same place.
+ */
+export type ClauseKey =
+  | "productSpec"
+  | "packagingSpec"
+  | "priceCurrency"
+  | "paymentTerms"
+  | "incoterms"
+  | "deliveryWindow"
+  | "qcArrangement"
+  | "disputeResolution"
+
+export const CLAUSE_ORDER: ClauseKey[] = [
+  "productSpec",
+  "packagingSpec",
+  "priceCurrency",
+  "paymentTerms",
+  "incoterms",
+  "deliveryWindow",
+  "qcArrangement",
+  "disputeResolution",
+]
+
+export const CLAUSE_LABELS: Record<ClauseKey, string> = {
+  productSpec: "Product spec",
+  packagingSpec: "Packaging spec",
+  priceCurrency: "Price & currency",
+  paymentTerms: "Payment terms",
+  incoterms: "Incoterms",
+  deliveryWindow: "Delivery window",
+  qcArrangement: "QC arrangement",
+  disputeResolution: "Dispute resolution",
+}
+
+/** `pending` — someone has proposed a value but the two sides don't (yet)
+ *  agree on it; `agreed` — the buyer's and seller's most recent proposals
+ *  match; `disputed` — pulled back for the KAM to mediate, same idea as
+ *  `ContractAmendment` but scoped to one clause rather than the whole
+ *  draft. */
+export type ClauseStatus = "pending" | "agreed" | "disputed"
+
+export type ClauseProposal = {
+  value: string
+  by: ChatParty
+  byName: string
+  at: string
+}
+
+/**
+ * One line of the term sheet. Under trade law any change to a term by
+ * either side is a fresh counter-offer that resets the other side's
+ * earlier "yes" — modeled here as: agreement only holds while the buyer's
+ * and seller's *latest* proposals still match, so a new counter from
+ * either side immediately drops the clause back to `pending` on its own,
+ * without a separate "reset" step anywhere.
+ */
+export type TermSheetClause = {
+  id: string
+  key: ClauseKey
+  label: string
+  /** The standing value — the latest proposal's, whoever made it. */
+  value: string | null
+  status: ClauseStatus
+  /** Oldest → newest. */
+  proposals: ClauseProposal[]
+  /** The chat line this clause's value was pinned from, if it was — the
+   *  bi-directional link back to where the number actually came from. */
+  linkedMessageText: string | null
+  updatedAt: string
+}
+
 export type ContractAmendment = {
   id: string
   raisedBy: ChatParty
@@ -142,6 +218,29 @@ export type ContractAmendment = {
   at: string
   resolved: boolean
   resolvedAt: string | null
+}
+
+/** `auto-accepted` — the PO matches the agreed term sheet exactly, so
+ *  under trade law the PO itself is the acceptance and the contract forms
+ *  the instant it's issued, no extra step needed. `pending-seller-
+ *  confirmation` — the buyer changed something at the moment of issuing
+ *  it, which makes the PO a fresh counter-offer that needs the seller's
+ *  own yes before anything is binding. `confirmed` — the seller gave that
+ *  yes. */
+export type PoStatus = "auto-accepted" | "pending-seller-confirmation" | "confirmed"
+
+export type PurchaseOrder = {
+  issuedAt: string
+  issuedByName: string
+  /** A snapshot at issuance — the PO's own record of what it said,
+   *  independent of whatever the clauses go on to do afterward. */
+  terms: Partial<Record<ClauseKey, string>>
+  deviatedClauses: ClauseKey[]
+  status: PoStatus
+  sellerConfirmedAt: string | null
+  sellerConfirmedBy: string | null
+  cancelledAt: string | null
+  cancelledBy: string | null
 }
 
 export type Contract = {
@@ -173,15 +272,35 @@ export type Contract = {
   }
 
   requests: TermSheetRequest[]
+  clauses: TermSheetClause[]
+  /** `null` until `openTermSheet` has posted its one card — guards against
+   *  posting a second copy of the same persistent card if a KAM clicks the
+   *  button twice. */
+  termSheetOpenedAt: string | null
   draftBody: string | null
   draftVersion: number
   amendments: ContractAmendment[]
   approvals: { buyer: PartyApproval; seller: PartyApproval }
   signatures: { buyer: PartyApproval; seller: PartyApproval }
+  po: PurchaseOrder | null
   shipmentDates: ShipmentDatePoll | null
 
   createdAt: string
   updatedAt: string
+}
+
+/** Backfills a `Contract` stored before clauses/term-sheet-opened/PO
+ *  existed — same convention as `listing-store.ts`'s `normalize` and
+ *  `deal-store.ts`'s `normalizeDeal`. Without this, a browser with
+ *  old-shaped contracts already in `localStorage` would crash the first
+ *  time a page reads `contract.clauses`. */
+function normalizeContract(raw: Partial<Contract>): Contract {
+  return {
+    clauses: seedClauses({}),
+    termSheetOpenedAt: null,
+    po: null,
+    ...raw,
+  } as Contract
 }
 
 let snapshot: Contract[] = []
@@ -194,7 +313,7 @@ function restoreOnce() {
   restored = true
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (raw) snapshot = JSON.parse(raw) as Contract[]
+    if (raw) snapshot = (JSON.parse(raw) as Partial<Contract>[]).map(normalizeContract)
   } catch {
     // Private mode or blocked storage — carry on with nothing drafted.
   }
@@ -274,6 +393,30 @@ function requestsForParty(contract: Contract, party: "buyer" | "seller"): TermSh
 
 const emptyApproval: PartyApproval = { agreed: false, at: null, by: null, note: null }
 
+/** The fixed 8-clause starting set, pre-filled wherever the negotiated
+ *  deal already answers it — a head start, not an agreement: every clause
+ *  still starts `pending` until both sides actually propose it themselves
+ *  (see `proposeClause`). */
+function seedClauses(known: Partial<Record<ClauseKey, string | null>>): TermSheetClause[] {
+  const now = new Date().toISOString()
+  return CLAUSE_ORDER.map((key) => ({
+    id: generateId("clause"),
+    key,
+    label: CLAUSE_LABELS[key],
+    value: known[key] ?? null,
+    status: "pending",
+    proposals: [],
+    linkedMessageText: null,
+    updatedAt: now,
+  }))
+}
+
+/** Whether every clause has a matching yes from both sides — the gate
+ *  `issuePurchaseOrder` checks before letting a PO out the door. */
+function allClausesAgreed(contract: Contract): boolean {
+  return contract.clauses.every((clause) => clause.status === "agreed")
+}
+
 /**
  * Opens the contract for an agreed deal. Only ever called by a KAM who has
  * the deal assigned to them — that gating lives in the view, since the
@@ -317,11 +460,19 @@ function createContract(deal: Deal, kam: { id: string; name: string }): Contract
     },
 
     requests: [],
+    clauses: seedClauses({
+      productSpec: deal.costing?.notes ?? null,
+      priceCurrency: `$${deal.agreedPricePerTonneUsd}/t × ${deal.agreedQuantityMt} MT`,
+      paymentTerms: deal.costing.paymentTerm,
+      incoterms: deal.costing.incoterm,
+    }),
+    termSheetOpenedAt: null,
     draftBody: null,
     draftVersion: 0,
     amendments: [],
     approvals: { buyer: { ...emptyApproval }, seller: { ...emptyApproval } },
     signatures: { buyer: { ...emptyApproval }, seller: { ...emptyApproval } },
+    po: null,
     shipmentDates: null,
 
     createdAt: now,
@@ -354,6 +505,140 @@ function updateTerms(id: string, patch: Partial<Contract["terms"]>) {
   const contract = findContract(id)
   if (!contract) return
   updateContract(id, { terms: { ...contract.terms, ...patch } })
+}
+
+/**
+ * Opens the term sheet for clause-by-clause negotiation — a deliberate KAM
+ * action (Stage 4 of the brief starts once the KAM "brings both sides into
+ * terms negotiation"), rather than something that just quietly exists the
+ * moment a contract is created. Posts the one `term-sheet` card both sides
+ * work off of; every clause update after this just changes what that same
+ * card shows, so it's only ever posted once per contract.
+ */
+function openTermSheet(contractId: string, byName: string) {
+  restoreOnce()
+  const contract = findContract(contractId)
+  if (!contract || contract.termSheetOpenedAt) return
+  if (contract.stage === "summary") setStage(contractId, "term-sheet", byName, "Term sheet opened")
+  updateContract(contractId, { termSheetOpenedAt: new Date().toISOString() })
+  postCard({
+    conversationId: contract.conversationId,
+    from: "kam",
+    fromName: byName,
+    text: `${byName} opened the term sheet for contract ${contract.reference} — review each clause and agree it with the other side.`,
+    card: { kind: "term-sheet", contractId },
+  })
+}
+
+function findClause(contract: Contract, clauseId: string): TermSheetClause | undefined {
+  return contract.clauses.find((clause) => clause.id === clauseId)
+}
+
+/** The two trading sides' latest word on a clause — a KAM's own proposal
+ *  (e.g. pinning a chat number as a starting suggestion) doesn't count as
+ *  either side's agreement, so it's excluded from the comparison. */
+function latestPartyProposals(proposals: ClauseProposal[]) {
+  const buyer = [...proposals].reverse().find((entry) => entry.by === "buyer")
+  const seller = [...proposals].reverse().find((entry) => entry.by === "seller")
+  return { buyer, seller }
+}
+
+function proposalsAgree(buyer: ClauseProposal | undefined, seller: ClauseProposal | undefined): boolean {
+  return !!buyer && !!seller && buyer.value.trim().toLowerCase() === seller.value.trim().toLowerCase()
+}
+
+/**
+ * One side putting a value on a clause — the first proposal on a fresh
+ * clause, a straight confirmation of the standing value, or a counter that
+ * changes it. Under trade law any change is a fresh counter-offer that
+ * resets whatever the other side had already agreed to, which is exactly
+ * what falls out of only comparing the two sides' *latest* proposals: a
+ * new counter from either party can never leave a stale "agreed" behind.
+ */
+function proposeClause(
+  contractId: string,
+  clauseId: string,
+  value: string,
+  by: ChatParty,
+  byName: string,
+  linkedMessageText?: string | null
+) {
+  restoreOnce()
+  const contract = findContract(contractId)
+  const clause = contract && findClause(contract, clauseId)
+  if (!contract || !clause) return
+
+  const proposal: ClauseProposal = { value, by, byName, at: new Date().toISOString() }
+  const proposals = [...clause.proposals, proposal]
+  const { buyer, seller } = latestPartyProposals(proposals)
+  const agreed = proposalsAgree(buyer, seller)
+
+  updateContract(contractId, {
+    clauses: contract.clauses.map((entry) =>
+      entry.id === clauseId
+        ? {
+            ...entry,
+            value,
+            status: agreed ? "agreed" : "pending",
+            proposals,
+            linkedMessageText: linkedMessageText !== undefined ? linkedMessageText : entry.linkedMessageText,
+            updatedAt: new Date().toISOString(),
+          }
+        : entry
+    ),
+  })
+  logSystemMessageForConversation(
+    contract.conversationId,
+    agreed
+      ? `${byName} confirmed "${clause.label}" — both sides now agree: ${value}.`
+      : `${byName} proposed "${value}" for ${clause.label}.`
+  )
+}
+
+/** Pulls a clause back to the KAM to mediate — the same "this needs a
+ *  human, not just the other side clicking a button" escape hatch
+ *  `raiseAmendment` gives the contract draft as a whole. */
+function disputeClause(contractId: string, clauseId: string, by: ChatParty, byName: string, note: string | null) {
+  restoreOnce()
+  const contract = findContract(contractId)
+  const clause = contract && findClause(contract, clauseId)
+  if (!contract || !clause) return
+  updateContract(contractId, {
+    clauses: contract.clauses.map((entry) =>
+      entry.id === clauseId ? { ...entry, status: "disputed", updatedAt: new Date().toISOString() } : entry
+    ),
+  })
+  logSystemMessageForConversation(
+    contract.conversationId,
+    `${byName} disputed "${clause.label}"${note ? `: ${note}` : "."}`
+  )
+}
+
+/** Undoes the most recent proposal on a clause — for a party that
+ *  changed their mind before the other side responded. Recomputes
+ *  agreement off whatever's left rather than assuming "pending". */
+function withdrawClauseProposal(contractId: string, clauseId: string, byName: string) {
+  restoreOnce()
+  const contract = findContract(contractId)
+  const clause = contract && findClause(contract, clauseId)
+  if (!contract || !clause || clause.proposals.length === 0) return
+  const proposals = clause.proposals.slice(0, -1)
+  const { buyer, seller } = latestPartyProposals(proposals)
+  const agreed = proposalsAgree(buyer, seller)
+  updateContract(contractId, {
+    clauses: contract.clauses.map((entry) =>
+      entry.id === clauseId
+        ? {
+            ...entry,
+            proposals,
+            value: proposals.length > 0 ? proposals[proposals.length - 1].value : null,
+            status: agreed ? "agreed" : "pending",
+            updatedAt: new Date().toISOString(),
+          }
+        : entry
+    ),
+  })
+  logSystemMessageForConversation(contract.conversationId, `${byName} withdrew their proposal for "${clause.label}".`)
 }
 
 /**
@@ -497,6 +782,128 @@ function submitRequest(contractId: string, requestId: string, byName: string) {
     `${byName} completed "${request.title}".`,
     [request.party, "kam"]
   )
+}
+
+/**
+ * The buyer locking in the term sheet as a real order. Only possible once
+ * every clause is agreed — this is the gate that makes "PO issued" mean
+ * something rather than just a label. If the buyer issues it exactly as
+ * agreed, trade law treats the PO itself as the acceptance and the
+ * contract forms the instant it lands, so this advances straight to
+ * `draft`. If the buyer changes anything at this exact moment (`overrides`
+ * keyed by clause), that change is a fresh counter-offer — the affected
+ * clauses flip back to `disputed` and the contract stays put until the
+ * seller confirms it (see `confirmPurchaseOrder`).
+ */
+function issuePurchaseOrder(
+  contractId: string,
+  byName: string,
+  overrides: Partial<Record<ClauseKey, string>> = {}
+): PurchaseOrder | null {
+  restoreOnce()
+  const contract = findContract(contractId)
+  if (!contract || !allClausesAgreed(contract)) return null
+
+  const now = new Date().toISOString()
+  const terms: Partial<Record<ClauseKey, string>> = {}
+  const deviatedClauses: ClauseKey[] = []
+  const clauses = contract.clauses.map((clause) => {
+    const overrideValue = overrides[clause.key]
+    const baseline = clause.value ?? ""
+    if (overrideValue === undefined) {
+      terms[clause.key] = baseline
+      return clause
+    }
+    terms[clause.key] = overrideValue
+    if (overrideValue.trim().toLowerCase() === baseline.trim().toLowerCase()) return clause
+    deviatedClauses.push(clause.key)
+    return {
+      ...clause,
+      value: overrideValue,
+      status: "disputed" as ClauseStatus,
+      proposals: [...clause.proposals, { value: overrideValue, by: "buyer" as ChatParty, byName, at: now }],
+      updatedAt: now,
+    }
+  })
+
+  const po: PurchaseOrder = {
+    issuedAt: now,
+    issuedByName: byName,
+    terms,
+    deviatedClauses,
+    status: deviatedClauses.length === 0 ? "auto-accepted" : "pending-seller-confirmation",
+    sellerConfirmedAt: null,
+    sellerConfirmedBy: null,
+    cancelledAt: null,
+    cancelledBy: null,
+  }
+
+  updateContract(contractId, { clauses, po })
+  if (po.status === "auto-accepted") {
+    setStage(contractId, "draft", byName, `PO issued for ${contract.reference} — matched the term sheet exactly`)
+  }
+  postCard({
+    conversationId: contract.conversationId,
+    from: "buyer",
+    fromName: byName,
+    text:
+      po.status === "auto-accepted"
+        ? `${byName} issued PO ${contract.reference} — it matches the agreed term sheet exactly, so this is now a binding order.`
+        : `${byName} issued PO ${contract.reference} with changes to ${deviatedClauses.length} clause${deviatedClauses.length === 1 ? "" : "s"} — this is a counter-offer and needs ${contract.sellerName}'s confirmation.`,
+    card: { kind: "po", contractId },
+  })
+  return po
+}
+
+/** The seller's yes to a PO that changed something — re-agrees the
+ *  clauses the buyer touched at the buyer's new values and, only now,
+ *  advances the contract. */
+function confirmPurchaseOrder(contractId: string, sellerName: string) {
+  restoreOnce()
+  const contract = findContract(contractId)
+  if (!contract?.po || contract.po.status !== "pending-seller-confirmation") return
+  const now = new Date().toISOString()
+  const deviated = contract.po.deviatedClauses
+  const clauses = contract.clauses.map((clause) =>
+    deviated.includes(clause.key)
+      ? {
+          ...clause,
+          status: "agreed" as ClauseStatus,
+          proposals: [
+            ...clause.proposals,
+            { value: clause.value ?? "", by: "seller" as ChatParty, byName: sellerName, at: now },
+          ],
+          updatedAt: now,
+        }
+      : clause
+  )
+  updateContract(contractId, {
+    clauses,
+    po: { ...contract.po, status: "confirmed", sellerConfirmedAt: now, sellerConfirmedBy: sellerName },
+  })
+  setStage(contractId, "draft", sellerName, `PO ${contract.reference} confirmed by seller`)
+  logSystemMessageForConversation(
+    contract.conversationId,
+    `${sellerName} confirmed PO ${contract.reference} — this is now a binding order.`
+  )
+}
+
+/** The buyer pulling back a PO before the seller has confirmed it —
+ *  releases the clauses it touched back to ordinary negotiation instead of
+ *  leaving them stuck disputed against a PO that no longer stands. */
+function cancelPurchaseOrder(contractId: string, byName: string) {
+  restoreOnce()
+  const contract = findContract(contractId)
+  if (!contract?.po || contract.po.status !== "pending-seller-confirmation") return
+  const now = new Date().toISOString()
+  const deviated = contract.po.deviatedClauses
+  const clauses = contract.clauses.map((clause) =>
+    deviated.includes(clause.key) && clause.status === "disputed"
+      ? { ...clause, status: "pending" as ClauseStatus, updatedAt: now }
+      : clause
+  )
+  updateContract(contractId, { clauses, po: { ...contract.po, cancelledAt: now, cancelledBy: byName } })
+  logSystemMessageForConversation(contract.conversationId, `${byName} withdrew PO ${contract.reference}.`)
 }
 
 /**
@@ -668,11 +1075,19 @@ export {
   createContract,
   setStage,
   updateTerms,
+  allClausesAgreed,
+  openTermSheet,
+  proposeClause,
+  disputeClause,
+  withdrawClauseProposal,
   requestTermSheet,
   saveRequestDraft,
   attachFile,
   removeFile,
   submitRequest,
+  issuePurchaseOrder,
+  confirmPurchaseOrder,
+  cancelPurchaseOrder,
   publishDraft,
   approveDraft,
   raiseAmendment,

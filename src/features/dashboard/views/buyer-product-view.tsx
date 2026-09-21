@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "motion/react"
 import { ArrowLeftIcon, BadgeCheckIcon, MessageCircleIcon, PackageSearchIcon, XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { cropLabels } from "@/features/dashboard/demo-data"
+import { productLabel, slugify } from "@/features/marketplace/catalog"
 import { buyerIdentity } from "@/features/marketplace/identity"
 import { ConversationThread } from "@/features/marketplace/conversation-thread"
 import {
@@ -21,7 +21,10 @@ import { latestDealForConversation, useDeals } from "@/features/marketplace/deal
 import { useListings } from "@/features/marketplace/listing-store"
 import { ProductInfoPanel } from "@/features/marketplace/product-info-panel"
 import { ProposeDealDialog } from "@/features/marketplace/propose-deal-dialog"
+import { RfqDialog, type RfqCandidateSeller } from "@/features/marketplace/rfq-dialog"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
+import { Button } from "@/components/ui/button"
+import { ClipboardListIcon } from "lucide-react"
 
 /** Same viewport-relative height on every full-height chat surface in the
  *  dashboard — the topbar offset (80px) plus the content wrapper's own
@@ -73,6 +76,39 @@ function BuyerProductView({ listingId }: { listingId: string }) {
   // started from the composer.
   const canPropose = !!conversation && (!deal || deal.status === "declined")
   const [proposing, setProposing] = React.useState(false)
+  const [requestingQuotes, setRequestingQuotes] = React.useState(false)
+
+  // Every other seller offering the same *variant* — an RFQ is a broadcast,
+  // not a reply to one thread, so it needs its own candidate list rather
+  // than reusing the single `conversation` this page is built around.
+  // Matched on variant (not just product), since a buyer always arrives
+  // here from one specific variant's seller list now (see
+  // `variant-sellers-view.tsx`) — an RFQ for Kashmiri Apple shouldn't also
+  // reach Royal Gala sellers. Deduped to one listing per seller (the
+  // newest), and this page's own seller is included — the buyer is already
+  // looking at their listing, so leaving them out would be a strange
+  // omission.
+  // One composite key (product + variant), not two separate dependencies —
+  // keeps this the same single-primitive-dependency shape the React
+  // Compiler can actually preserve memoization for.
+  const rfqMatchKey = listing ? `${listing.cropId}::${slugify(listing.variety)}` : null
+  const rfqCandidates: RfqCandidateSeller[] = React.useMemo(() => {
+    if (!rfqMatchKey) return []
+    return listings
+      .filter(
+        (entry) =>
+          !entry.deletedAt &&
+          entry.moderationStatus !== "flagged" &&
+          `${entry.cropId}::${slugify(entry.variety)}` === rfqMatchKey
+      )
+      .filter((entry, index, matches) => matches.findIndex((other) => other.sellerId === entry.sellerId) === index)
+      .map((entry) => ({
+        sellerId: entry.sellerId,
+        sellerName: entry.sellerName,
+        listingId: entry.id,
+        listingTitle: `${productLabel(entry.cropId)} — ${entry.variety}`,
+      }))
+  }, [rfqMatchKey, listings])
 
   if (!listing) {
     return (
@@ -86,7 +122,7 @@ function BuyerProductView({ listingId }: { listingId: string }) {
     )
   }
 
-  const cropLabel = cropLabels[listing.cropId] ?? listing.cropId
+  const cropLabel = productLabel(listing.cropId)
   const messages = conversation ? toThreadMessages(conversation.messages, "buyer") : []
   // Off the filtered list — the newest raw message may be the KAM's
   // private chase to the seller, which must not surface in the buyer's
@@ -144,6 +180,14 @@ function BuyerProductView({ listingId }: { listingId: string }) {
         <div className="rounded-[18px] bg-card shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] lg:flex-1 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden">
           <div className="p-4">
             <ProductInfoPanel listing={listing} />
+            <Button
+              variant="outline"
+              className="mt-4 w-full"
+              onClick={() => setRequestingQuotes(true)}
+            >
+              <ClipboardListIcon className="size-4" />
+              Request quotes (RFQ)
+            </Button>
           </div>
         </div>
         <DealStatusFooter
@@ -170,6 +214,8 @@ function BuyerProductView({ listingId }: { listingId: string }) {
           viewer="buyer"
           viewerName={buyer.name}
           placeholder={`Message ${listing.sellerName}…`}
+          conversationId={conversation?.id}
+          composerParties={conversation ? [{ party: "seller", name: listing.sellerName }] : []}
           onProposeDeal={canPropose ? () => setProposing(true) : undefined}
         />
       </div>
@@ -234,6 +280,8 @@ function BuyerProductView({ listingId }: { listingId: string }) {
                 viewer="buyer"
                 viewerName={buyer.name}
                 placeholder={`Message ${listing.sellerName}…`}
+                conversationId={conversation?.id}
+                composerParties={conversation ? [{ party: "seller", name: listing.sellerName }] : []}
                 onProposeDeal={canPropose ? () => setProposing(true) : undefined}
               />
             </motion.div>
@@ -251,6 +299,16 @@ function BuyerProductView({ listingId }: { listingId: string }) {
           myName={buyer.name}
         />
       ) : null}
+
+      <RfqDialog
+        open={requestingQuotes}
+        onOpenChange={setRequestingQuotes}
+        buyerId={buyer.id}
+        buyerName={buyer.name}
+        productCategory={listing.cropId}
+        productLabel={cropLabel}
+        candidateSellers={rfqCandidates}
+      />
     </div>
   )
 }

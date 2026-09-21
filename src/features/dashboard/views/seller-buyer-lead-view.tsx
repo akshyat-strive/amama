@@ -5,7 +5,7 @@ import Link from "next/link"
 import { ArrowLeftIcon, UserRoundSearchIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { cropLabels } from "@/features/dashboard/demo-data"
+import { productLabel } from "@/features/marketplace/catalog"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
 import { BUYER_LEADS } from "@/features/marketplace/buyer-leads"
 import { useBuyerProfiles } from "@/features/marketplace/buyer-directory"
@@ -64,7 +64,7 @@ function SellerBuyerLeadView({ leadId }: { leadId: string }) {
     )
   }
 
-  const cropLabel = cropLabels[listing.cropId] ?? listing.cropId
+  const cropLabel = productLabel(listing.cropId)
   const country = countries.find((entry) => entry.code === lead.country)
 
   const conversationHeader = (
@@ -125,7 +125,7 @@ function SellerBuyerLeadView({ leadId }: { leadId: string }) {
                       : "bg-muted text-muted-foreground"
                   )}
                 >
-                  {cropLabels[cropId] ?? cropId}
+                  {productLabel(cropId)}
                 </span>
               ))}
             </div>
@@ -155,6 +155,12 @@ function SellerBuyerLeadView({ leadId }: { leadId: string }) {
           viewer="seller"
           viewerName={seller.name}
           placeholder={`Message ${lead.name}…`}
+          // Only once `conversation` is a real, already-started record —
+          // a cold-outreach lead with nothing sent yet has no conversation
+          // for a form-request card to attach to (see `handleSend`, which
+          // is what actually creates one on the first plain message).
+          conversationId={conversation?.id}
+          composerParties={conversation ? [{ party: "buyer", name: lead.name }] : []}
           className="min-h-[420px]"
         />
       </div>

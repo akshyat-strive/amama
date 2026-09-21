@@ -1,0 +1,6 @@
+-- No-op on purpose: `neon_auth.user` is owned and already shaped by
+-- Managed Better Auth. This migration only exists so drizzle-kit's
+-- snapshot stays in sync with the `email`/`name` columns added to the
+-- read-only `neonAuthUser` shadow table in
+-- `src/features/identity/lib/schema.ts` — those columns already exist on
+-- the real table, so there is nothing to actually run here.

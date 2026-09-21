@@ -6,10 +6,13 @@ import { ChartNoAxesGantt } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { AccountMenu } from "@/features/dashboard/account-menu"
+import { useSignOut } from "@/features/auth/use-sign-out"
 import { LanguageSwitcher } from "@/features/i18n/components/language-switcher"
 import { NavList } from "@/features/dashboard/nav-list"
 import { dashboardNav } from "@/features/dashboard/nav-config"
 import { useSidebarOpen } from "@/features/dashboard/sidebar-open-store"
+import { seedAdminDemoData } from "@/features/admin/seed-data"
 import { upsertBuyerProfile } from "@/features/marketplace/buyer-directory"
 import { buyerIdentity } from "@/features/marketplace/identity"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
@@ -59,10 +62,22 @@ function DashboardShell({
   const { draft } = useOnboarding()
   const [sidebarOpen, setSidebarOpen] = useSidebarOpen(SIDEBAR_STORAGE_KEY)
   const nav = dashboardNav[role]
+  const signOut = useSignOut(role)
 
   const toggleSidebar = () => {
     setSidebarOpen((open) => !open)
   }
+
+  // The demo world (deals, RFQs, contracts, conversations) was only ever
+  // seeded from the admin console's own shell — a fresh browser that
+  // signs in as a buyer or seller first, without ever visiting
+  // `/internal`, saw an empty dashboard even though the exact same
+  // `localStorage` origin has a whole demo world ready to write. Same
+  // idempotent call as `AdminShell`/`InternalShell`'s own effect, just
+  // reachable from this door too.
+  React.useEffect(() => {
+    seedAdminDemoData()
+  }, [])
 
   // Keeps the shared buyer directory current with whatever this buyer's
   // own session draft says right now — the only way a seller in another
@@ -83,7 +98,6 @@ function DashboardShell({
 
   const person = role === "buyer" ? draft.buyer : draft.seller
   const displayName = person.fullName.trim() || "Your account"
-  const initial = displayName.charAt(0).toUpperCase()
 
   return (
     <div className="h-dvh bg-card">
@@ -111,14 +125,17 @@ function DashboardShell({
           </span>
         </span>
 
-        <div className="ms-auto flex items-center gap-3">
+        <div className="ms-auto flex items-center gap-2 sm:gap-3">
           <LanguageSwitcher variant="inline" />
-          <span
-            className="grid size-10 place-items-center rounded-full bg-amama-deep text-[14px] font-semibold text-white shadow-floating"
-            title={displayName}
-          >
-            {initial}
-          </span>
+          <AccountMenu
+            name={displayName}
+            subtitle={person.email.trim() || null}
+            profileHref={`/${role}/dashboard/profile`}
+            settingsHref={`/${role}/dashboard/settings`}
+            onSignOut={() => {
+              void signOut()
+            }}
+          />
         </div>
       </header>
 

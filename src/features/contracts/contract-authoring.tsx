@@ -18,6 +18,7 @@ import {
   askShipmentDates,
   CONTRACT_STAGE_LABELS,
   CONTRACT_STAGE_ORDER,
+  openTermSheet,
   publishDraft,
   requestTermSheet,
   resolveAmendment,
@@ -110,6 +111,18 @@ function ContractAuthoring({ contract, kamName }: { contract: Contract; kamName:
       </div>
 
       <TermsPanel contract={contract} />
+      {!contract.termSheetOpenedAt ? (
+        <Section title="Term sheet">
+          <p className="text-[12px] text-muted-foreground">
+            Opens the clause-by-clause negotiation card in the conversation — both sides propose and agree each
+            clause from there.
+          </p>
+          <Button className="mt-3" onClick={() => openTermSheet(contract.id, kamName)}>
+            <SendIcon className="size-4" />
+            Open term sheet for negotiation
+          </Button>
+        </Section>
+      ) : null}
       <RequestBuilder contract={contract} />
       <DraftPanel contract={contract} kamName={kamName} />
       <ShipmentDatesPanel contract={contract} kamName={kamName} />

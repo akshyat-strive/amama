@@ -34,22 +34,22 @@ function TeamManagementView() {
       <h1 className="text-[28px] font-bold tracking-tight">Team</h1>
 
       <div className="mt-6 flex flex-col gap-6">
-        {canManageUsers ? <UsersPanel users={users} roles={roles} createdBy={admin.user.id} /> : null}
+        {canManageUsers ? <UsersPanel users={users} roles={roles} /> : null}
         {canManageRoles ? <RolesPanel roles={roles} users={users} /> : null}
       </div>
     </div>
   )
 }
 
-function UsersPanel({ users, roles, createdBy }: { users: AdminUser[]; roles: Role[]; createdBy: string }) {
+function UsersPanel({ users, roles }: { users: AdminUser[]; roles: Role[] }) {
   const [adding, setAdding] = React.useState(false)
   const [name, setName] = React.useState("")
   const [email, setEmail] = React.useState("")
   const [roleId, setRoleId] = React.useState(roles[0]?.id ?? "")
   const [error, setError] = React.useState<string | null>(null)
 
-  const submit = () => {
-    const result = createUser({ name, email, password: DEMO_PASSWORD, roleId }, createdBy)
+  const submit = async () => {
+    const result = await createUser({ name, email, password: DEMO_PASSWORD, roleId })
     if (!result.ok) {
       setError(result.error)
       return
@@ -147,9 +147,9 @@ function RolesPanel({ roles, users }: { roles: Role[]; users: AdminUser[] }) {
     })
   }
 
-  const submit = () => {
+  const submit = async () => {
     if (!name.trim()) return
-    createRole(name.trim(), Array.from(permissions))
+    await createRole(name.trim(), Array.from(permissions))
     setName("")
     setPermissions(new Set())
     setAdding(false)

@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789713241288,
+      "tag": "0000_faithful_sue_storm",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789713817239,
+      "tag": "0001_add_neon_auth_user_columns_shadow_only",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,13 +1,9 @@
 "use client"
 
-import * as React from "react"
-
 import { hasPermission, type Permission } from "@/features/admin/permissions"
-import type { Role } from "@/features/admin/role-store"
-import { useRoles } from "@/features/admin/role-store"
-import { useSession } from "@/features/admin/session-store"
-import type { AdminUser } from "@/features/admin/user-store"
-import { useUsers } from "@/features/admin/user-store"
+import type { Role } from "@/features/admin/lib/roles-repository"
+import type { AdminUser } from "@/features/admin/lib/admin-users-repository"
+import { createFetchStore } from "@/lib/api/fetch-store"
 
 export type CurrentAdmin = {
   user: AdminUser
@@ -15,22 +11,28 @@ export type CurrentAdmin = {
   can: (permission: Permission) => boolean
 }
 
-/** `null` until a signed-in session resolves to a real user *and* that
- *  user's role still exists — the one hook every admin view reads
- *  identity/permissions from, replacing the old `useKamIdentity()`. */
-function useCurrentAdmin(): CurrentAdmin | null {
-  const session = useSession()
-  const users = useUsers()
-  const roles = useRoles()
+type MeResponse = { kind: "admin"; user: AdminUser; role: Role } | { kind: "buyer" | "seller" } | null
 
-  return React.useMemo(() => {
-    if (!session) return null
-    const user = users.find((entry) => entry.id === session.userId)
-    if (!user) return null
-    const role = roles.find((entry) => entry.id === user.roleId)
-    if (!role) return null
-    return { user, role, can: (permission: Permission) => hasPermission(role.permissions, permission) }
-  }, [session, users, roles])
+const meStore = createFetchStore<MeResponse>("/api/identity/me", null)
+
+/** `undefined` while the session check is still in flight, `null` once
+ *  it's resolved to "no admin session," or the real thing — a consumer
+ *  that redirects on "no admin" (see `AdminShell`) must treat only `null`
+ *  as that signal, not `undefined`, or it fires during every fresh page
+ *  load's network round-trip rather than waiting for an actual answer.
+ *  Call `invalidateCurrentAdmin()` right after sign-in/sign-out, since the
+ *  underlying fetch is cached across client-side navigations and won't
+ *  otherwise notice the session changed. */
+function useCurrentAdmin(): CurrentAdmin | null | undefined {
+  const me = meStore.useStore()
+  const loaded = meStore.useIsLoaded()
+  if (!loaded) return undefined
+  if (!me || me.kind !== "admin") return null
+  return { user: me.user, role: me.role, can: (permission) => hasPermission(me.role.permissions, permission) }
 }
 
-export { useCurrentAdmin }
+function invalidateCurrentAdmin() {
+  return meStore.invalidate()
+}
+
+export { useCurrentAdmin, invalidateCurrentAdmin }

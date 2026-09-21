@@ -5,7 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { MessageCircleIcon, UsersIcon } from "lucide-react"
 
-import { cropLabels } from "@/features/dashboard/demo-data"
+import { productLabel } from "@/features/marketplace/catalog"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
 import { cropImageUrl, crops } from "@/features/onboarding/steps"
 import { BUYER_LEADS } from "@/features/marketplace/buyer-leads"
@@ -53,9 +53,12 @@ function SellerBuyersView() {
 
     // Real buyers first — anyone who has already reached out about a
     // listing that's actually theirs (a deleted listing's old thread
-    // doesn't count, there's nothing left to sell them).
+    // doesn't count, there's nothing left to sell them). One card per
+    // buyer even if they've messaged about more than one listing — the
+    // same buyer shouldn't produce two same-keyed matches.
     for (const conversation of conversations) {
       if (conversation.sellerId !== seller.id) continue
+      if (seenBuyerIds.has(conversation.buyerId)) continue
       const listing = allListings.find(
         (entry) => entry.id === conversation.listingId && entry.sellerId === seller.id && !entry.deletedAt
       )
@@ -127,7 +130,7 @@ function SellerBuyersView() {
  *  The photo is the crop's own (the thing that connects the two of them),
  *  not a headshot no seed data actually has. */
 function BuyerMatchCard({ match }: { match: Match }) {
-  const cropLabel = cropLabels[match.cropId] ?? match.cropId
+  const cropLabel = productLabel(match.cropId)
   const photo = crops.find((crop) => crop.id === match.cropId)?.photo ?? crops[0].photo
   const country = match.country ? countries.find((entry) => entry.code === match.country) : null
 

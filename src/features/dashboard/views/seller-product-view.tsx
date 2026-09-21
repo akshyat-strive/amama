@@ -16,7 +16,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
-import { cropLabels } from "@/features/dashboard/demo-data"
+import { productLabel } from "@/features/marketplace/catalog"
 import { sellerIdentity } from "@/features/marketplace/identity"
 import { ConversationThread } from "@/features/marketplace/conversation-thread"
 import {
@@ -108,7 +108,7 @@ function SellerProductView({ listingId }: { listingId: string }) {
     )
   }
 
-  const cropLabel = cropLabels[listing.cropId] ?? listing.cropId
+  const cropLabel = productLabel(listing.cropId)
   const messages = selected ? toThreadMessages(selected.messages, "seller") : null
   // Off the filtered list — the newest raw message may be the KAM's
   // private chase to the buyer, which must not surface in the seller's
@@ -159,6 +159,8 @@ function SellerProductView({ listingId }: { listingId: string }) {
           viewerName={seller.name}
           placeholder={selected ? `Message ${selected.buyerName}…` : undefined}
           emptyState={<p className="text-[13px] text-muted-foreground">Pick a buyer to reply.</p>}
+          conversationId={selected?.id}
+          composerParties={selected ? [{ party: "buyer", name: selected.buyerName }] : []}
           onProposeDeal={canPropose ? () => setProposing(true) : undefined}
         />
       </div>

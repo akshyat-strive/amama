@@ -6,15 +6,26 @@ import { ArrowRightIcon, HandshakeIcon, Inbox } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
-import { AdminEmptyState, AdminPanel, AdminStatCard } from "@/features/admin/admin-ui"
+import {
+  AdminEmptyState,
+  AdminListSkeleton,
+  AdminPanel,
+  AdminStatCard,
+  AdminStatCardSkeleton,
+} from "@/features/admin/admin-ui"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { statusStyles, describeApplicant } from "@/features/admin/review-queue-view"
-import { useUsers } from "@/features/admin/user-store"
+import { useUsers, useUsersLoaded } from "@/features/admin/user-store"
 import { formatInr } from "@/features/marketplace/currency"
 import { useDeals, type Deal } from "@/features/marketplace/deal-store"
 import { useListings } from "@/features/marketplace/listing-store"
 import type { OnboardingRole } from "@/features/onboarding/types"
-import { useVerification } from "@/features/verification/verification-context"
+import {
+  useAllVerificationQueues,
+  useAllVerificationQueuesLoaded,
+  useVerificationQueue,
+  useVerificationQueueLoaded,
+} from "@/features/verification/admin-verification"
 
 /** How many rows a Home preview card shows before it just points at the
  *  section's own full page instead of growing further — a preview, not a
@@ -34,15 +45,12 @@ function ViewAllLink({ href, label }: { href: string; label: string }) {
 }
 
 function OverviewSection() {
-  const { submissions } = useVerification()
+  const applications = useAllVerificationQueues()
+  const applicationsLoaded = useAllVerificationQueuesLoaded()
   const listings = useListings()
 
-  const applications = (["buyer", "seller"] as const)
-    .map((role) => submissions[role])
-    .filter((submission): submission is NonNullable<typeof submission> => Boolean(submission))
-
   const pendingApplications = applications.filter(
-    (submission) => submission.status === "pending" || submission.status === "changes-requested"
+    (submission) => submission.reviewStatus === "pending" || submission.reviewStatus === "changes-requested"
   ).length
 
   const activeListings = listings.filter((listing) => !listing.deletedAt)
@@ -50,6 +58,17 @@ function OverviewSection() {
   const unverifiedListings = activeListings.filter(
     (listing) => listing.moderationStatus === "unverified"
   ).length
+
+  if (!applicationsLoaded) {
+    return (
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <AdminStatCardSkeleton />
+        <AdminStatCardSkeleton />
+        <AdminStatCardSkeleton />
+        <AdminStatCardSkeleton />
+      </div>
+    )
+  }
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -72,16 +91,15 @@ function OverviewSection() {
 }
 
 /** Compact preview of "By team member" — a handful of rows, each still
- *  the full three-stat readout, with the rest one click away on `/admin/team`
+ *  the full three-stat readout, with the rest one click away on `/internal/team`
  *  rather than the whole roster living on Home too. */
 function TeamPreviewCard() {
   const users = useUsers()
+  const usersLoaded = useUsersLoaded()
   const deals = useDeals()
   const listings = useListings()
-  const { submissions } = useVerification()
-  const applications = (["buyer", "seller"] as const)
-    .map((role) => submissions[role])
-    .filter((submission): submission is NonNullable<typeof submission> => Boolean(submission))
+  const applications = useAllVerificationQueues()
+  const applicationsLoaded = useAllVerificationQueuesLoaded()
 
   const preview = users.slice(0, PREVIEW_ROWS)
   const remaining = users.length - preview.length
@@ -90,14 +108,16 @@ function TeamPreviewCard() {
     <AdminPanel
       title="By team member"
       subtitle="Who's verified how much, and who's carrying which deals."
-      action={<ViewAllLink href="/admin/team" label="View team" />}
+      action={<ViewAllLink href="/internal/team" label="View team" />}
     >
-      {users.length === 0 ? (
+      {!usersLoaded || !applicationsLoaded ? (
+        <AdminListSkeleton />
+      ) : users.length === 0 ? (
         <p className="px-5 py-4 text-[13px] text-muted-foreground">Nobody&apos;s signed in yet.</p>
       ) : (
         <ul className="divide-y divide-border">
           {preview.map((user) => {
-            const reviewed = applications.filter((submission) => submission.reviewedByKamId === user.id).length
+            const reviewed = applications.filter((submission) => submission.reviewedByAdminId === user.id).length
             const activeDeals = deals.filter(
               (deal) => deal.status === "active" && deal.assignedKamId === user.id
             ).length
@@ -142,38 +162,47 @@ function TeamPreviewCard() {
 
 /** One role's own registered application, if there is one — just who it
  *  is and their status, no document list or approve/decline actions;
- *  those live on that role's own `/admin/review-queue/{role}` page. Split
+ *  those live on that role's own `/internal/review-queue/{role}` page. Split
  *  by role rather than one combined card, since a buyer application and
  *  a seller one are never really the same queue. */
 function RoleQueuePreviewCard({ role }: { role: OnboardingRole }) {
-  const { submissions } = useVerification()
-  const submission = submissions[role]
+  const submissions = useVerificationQueue(role)
+  const loaded = useVerificationQueueLoaded(role)
   const roleLabel = role === "buyer" ? "Buyer" : "Seller"
+  const preview = submissions.slice(0, PREVIEW_ROWS)
+  const remaining = submissions.length - preview.length
 
   return (
     <AdminPanel
       title={`${roleLabel} queue`}
       subtitle={`${roleLabel} applications, and where each stands.`}
-      action={<ViewAllLink href={`/admin/review-queue/${role}`} label="View queue" />}
+      action={<ViewAllLink href={`/internal/review-queue/${role}`} label="View queue" />}
     >
-      {!submission ? (
+      {!loaded ? (
+        <AdminListSkeleton />
+      ) : submissions.length === 0 ? (
         <p className="px-5 py-4 text-[13px] text-muted-foreground">No one registered yet.</p>
       ) : (
         <ul className="divide-y divide-border">
-          <li className="flex items-center gap-3 px-5 py-3.5">
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-[12px] font-bold text-foreground/70">
-              {(submission.applicant.fullName || "?").charAt(0)}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-semibold text-foreground">
-                {submission.applicant.fullName || "Unnamed applicant"}
-              </p>
-              <p className="truncate text-[12px] text-muted-foreground">{describeApplicant(submission)}</p>
-            </div>
-            <Badge className={cn("shrink-0", statusStyles[submission.status].className)}>
-              {statusStyles[submission.status].label}
-            </Badge>
-          </li>
+          {preview.map((submission) => (
+            <li key={submission.userId} className="flex items-center gap-3 px-5 py-3.5">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-[12px] font-bold text-foreground/70">
+                {(submission.fullName || "?").charAt(0)}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-semibold text-foreground">
+                  {submission.fullName || "Unnamed applicant"}
+                </p>
+                <p className="truncate text-[12px] text-muted-foreground">{describeApplicant(submission)}</p>
+              </div>
+              <Badge className={cn("shrink-0", statusStyles[submission.reviewStatus].className)}>
+                {statusStyles[submission.reviewStatus].label}
+              </Badge>
+            </li>
+          ))}
+          {remaining > 0 ? (
+            <li className="px-5 py-3 text-[12px] font-medium text-muted-foreground">+{remaining} more</li>
+          ) : null}
         </ul>
       )}
     </AdminPanel>
@@ -219,7 +248,7 @@ function AssignTeamMemberPreviewCard() {
     <AdminPanel
       title="Assign a team member"
       subtitle="Active deals nobody's driving yet."
-      action={<ViewAllLink href="/admin/deals?filter=needs-a-team-member" label="View deals" />}
+      action={<ViewAllLink href="/internal/deals?filter=needs-a-team-member" label="View deals" />}
     >
       {needsAssignment.length === 0 ? (
         <p className="px-5 py-4 text-[13px] text-muted-foreground">Nothing waiting to be assigned.</p>
@@ -257,7 +286,7 @@ function ActiveDealsPreviewCard() {
     <AdminPanel
       title="Active deals"
       subtitle="Every deal currently moving through the pipeline."
-      action={<ViewAllLink href="/admin/deals?filter=active" label="View deals" />}
+      action={<ViewAllLink href="/internal/deals?filter=active" label="View deals" />}
     >
       {active.length === 0 ? (
         <p className="px-5 py-4 text-[13px] text-muted-foreground">Nothing active right now.</p>

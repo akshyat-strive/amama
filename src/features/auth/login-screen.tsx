@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowRightIcon, EyeIcon, EyeOffIcon, KeyRoundIcon } from "lucide-react"
+import { ArrowRightIcon, EyeIcon, EyeOffIcon, KeyRoundIcon, Loader2Icon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -17,11 +17,10 @@ import { EditorialImage } from "@/components/ui/editorial-image"
 import { useI18n } from "@/features/i18n/i18n-context"
 import { GoogleIcon, MicrosoftIcon, AppleIcon } from "@/features/auth/oauth-icons"
 import { loginContent } from "@/features/auth/login-content"
-import { demoDraftFor, demoKashmirSellerDraft } from "@/features/auth/demo-accounts"
-import { seedAdminDemoData } from "@/features/admin/seed-data"
+import { authClient } from "@/lib/auth/client"
+import { apiRequest } from "@/lib/api/fetch-store"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
-import type { OnboardingRole } from "@/features/onboarding/types"
-import { useVerification } from "@/features/verification/verification-context"
+import { emptyBuyer, emptySeller, type BuyerDraft, type OnboardingRole, type SellerDraft } from "@/features/onboarding/types"
 
 // Provider names are brand names, not translated — only the surrounding
 // "Continue with {provider}" template comes from the dictionary.
@@ -33,47 +32,147 @@ const oauthProviders = [
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
+/** Every demo account shares this password, same convention as the admin
+ *  side's `DEMO_PASSWORD` — real Managed Better Auth credentials, seeded
+ *  once by `POST /api/dev/seed`. */
+const DEMO_PASSWORD = "User@123"
+
+const DEMO_ACCOUNTS: Record<OnboardingRole, { email: string; caption: string }> = {
+  buyer: { email: "buyer@amama.in", caption: "buyer@amama.in — skips onboarding, already mid-deal" },
+  seller: { email: "seller@amama.in", caption: "seller@amama.in — skips onboarding, already mid-deal" },
+}
+
+/** A second seller demo — the counterparty behind the "Kashmir Valley
+ *  Growers" apple listing a buyer demo can already message. */
+const KASHMIR_DEMO = {
+  email: "kashmir@amama.in",
+  label: "Continue as Kashmir Valley Growers",
+  caption: "kashmir@amama.in — the apple listing a buyer demo can message",
+}
+
+/** Marketplace/deals/conversations are still `localStorage`, keyed off
+ *  `onboarding-context`'s draft email (see `buyerIdentity`/`sellerIdentity`)
+ *  rather than the real signed-in account — that migration hasn't reached
+ *  those features yet. Real login no longer runs the wizard, so this is
+ *  the bridge: populate the draft from the real, Postgres-backed profile
+ *  right after signing in, so every not-yet-migrated screen still resolves
+ *  to the same identity it always did. Safe to drop once those stores
+ *  move to the real backend too.
+ *
+ * Retries a few times on failure rather than giving up after one try: the
+ * very first fetch right after `signIn.email` resolves can race the new
+ * session cookie actually propagating, so `/api/onboarding/[role]` comes
+ * back 401 even though sign-in genuinely succeeded. Silently swallowing
+ * that (the old behavior) left the draft empty, which is what made
+ * `sellerIdentity`/`buyerIdentity` fall back to a placeholder identity
+ * ("you") — every RFQ/deal/listing lookup keyed on the real email then
+ * came back empty too, on a real account that was actually signed in
+ * fine. A short retry window covers the propagation delay in practice. */
+async function syncOnboardingDraft(
+  role: OnboardingRole,
+  email: string,
+  loadDraft: (next: { role: OnboardingRole; buyer: BuyerDraft; seller: SellerDraft }) => void
+) {
+  const attempts = 4
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      const { profile } = await apiRequest<{ profile: Record<string, unknown> | null }>(`/api/onboarding/${role}`)
+      if (role === "buyer") {
+        loadDraft({ role, buyer: { ...emptyBuyer, ...profile, email }, seller: emptySeller })
+      } else {
+        loadDraft({ role, buyer: emptyBuyer, seller: { ...emptySeller, ...profile, email } })
+      }
+      return
+    } catch {
+      if (attempt === attempts - 1) return
+      await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)))
+    }
+  }
+}
+
 function LoginScreen({ role }: { role: OnboardingRole }) {
   const router = useRouter()
   const { t } = useI18n()
   const { loadDraft } = useOnboarding()
-  const { submissions } = useVerification()
   const content = loginContent[role]
   const [submitting, setSubmitting] = React.useState(false)
+  // Which control triggered the in-flight sign-in — `submitting` alone
+  // gates every button's `disabled`, but this is what tells each one
+  // whether *it* should swap its own icon for a spinner, instead of every
+  // button changing at once with no clue which was actually clicked.
+  const [activeAction, setActiveAction] = React.useState<"form" | "demo" | "kashmir" | null>(null)
   const [email, setEmail] = React.useState("")
+  const [password, setPassword] = React.useState("")
   const [showPassword, setShowPassword] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
 
-  // No auth backend yet, so a provider button (no email to check against)
-  // still just drops the visitor into onboarding — nothing to look up.
+  // No auth backend behind these yet, so a provider button (no email to
+  // check against) still just drops the visitor into onboarding.
   const enterApp = () => router.push(content.onboardingHref)
+
+  /**
+   * One form, two outcomes: sign in if the account exists, create it if it
+   * doesn't — there's no separate "sign up" screen, so this is genuinely
+   * how a brand-new buyer/seller gets an account. `ReviewGate` (wrapping
+   * both dashboard layouts) is what decides what a freshly created,
+   * nothing-submitted-yet account actually sees once it lands there.
+   */
+  const enterDashboard = async (attemptEmail: string, attemptPassword: string) => {
+    setSubmitting(true)
+    setError(null)
+
+    // The client throws on some failures (e.g. wrong password) rather
+    // than always resolving `{ data, error }` — both shapes mean "try
+    // sign-up next" here, so a failed sign-in is never itself the error
+    // shown to the user; only a failed sign-up (an account that already
+    // exists) is.
+    try {
+      const signInResult = await authClient.signIn.email({ email: attemptEmail, password: attemptPassword })
+      if (!signInResult.error) {
+        await syncOnboardingDraft(role, attemptEmail, loadDraft)
+        router.push(`/${role}/dashboard`)
+        return
+      }
+    } catch {
+      // Falls through to sign-up below.
+    }
+
+    try {
+      const signUpResult = await authClient.signUp.email({
+        email: attemptEmail,
+        password: attemptPassword,
+        name: attemptEmail.split("@")[0],
+      })
+      if (signUpResult.error) {
+        setSubmitting(false)
+        setError(signUpResult.error.message ?? "That email or password isn't right.")
+        return
+      }
+    } catch (error) {
+      setSubmitting(false)
+      setError(error instanceof Error ? error.message : "That email or password isn't right.")
+      return
+    }
+
+    await apiRequest("/api/identity/register", { method: "POST", body: JSON.stringify({ kind: role }) })
+    await syncOnboardingDraft(role, attemptEmail, loadDraft)
+    router.push(`/${role}/dashboard`)
+  }
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
-    setSubmitting(true)
-    window.setTimeout(() => {
-      // The one thing a real backend would answer for us: has *this* email
-      // already applied? The verification store is the only place that
-      // survives across tabs/sessions (`draft.buyer`/`draft.seller` is
-      // per-tab `sessionStorage`), so it's what a returning applicant's
-      // login actually has to check — otherwise they land back on step
-      // one of onboarding instead of the "your application is pending"
-      // screen `ReviewGate` already shows once they reach the dashboard.
-      const submission = submissions[role]
-      const isReturningApplicant =
-        submission && submission.applicant.email.trim().toLowerCase() === email.trim().toLowerCase()
-      router.push(isReturningApplicant ? `/${role}/dashboard` : content.onboardingHref)
-    }, 500)
+    setActiveAction("form")
+    void enterDashboard(email.trim().toLowerCase(), password)
   }
 
-  // The one door a demo actually walks through: skip the form, skip the
-  // wizard, land straight on a dashboard that's already mid-deal — loading
-  // a finished draft and seeding its data (idempotent, safe to call from
-  // here even if `/admin` was never visited first) before routing in.
-  const demoDraft = demoDraftFor(role)
-  const enterDemoAccount = (draft: typeof demoDraft = demoDraft) => {
-    loadDraft(draft)
-    seedAdminDemoData()
-    router.push(`/${role}/dashboard`)
+  const handleDemoLogin = () => {
+    setActiveAction("demo")
+    void enterDashboard(demo.email, DEMO_PASSWORD)
+  }
+
+  const handleKashmirLogin = () => {
+    setActiveAction("kashmir")
+    void enterDashboard(KASHMIR_DEMO.email, DEMO_PASSWORD)
   }
 
   const emailValid = EMAIL_PATTERN.test(email.trim())
@@ -82,6 +181,7 @@ function LoginScreen({ role }: { role: OnboardingRole }) {
   const title = t(role === "buyer" ? "auth.buyerTitle" : "auth.sellerTitle")
   const description = t(role === "buyer" ? "auth.buyerDescription" : "auth.sellerDescription")
   const otherRoleLabel = t(role === "buyer" ? "auth.buyerOtherRole" : "auth.sellerOtherRole")
+  const demo = DEMO_ACCOUNTS[role]
 
   return (
     // Fixed to the viewport height rather than just a minimum, so a long
@@ -157,9 +257,10 @@ function LoginScreen({ role }: { role: OnboardingRole }) {
                     // Emails are case-insensitive by convention — forcing
                     // lowercase as you type avoids "Not.Me@x.com" vs
                     // "not.me@x.com" ever looking like two different accounts.
-                    onChange={(event) =>
+                    onChange={(event) => {
                       setEmail(event.target.value.toLowerCase())
-                    }
+                      setError(null)
+                    }}
                   />
                   <FieldStatusIcon status={emailStatus} />
                 </FieldGroupRow>
@@ -170,6 +271,11 @@ function LoginScreen({ role }: { role: OnboardingRole }) {
                     autoComplete="current-password"
                     required
                     placeholder={t("auth.passwordPlaceholder")}
+                    value={password}
+                    onChange={(event) => {
+                      setPassword(event.target.value)
+                      setError(null)
+                    }}
                   />
                   <button
                     type="button"
@@ -187,6 +293,8 @@ function LoginScreen({ role }: { role: OnboardingRole }) {
                 </FieldGroupRow>
               </FieldGroup>
 
+              {error ? <p className="text-[13px] font-medium text-destructive">{error}</p> : null}
+
               <Link
                 href={`/${role}/forgot-password`}
                 className="self-end text-[13px] font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground"
@@ -200,44 +308,56 @@ function LoginScreen({ role }: { role: OnboardingRole }) {
                 className="mt-1 w-full"
                 disabled={submitting}
               >
-                {submitting ? t("auth.signingIn") : t("auth.logIn")}
-                {!submitting && <ArrowRightIcon />}
+                {submitting && activeAction === "form" ? t("auth.signingIn") : t("auth.logIn")}
+                {submitting && activeAction === "form" ? (
+                  <Loader2Icon className="animate-spin" />
+                ) : (
+                  !submitting && <ArrowRightIcon />
+                )}
               </Button>
             </form>
 
             <button
               type="button"
-              onClick={() => enterDemoAccount()}
-              className="mt-4 flex w-full items-center gap-3 rounded-[16px] border border-dashed border-border px-4 py-3 text-start transition-colors hover:border-foreground/30 hover:bg-muted"
+              disabled={submitting}
+              onClick={handleDemoLogin}
+              className="mt-4 flex w-full items-center gap-3 rounded-[16px] border border-dashed border-border px-4 py-3 text-start transition-colors hover:border-foreground/30 hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
             >
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-amama-deep text-white">
-                <KeyRoundIcon className="size-4" />
+                {submitting && activeAction === "demo" ? (
+                  <Loader2Icon className="size-4 animate-spin" />
+                ) : (
+                  <KeyRoundIcon className="size-4" />
+                )}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[13px] font-semibold text-foreground">
                   Continue as demo {role}
                 </span>
-                <span className="block truncate text-[12px] text-muted-foreground">
-                  {role === "buyer" ? demoDraft.buyer.email : demoDraft.seller.email} — skips onboarding, already mid-deal
-                </span>
+                <span className="block truncate text-[12px] text-muted-foreground">{demo.caption}</span>
               </span>
             </button>
 
             {role === "seller" ? (
               <button
                 type="button"
-                onClick={() => enterDemoAccount(demoKashmirSellerDraft)}
-                className="mt-2 flex w-full items-center gap-3 rounded-[16px] border border-dashed border-border px-4 py-3 text-start transition-colors hover:border-foreground/30 hover:bg-muted"
+                disabled={submitting}
+                onClick={handleKashmirLogin}
+                className="mt-2 flex w-full items-center gap-3 rounded-[16px] border border-dashed border-border px-4 py-3 text-start transition-colors hover:border-foreground/30 hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
               >
                 <span className="grid size-9 shrink-0 place-items-center rounded-full bg-amama-deep text-white">
-                  <KeyRoundIcon className="size-4" />
+                  {submitting && activeAction === "kashmir" ? (
+                    <Loader2Icon className="size-4 animate-spin" />
+                  ) : (
+                    <KeyRoundIcon className="size-4" />
+                  )}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[13px] font-semibold text-foreground">
-                    Continue as Kashmir Valley Growers
+                    {KASHMIR_DEMO.label}
                   </span>
                   <span className="block truncate text-[12px] text-muted-foreground">
-                    {demoKashmirSellerDraft.seller.email} — the apple listing a buyer demo can message
+                    {KASHMIR_DEMO.caption}
                   </span>
                 </span>
               </button>

@@ -23,6 +23,70 @@ import {
  * a plane. The other four are single events and pretending otherwise
  * would be padding.
  */
+/**
+ * A thin line and a dot, not a row of thick colored bars — bars read as
+ * a generic dashboard progress meter; a stepper where only the current
+ * stop actually stands out reads as considered instead. Shared by every
+ * order-shaped progress read in the app (the live deal journey below,
+ * and the plain order list rows in `orders-view.tsx`) so a page never
+ * mixes two different ideas of what "progress" looks like. `labels`
+ * is optional — a compact row wants just the dots, the full journey
+ * wants the stage names underneath.
+ */
+function StageDots({
+  total,
+  currentIndex,
+  labels,
+}: {
+  total: number
+  currentIndex: number
+  labels?: string[]
+}) {
+  return (
+    <ol className="flex items-stretch gap-1">
+      {Array.from({ length: total }).map((_, index) => {
+        const done = index < currentIndex
+        const current = index === currentIndex
+        return (
+          <li key={index} className="min-w-0 flex-1">
+            <div className="relative h-2.5">
+              <div
+                aria-hidden
+                className={cn("absolute inset-x-0 top-1/2 h-px -translate-y-1/2", done ? "bg-amama-deep" : "bg-border")}
+              />
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all",
+                  current
+                    ? "size-2.5 bg-amama-deep ring-[3px] ring-amama-subtle"
+                    : done
+                      ? "size-2 bg-amama-deep"
+                      : "size-2 border-2 border-border bg-card"
+                )}
+              />
+            </div>
+            {labels ? (
+              <p
+                className={cn(
+                  "mt-2.5 truncate tracking-tight",
+                  current
+                    ? "text-[12px] font-bold text-amama-deep"
+                    : done
+                      ? "text-[11px] font-semibold text-foreground"
+                      : "text-[11px] font-medium text-muted-foreground"
+                )}
+              >
+                {labels[index]}
+              </p>
+            ) : null}
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
 function OrderJourney({
   deal,
   defaultExpanded = false,
@@ -44,49 +108,7 @@ function OrderJourney({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* A thin line and a dot, not a row of thick colored bars — the
-          bars read as a generic dashboard progress meter; a stepper
-          where only the current stop actually stands out reads as
-          considered instead. */}
-      <ol className="flex items-stretch gap-1">
-        {ORDER_STAGE_ORDER.map((entry, index) => {
-          const done = index < currentIndex
-          const current = index === currentIndex
-          return (
-            <li key={entry} className="min-w-0 flex-1">
-              <div className="relative h-2.5">
-                <div
-                  aria-hidden
-                  className={cn("absolute inset-x-0 top-1/2 h-px -translate-y-1/2", done ? "bg-amama-deep" : "bg-border")}
-                />
-                <span
-                  aria-hidden
-                  className={cn(
-                    "absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all",
-                    current
-                      ? "size-2.5 bg-amama-deep ring-[3px] ring-amama-subtle"
-                      : done
-                        ? "size-2 bg-amama-deep"
-                        : "size-2 border-2 border-border bg-card"
-                  )}
-                />
-              </div>
-              <p
-                className={cn(
-                  "mt-2.5 truncate tracking-tight",
-                  current
-                    ? "text-[12px] font-bold text-amama-deep"
-                    : done
-                      ? "text-[11px] font-semibold text-foreground"
-                      : "text-[11px] font-medium text-muted-foreground"
-                )}
-              >
-                {ORDER_STAGE_LABELS[entry]}
-              </p>
-            </li>
-          )
-        })}
-      </ol>
+      <StageDots total={ORDER_STAGE_ORDER.length} currentIndex={currentIndex} labels={ORDER_STAGE_ORDER.map((entry) => ORDER_STAGE_LABELS[entry])} />
 
       {/* The sub-journey only earns its space once the order is actually
           moving and there's a leg to show. */}
@@ -142,4 +164,4 @@ function LegPanel({ shipment, index, total }: { shipment: Shipment; index: numbe
   )
 }
 
-export { OrderJourney }
+export { OrderJourney, StageDots }

@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowRightIcon, EyeIcon, EyeOffIcon, KeyRoundIcon } from "lucide-react"
+import { ArrowRightIcon, EyeIcon, EyeOffIcon, KeyRoundIcon, Loader2Icon } from "lucide-react"
 
 import {
   FieldGroup,
@@ -14,9 +14,10 @@ import {
 import { Button } from "@/components/ui/button"
 import { EditorialImage } from "@/components/ui/editorial-image"
 import { adminLoginContent } from "@/features/auth/admin-login-content"
-import { useRoles } from "@/features/admin/role-store"
-import { signIn } from "@/features/admin/session-store"
-import { useUsers } from "@/features/admin/user-store"
+import { authClient } from "@/lib/auth/client"
+import { invalidateCurrentAdmin } from "@/features/admin/current-admin"
+import { useDemoDirectory } from "@/features/admin/demo-directory"
+import { DEMO_PASSWORD } from "@/features/admin/user-store"
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
@@ -24,16 +25,18 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
  * The admin module's own sign-in — deliberately plainer than the buyer/
  * seller `LoginScreen`: no social providers, no "new here? get started"
  * (there's no public sign-up for staff accounts), no forgot-password link
- * yet. One door for every business-side role now, checked against real
- * (if entirely local) accounts in `user-store.ts` — no more typing
- * whatever name you want.
+ * yet. One door for every business-side role now, checked against a real
+ * Managed Better Auth credential — no more typing whatever name you want.
  */
 function AdminLoginScreen() {
   const router = useRouter()
   const content = adminLoginContent
-  const users = useUsers()
-  const roles = useRoles()
+  const directory = useDemoDirectory()
   const [submitting, setSubmitting] = React.useState(false)
+  // "form", or the quick-login user id that's mid sign-in — tells that
+  // one row's own avatar to swap in a spinner, rather than every row
+  // dimming at once with no sign of which one was actually clicked.
+  const [activeAction, setActiveAction] = React.useState<string | null>(null)
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
   const [showPassword, setShowPassword] = React.useState(false)
@@ -42,20 +45,25 @@ function AdminLoginScreen() {
 
   const enterConsole = () => router.push(content.homeHref)
 
-  const attemptSignIn = (attemptEmail: string, attemptPassword: string) => {
+  const attemptSignIn = async (attemptEmail: string, attemptPassword: string) => {
     setSubmitting(true)
     setError(null)
-    const result = signIn(attemptEmail, attemptPassword)
-    if (result.ok) {
-      window.setTimeout(enterConsole, 300)
-    } else {
+    // Some failures throw rather than resolve `{ data, error }` — either
+    // shape means the same thing here.
+    try {
+      const { error: signInError } = await authClient.signIn.email({ email: attemptEmail, password: attemptPassword })
+      if (signInError) throw signInError
+      await invalidateCurrentAdmin()
+      enterConsole()
+    } catch (error) {
       setSubmitting(false)
-      setError(result.error)
+      setError(error instanceof Error ? error.message : "That email or password isn't right.")
     }
   }
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
+    setActiveAction("form")
     attemptSignIn(email.trim(), password)
   }
 
@@ -127,8 +135,12 @@ function AdminLoginScreen() {
               {error ? <p className="text-[13px] font-medium text-destructive">{error}</p> : null}
 
               <Button type="submit" size="lg" className="mt-1 w-full" disabled={submitting}>
-                {submitting ? "Signing in…" : "Log in"}
-                {!submitting && <ArrowRightIcon />}
+                {submitting && activeAction === "form" ? "Signing in…" : "Log in"}
+                {submitting && activeAction === "form" ? (
+                  <Loader2Icon className="animate-spin" />
+                ) : (
+                  !submitting && <ArrowRightIcon />
+                )}
               </Button>
             </form>
 
@@ -145,25 +157,31 @@ function AdminLoginScreen() {
 
               {quickLoginOpen ? (
                 <div className="mt-2 flex flex-col gap-1 rounded-[16px] border border-border bg-card p-1.5">
-                  {users.map((user) => {
-                    const role = roles.find((entry) => entry.id === user.roleId)
+                  {directory.map((user) => {
                     return (
                       <button
                         key={user.id}
                         type="button"
                         disabled={submitting}
-                        onClick={() => attemptSignIn(user.email, user.password)}
+                        onClick={() => {
+                          setActiveAction(user.id)
+                          attemptSignIn(user.email, DEMO_PASSWORD)
+                        }}
                         className="flex items-center gap-3 rounded-[12px] px-3 py-2 text-start transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
                       >
                         <span className="grid size-8 shrink-0 place-items-center rounded-full bg-amama-deep text-[12px] font-semibold text-white">
-                          {user.name.trim().charAt(0).toUpperCase() || "?"}
+                          {submitting && activeAction === user.id ? (
+                            <Loader2Icon className="size-3.5 animate-spin" />
+                          ) : (
+                            user.name.trim().charAt(0).toUpperCase() || "?"
+                          )}
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[13px] font-semibold text-foreground">
                             {user.name}
                           </span>
                           <span className="block truncate text-[12px] text-muted-foreground">
-                            {role?.name ?? "No role"} · {user.email}
+                            {user.roleName} · {user.email}
                           </span>
                         </span>
                       </button>

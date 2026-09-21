@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { AdminEmptyState } from "@/features/admin/admin-ui"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
-import { cropLabels } from "@/features/dashboard/demo-data"
+import { productLabel } from "@/features/marketplace/catalog"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
 import { formatInr } from "@/features/marketplace/currency"
 import { notifyFromKam } from "@/features/marketplace/kam-thread-store"
@@ -39,7 +39,7 @@ function ListingModerationCard({ listing, reviewerName }: { listing: Listing; re
       notifyFromKam(
         listing.sellerId,
         "seller",
-        `I've had to pull your ${cropLabels[listing.cropId] ?? listing.cropId} listing (${listing.variety}) from the marketplace: ${trimmed}`
+        `I've had to pull your ${productLabel(listing.cropId)} listing (${listing.variety}) from the marketplace: ${trimmed}`
       )
     }
     setMode("idle")
@@ -51,7 +51,7 @@ function ListingModerationCard({ listing, reviewerName }: { listing: Listing; re
       <header className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
         <div className="min-w-0">
           <h2 className="truncate text-[16px] font-bold tracking-tight">
-            {cropLabels[listing.cropId] ?? listing.cropId} — {listing.variety}
+            {productLabel(listing.cropId)} — {listing.variety}
           </h2>
           <p className="mt-0.5 truncate text-[13px] text-muted-foreground">
             {listing.sellerName} · {listing.grade} · {listing.quantityMt} MT ·{" "}

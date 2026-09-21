@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { cropLabels } from "@/features/dashboard/demo-data"
+import { CATALOG_CATEGORIES, catalogCategory, productLabel, uniqueProductId } from "@/features/marketplace/catalog"
 import { convertToUsd, currencies, inrToUsd, suggestRoundedUsd, usdToInr } from "@/features/marketplace/currency"
 import { logListingChange } from "@/features/marketplace/conversation-store"
 import { GradeInfoTrigger } from "@/features/marketplace/grade-badge"
@@ -32,7 +32,13 @@ import { crops } from "@/features/onboarding/steps"
 
 const gradeOptions = ["Grade A+", "Grade A", "Grade B"]
 
+/** The Product select's escape hatch — picking this reveals a text input
+ *  instead of a fixed option, since the base catalog can't realistically
+ *  enumerate every agro product up front. */
+const NEW_PRODUCT_VALUE = "__new__"
+
 type FormState = {
+  categoryId: string
   cropId: string
   variety: string
   grade: string
@@ -63,10 +69,13 @@ function ListingFormView({ listingId }: { listingId?: string }) {
   const listings = useListings()
   const editing = listingId ? listings.find((entry) => entry.id === listingId) : undefined
 
+  const [newProductName, setNewProductName] = React.useState("")
+
   const [form, setForm] = React.useState<FormState>(() => {
     if (editing) {
       const inrPrice = String(Math.round(usdToInr(editing.pricePerTonneUsd)))
       return {
+        categoryId: editing.categoryId,
         cropId: editing.cropId,
         variety: editing.variety,
         grade: editing.grade,
@@ -81,8 +90,10 @@ function ListingFormView({ listingId }: { listingId?: string }) {
         pinY: editing.pinY,
       }
     }
+    const defaultCategory = CATALOG_CATEGORIES[0]
     return {
-      cropId: crops[0].id,
+      categoryId: defaultCategory.id,
+      cropId: defaultCategory.cropIds[0] ?? NEW_PRODUCT_VALUE,
       variety: "",
       grade: gradeOptions[0],
       quantityMt: "",
@@ -98,6 +109,29 @@ function ListingFormView({ listingId }: { listingId?: string }) {
   })
   const [submitError, setSubmitError] = React.useState<string | null>(null)
 
+  // What a seller can pick as the Product for a given Category: the base
+  // crops that category ships with, plus any other `cropId` a real listing
+  // already uses under that same category — so once one seller adds
+  // "Dragonfruit" under Fruits, the next seller doing the same finds it as
+  // a pickable existing product rather than typing it twice. Computed
+  // above the early return below so every hook here still runs on every
+  // render, even the "this listing no longer exists" one.
+  const productsForCategory = React.useCallback(
+    (categoryId: string) => {
+      const base = catalogCategory(categoryId).cropIds
+      const custom = listings
+        .filter((entry) => entry.categoryId === categoryId && !base.includes(entry.cropId))
+        .map((entry) => entry.cropId)
+      const ids = Array.from(new Set([...base, ...custom]))
+      return ids.map((id) => ({ id, label: productLabel(id) })).sort((a, b) => a.label.localeCompare(b.label))
+    },
+    [listings]
+  )
+  const productOptions = React.useMemo(
+    () => productsForCategory(form.categoryId),
+    [productsForCategory, form.categoryId]
+  )
+
   if (listingId && !editing) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border py-16 text-center">
@@ -111,6 +145,17 @@ function ListingFormView({ listingId }: { listingId?: string }) {
   }
 
   const patchForm = (patch: Partial<FormState>) => setForm((previous) => ({ ...previous, ...patch }))
+
+  const onCategoryChange = (categoryId: string) => {
+    const options = productsForCategory(categoryId)
+    patchForm({ categoryId, cropId: options[0]?.id ?? NEW_PRODUCT_VALUE })
+    setNewProductName("")
+  }
+
+  const onProductChange = (value: string) => {
+    patchForm({ cropId: value })
+    if (value !== NEW_PRODUCT_VALUE) setNewProductName("")
+  }
 
   // The seller can type in whatever currency they think in; what lands in
   // "Listing price" — and what actually gets stored — is always the
@@ -139,6 +184,7 @@ function ListingFormView({ listingId }: { listingId?: string }) {
     // problem (country defaulting to empty for an incomplete onboarding
     // profile was the usual culprit).
     const missing: string[] = []
+    if (form.cropId === NEW_PRODUCT_VALUE && !newProductName.trim()) missing.push("product name")
     if (!form.variety.trim()) missing.push("variety")
     if (!(Number(form.quantityMt) > 0)) missing.push("quantity")
     if (!(Number(form.inrPrice) > 0)) missing.push("price")
@@ -149,10 +195,19 @@ function ListingFormView({ listingId }: { listingId?: string }) {
     }
     setSubmitError(null)
 
-    const cropPhoto = crops.find((crop) => crop.id === form.cropId)?.photo ?? crops[0].photo
+    // A brand-new product gets a fresh `cropId` slugified from what the
+    // seller typed, de-duplicated against every id already in use — from
+    // here on it's just another real product, pickable by the next seller
+    // who lists under the same category (see `productsForCategory`).
+    const cropId =
+      form.cropId === NEW_PRODUCT_VALUE
+        ? uniqueProductId(newProductName, listings.map((entry) => entry.cropId))
+        : form.cropId
+    const cropPhoto = crops.find((crop) => crop.id === cropId)?.photo ?? crops[0].photo
 
     const payload = {
-      cropId: form.cropId,
+      categoryId: form.categoryId,
+      cropId,
       variety: form.variety.trim(),
       grade: form.grade,
       quantityMt: Number(form.quantityMt),
@@ -205,15 +260,15 @@ function ListingFormView({ listingId }: { listingId?: string }) {
         <FormSection title="Product">
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1.5 text-[13px] font-medium text-foreground">
-              Crop
-              <Select value={form.cropId} onValueChange={(value) => patchForm({ cropId: value as string })}>
+              Category
+              <Select value={form.categoryId} onValueChange={(value) => onCategoryChange(value as string)}>
                 <SelectTrigger className="w-full">
-                  <SelectValue>{(value) => cropLabels[value as string] ?? (value as string)}</SelectValue>
+                  <SelectValue>{(value) => catalogCategory(value as string).label}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {crops.map((crop) => (
-                    <SelectItem key={crop.id} value={crop.id}>
-                      {cropLabels[crop.id] ?? crop.id}
+                  {CATALOG_CATEGORIES.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -239,6 +294,39 @@ function ListingFormView({ listingId }: { listingId?: string }) {
               </Select>
             </label>
           </div>
+
+          <label className="mt-3 flex flex-col gap-1.5 text-[13px] font-medium text-foreground">
+            Product
+            <Select value={form.cropId} onValueChange={(value) => onProductChange(value as string)}>
+              <SelectTrigger className="w-full">
+                <SelectValue>
+                  {(value) =>
+                    value === NEW_PRODUCT_VALUE ? "+ Add a new product" : productLabel(value as string)
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {productOptions.map((product) => (
+                  <SelectItem key={product.id} value={product.id}>
+                    {product.label}
+                  </SelectItem>
+                ))}
+                <SelectItem value={NEW_PRODUCT_VALUE}>+ Add a new product</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+
+          {form.cropId === NEW_PRODUCT_VALUE ? (
+            <label className="mt-3 flex flex-col gap-1.5 text-[13px] font-medium text-foreground">
+              New product name
+              <Input
+                value={newProductName}
+                onChange={(event) => setNewProductName(event.target.value)}
+                placeholder="e.g. Dragonfruit — not on the list yet? Add it."
+                autoFocus
+              />
+            </label>
+          ) : null}
 
           <label className="mt-3 flex flex-col gap-1.5 text-[13px] font-medium text-foreground">
             Variety

@@ -77,6 +77,39 @@ function AdminStatCard({
   )
 }
 
+/** `AdminStatCard`'s own shape, filled with pulsing placeholder blocks —
+ *  for the network round-trip a fetch-backed stat (the roster, a
+ *  verification queue) needs on a fresh page load, so that gap reads as
+ *  "still counting" rather than a wrong "zero" flashing before the real
+ *  number lands. */
+function AdminStatCardSkeleton() {
+  return (
+    <div className="rounded-[20px] border border-border bg-card px-4 py-4">
+      <div className="h-[13px] w-16 animate-pulse rounded bg-muted" />
+      <div className="mt-2.5 h-[28px] w-10 animate-pulse rounded bg-muted" />
+      <div className="mt-2.5 h-[12px] w-24 animate-pulse rounded bg-muted" />
+    </div>
+  )
+}
+
+/** A handful of pulsing rows, the same height as a real preview row —
+ *  for a Home-page list card while its own fetch is still in flight. */
+function AdminListSkeleton({ rows = 3 }: { rows?: number }) {
+  return (
+    <ul className="divide-y divide-border">
+      {Array.from({ length: rows }).map((_, index) => (
+        <li key={index} className="flex items-center gap-3 px-5 py-3.5">
+          <span className="size-9 shrink-0 animate-pulse rounded-full bg-muted" />
+          <div className="min-w-0 flex-1">
+            <div className="h-[13px] w-2/5 animate-pulse rounded bg-muted" />
+            <div className="mt-1.5 h-[12px] w-3/5 animate-pulse rounded bg-muted" />
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 /** A plain bordered card for standalone list items (a listing, an
  *  application) that don't need a distinct header band — just the shared
  *  hardcoded radius so every admin surface nests consistently. */
@@ -108,4 +141,12 @@ function AdminEmptyState({
  *  a selected list row reads as the same move as a selected sidebar item. */
 const ADMIN_SELECTED_CLASS = "bg-amama text-amama-foreground border border-amama-foreground"
 
-export { AdminPanel, AdminStatCard, AdminCard, AdminEmptyState, ADMIN_SELECTED_CLASS }
+export {
+  AdminPanel,
+  AdminStatCard,
+  AdminStatCardSkeleton,
+  AdminListSkeleton,
+  AdminCard,
+  AdminEmptyState,
+  ADMIN_SELECTED_CLASS,
+}

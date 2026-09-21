@@ -256,6 +256,17 @@ function MessagesViewInner({ role }: { role: OnboardingRole }) {
             onSend={handleSend}
             viewer={role}
             viewerName={identity.name}
+            conversationId={active && !active.isKam ? active.id : undefined}
+            composerParties={
+              activeConversation
+                ? [
+                    {
+                      party: role === "buyer" ? "seller" : "buyer",
+                      name: role === "buyer" ? activeConversation.sellerName : activeConversation.buyerName,
+                    },
+                  ]
+                : []
+            }
             onProposeDeal={canPropose ? () => setProposing(true) : undefined}
             className="min-h-[420px] flex-1 bg-card lg:min-h-0"
           />

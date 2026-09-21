@@ -7,9 +7,11 @@ import {
   CheckIcon,
   ClipboardListIcon,
   ContainerIcon,
+  FileCheck2Icon,
   FileSignatureIcon,
   FileTextIcon,
   PenLineIcon,
+  ReceiptIcon,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -24,8 +26,13 @@ import {
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import {
+  allClausesAgreed,
   approveDraft,
+  cancelPurchaseOrder,
   chooseShipmentDate,
+  CLAUSE_LABELS,
+  CLAUSE_ORDER,
+  confirmPurchaseOrder,
   CONTRACT_STAGE_LABELS,
   contractProgress,
   raiseAmendment,
@@ -35,6 +42,7 @@ import {
   type Contract,
 } from "@/features/contracts/contract-store"
 import { TermSheetDialog } from "@/features/contracts/term-sheet-dialog"
+import { TermSheetPanel } from "@/features/contracts/term-sheet-panel"
 import { CardProgress, CardShell } from "@/features/marketplace/chat-card-shell"
 import type { ChatParty, ConversationCard } from "@/features/marketplace/conversation-store"
 
@@ -43,7 +51,7 @@ import type { ChatParty, ConversationCard } from "@/features/marketplace/convers
 function contractsHref(viewer: ChatParty, contractId: string) {
   const base =
     viewer === "kam"
-      ? "/admin/contracts"
+      ? "/internal/contracts"
       : viewer === "buyer"
         ? "/buyer/dashboard/contracts"
         : "/seller/dashboard/contracts"
@@ -67,7 +75,15 @@ function ContractChatCard({
 }) {
   const contracts = useContracts()
 
-  if (card.kind === "proposal") return null
+  if (
+    card.kind === "proposal" ||
+    card.kind === "form-request" ||
+    card.kind === "rfq" ||
+    card.kind === "rfq-quote" ||
+    card.kind === "contract-request"
+  ) {
+    return null
+  }
 
   const contract = contracts.find((entry) => entry.id === card.contractId)
   if (!contract) return null
@@ -80,6 +96,12 @@ function ContractChatCard({
   }
   if (card.kind === "final-draft") {
     return <FinalDraftCard contract={contract} viewer={viewer} viewerName={viewerName} />
+  }
+  if (card.kind === "term-sheet") {
+    return <TermSheetNegotiationCard contract={contract} viewer={viewer} viewerName={viewerName} />
+  }
+  if (card.kind === "po") {
+    return <PurchaseOrderCard contract={contract} viewer={viewer} viewerName={viewerName} />
   }
   return <ShipmentDatesCard contract={contract} viewer={viewer} viewerName={viewerName} />
 }
@@ -113,6 +135,130 @@ function ContractOpenedCard({ contract, viewer }: { contract: Contract; viewer: 
         </div>
         <CardProgress done={progress.cleared} total={progress.total} label="steps" tone="neutral" />
       </div>
+    </CardShell>
+  )
+}
+
+/** The term sheet's own card — one persistent card per contract (never
+ *  reposted), always showing today's clause-by-clause progress since it
+ *  reads the live contract rather than a snapshot of the moment it was
+ *  opened. */
+function TermSheetNegotiationCard({
+  contract,
+  viewer,
+  viewerName,
+}: {
+  contract: Contract
+  viewer: ChatParty
+  viewerName: string
+}) {
+  const [open, setOpen] = React.useState(false)
+  const agreedCount = contract.clauses.filter((clause) => clause.status === "agreed").length
+  const disputedCount = contract.clauses.filter((clause) => clause.status === "disputed").length
+  const allAgreed = allClausesAgreed(contract)
+
+  return (
+    <>
+      <CardShell
+        icon={FileCheck2Icon}
+        tone={allAgreed ? "success" : disputedCount > 0 ? "danger" : "brand"}
+        title={`Term sheet — ${contract.reference}`}
+        subtitle={
+          allAgreed
+            ? "Every clause agreed — ready for a PO"
+            : disputedCount > 0
+              ? `${disputedCount} clause${disputedCount === 1 ? "" : "s"} disputed`
+              : `${agreedCount}/${contract.clauses.length} clauses agreed`
+        }
+        footer={
+          <Button size="sm" className="w-full" onClick={() => setOpen(true)}>
+            Review clauses
+          </Button>
+        }
+      >
+        <CardProgress done={agreedCount} total={contract.clauses.length} label="agreed" />
+      </CardShell>
+
+      <TermSheetPanel open={open} onOpenChange={setOpen} contract={contract} viewer={viewer} viewerName={viewerName} />
+    </>
+  )
+}
+
+/**
+ * The purchase order the buyer issued against an agreed term sheet — a
+ * snapshot of what it said at issuance, plus whichever of the two legal
+ * outcomes the brief calls for: matched exactly (binding immediately) or
+ * changed something (a counter-offer waiting on the seller).
+ */
+function PurchaseOrderCard({
+  contract,
+  viewer,
+  viewerName,
+}: {
+  contract: Contract
+  viewer: ChatParty
+  viewerName: string
+}) {
+  const po = contract.po
+  if (!po) return null
+
+  const cancelled = !!po.cancelledAt
+  const needsSellerConfirm = po.status === "pending-seller-confirmation" && !cancelled
+
+  return (
+    <CardShell
+      icon={ReceiptIcon}
+      tone={cancelled ? "danger" : needsSellerConfirm ? "warning" : "success"}
+      title={`Purchase order — ${contract.reference}`}
+      subtitle={
+        po.status === "auto-accepted"
+          ? "Matches the term sheet exactly — binding"
+          : po.status === "confirmed"
+            ? "Confirmed by the seller — binding"
+            : `Needs ${contract.sellerName}'s confirmation`
+      }
+      cancelled={cancelled ? { at: po.cancelledAt!, byName: po.cancelledBy ?? contract.buyerName } : null}
+      footer={
+        needsSellerConfirm ? (
+          <div className="flex gap-2">
+            {viewer === "seller" ? (
+              <Button size="sm" className="flex-1" onClick={() => confirmPurchaseOrder(contract.id, viewerName)}>
+                <CheckIcon className="size-4" />
+                Confirm PO
+              </Button>
+            ) : null}
+            {viewer === "buyer" ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1"
+                onClick={() => cancelPurchaseOrder(contract.id, viewerName)}
+              >
+                Withdraw
+              </Button>
+            ) : null}
+            {viewer === "kam" ? (
+              <p className="text-[12px] font-medium text-muted-foreground">Waiting on {contract.sellerName}.</p>
+            ) : null}
+          </div>
+        ) : undefined
+      }
+    >
+      <ul className="flex flex-col gap-1.5 text-[12px]">
+        {CLAUSE_ORDER.map((key) => (
+          <li key={key} className="flex items-baseline justify-between gap-2">
+            <span className="text-muted-foreground">{CLAUSE_LABELS[key]}</span>
+            <span
+              className={cn(
+                "min-w-0 truncate font-medium text-foreground",
+                po.deviatedClauses.includes(key) && "text-destructive"
+              )}
+            >
+              {po.terms[key] ?? "—"}
+            </span>
+          </li>
+        ))}
+      </ul>
     </CardShell>
   )
 }

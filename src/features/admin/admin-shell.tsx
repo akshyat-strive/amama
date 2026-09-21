@@ -3,17 +3,19 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChartNoAxesGantt, CrownIcon, ShieldCheckIcon } from "lucide-react"
+import { ChartNoAxesGantt } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { AccountMenu } from "@/features/dashboard/account-menu"
+import { useSignOut } from "@/features/auth/use-sign-out"
 import { LanguageSwitcher } from "@/features/i18n/components/language-switcher"
 import { NavList } from "@/features/dashboard/nav-list"
 import { useSidebarOpen } from "@/features/dashboard/sidebar-open-store"
 import { visibleAdminNav } from "@/features/admin/admin-nav-config"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
-import { isFullAccess } from "@/features/admin/permissions"
 import { seedAdminDemoData } from "@/features/admin/seed-data"
+import { FullPageLoader } from "@/components/ui/full-page-loader"
 
 /** Same rail-width constant and rationale as `DashboardShell` — see there
  *  for why one `sidebarOpen` boolean resolves to three different visual
@@ -40,40 +42,37 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   // in has nowhere to attribute an action to. Bounce back to sign-in
   // rather than letting the console render with no identity.
   //
-  // On a real (non-client-routed) navigation, `useCurrentAdmin` renders
-  // `null` on the hydration-matching pass even when localStorage really
-  // does have a session — the underlying stores' own post-hydration
-  // correction effect fires and fixes it a moment later, but only *after*
-  // this effect (registered later in this same component) has already run
-  // once with that stale `null`. Deferring the redirect through a
-  // cancelled-by-cleanup microtask lets that correction win the race: if
-  // `signedOut` flips back to `false` on the very next render, cleanup
-  // cancels the still-pending redirect before it fires.
+  // `useCurrentAdmin` is `undefined` while its `/api/identity/me` fetch is
+  // still in flight (every fresh page load, not just a one-tick hydration
+  // race) and only settles to `null` once that call has genuinely come
+  // back with no admin session — the redirect below fires on that `null`,
+  // never on the loading state, so it doesn't bounce a real session back
+  // to `/login` just because the network round-trip hasn't finished yet.
   const admin = useCurrentAdmin()
+  const loading = admin === undefined
   const signedOut = admin === null
   React.useEffect(() => {
-    if (!signedOut) return
-    let cancelled = false
-    queueMicrotask(() => {
-      if (!cancelled) router.replace("/admin/login")
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [signedOut, router])
+    if (loading || !signedOut) return
+    router.replace("/internal/login")
+  }, [loading, signedOut, router])
 
   React.useEffect(() => {
     if (admin) seedAdminDemoData()
   }, [admin])
 
   const [sidebarOpen, setSidebarOpen] = useSidebarOpen("amama.admin.sidebarOpen")
+  const signOut = useSignOut("admin")
 
   // Every hook above must still run before this — the redirect itself is
-  // fired from the effect above, this just skips the flash of an
-  // unattributed console while that navigation is in flight.
+  // fired from the effect above, this just skips rendering a console with
+  // no identity while that's still being sorted out. `loading` gets a
+  // spinner rather than nothing, since it's the one branch that can take
+  // a real network round-trip (right after a quick-login redirect, say) —
+  // `signedOut` is about to navigate away, so there's nothing worth
+  // showing there.
+  if (loading) return <FullPageLoader />
   if (signedOut) return null
 
-  const Icon = isFullAccess(admin.role.permissions) ? CrownIcon : ShieldCheckIcon
   const toggleSidebar = () => {
     setSidebarOpen((open) => !open)
   }
@@ -91,7 +90,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         >
           <ChartNoAxesGantt />
         </Button>
-        <Link href="/admin" className="text-xl font-bold tracking-tight text-amama-deep">
+        <Link href="/internal" className="text-xl font-bold tracking-tight text-amama-deep">
           amama
         </Link>
         <span className="hidden items-center gap-2 sm:flex">
@@ -99,14 +98,17 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           <span className="text-[15px] font-medium text-muted-foreground">{admin.role.name}</span>
         </span>
 
-        <div className="ms-auto flex items-center gap-3">
+        <div className="ms-auto flex items-center gap-2 sm:gap-3">
           <LanguageSwitcher variant="inline" />
-          <span
-            className="grid size-10 place-items-center rounded-full bg-amama-deep text-[14px] font-semibold text-white shadow-floating"
-            title={admin.user.name}
-          >
-            <Icon className="size-4.5" />
-          </span>
+          <AccountMenu
+            name={admin.user.name}
+            subtitle={admin.role.name}
+            profileHref="/internal/profile"
+            settingsHref="/internal/settings"
+            onSignOut={() => {
+              void signOut()
+            }}
+          />
         </div>
       </header>
 

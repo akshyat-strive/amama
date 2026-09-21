@@ -28,5 +28,5 @@ export const adminLoginContent: AdminLoginContent = {
       profileUrl: "https://unsplash.com/@mapbox",
     },
   },
-  homeHref: "/admin",
+  homeHref: "/internal",
 }

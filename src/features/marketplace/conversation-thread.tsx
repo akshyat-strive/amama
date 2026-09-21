@@ -1,22 +1,17 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangleIcon, HandshakeIcon, PackageIcon, PlusIcon, SendIcon, ShieldCheckIcon } from "lucide-react"
+import { AlertTriangleIcon, PackageIcon, SendIcon, ShieldCheckIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { ChatCard } from "@/features/marketplace/chat-cards"
+import { ChatComposerPopover, type ComposerParty } from "@/features/marketplace/chat-composer-popover"
 import {
   containsContactInfo,
   type ChatParty,
   type ConversationCard,
   type ListingDiff,
 } from "@/features/marketplace/conversation-store"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { ListingDiffDialog } from "@/features/marketplace/listing-diff-dialog"
 
 export type ThreadMessage = {
@@ -62,7 +57,10 @@ function ConversationThread({
   readOnly = false,
   viewer = "buyer",
   viewerName = "",
+  conversationId,
+  composerParties = [],
   onProposeDeal,
+  renderMessageAction,
   className,
 }: {
   header?: React.ReactNode
@@ -78,10 +76,23 @@ function ConversationThread({
    *  "waiting…" line to the side that asked. */
   viewer?: ChatParty
   viewerName?: string
-  /** Adds a "+" menu to the composer with a "Proposal" option — only
-   *  meaningful where the caller actually has a listing to propose terms
-   *  against, so it's opt-in rather than always-on. */
+  /** Required for the "+" form-request picker — omit it (leave
+   *  `composerParties` empty too) wherever there's no real conversation
+   *  to attach a form to yet. */
+  conversationId?: string
+  /** Who a form sent from here can target — see `ChatComposerPopover`.
+   *  Empty (the default) just hides the form templates from the "+"
+   *  picker, leaving "Proposal" (if `onProposeDeal` is set) on its own. */
+  composerParties?: ComposerParty[]
+  /** Adds a "Proposal" tile to the "+" picker — only meaningful where the
+   *  caller actually has a listing to propose terms against, so it's
+   *  opt-in rather than always-on. */
   onProposeDeal?: () => void
+  /** An extra affordance next to a plain typed bubble — used by the KAM
+   *  console to offer "pin this number to a term sheet clause" without
+   *  every other reader of this thread (a buyer, a seller) growing the
+   *  same control. Omitted everywhere else. */
+  renderMessageAction?: (message: ThreadMessage, index: number) => React.ReactNode
   className?: string
 }) {
   const [draftText, setDraftText] = React.useState("")
@@ -125,11 +136,19 @@ function ConversationThread({
               ) : message.from === "system" ? (
                 <SystemLogLine key={index} message={message} onOpenDiff={setOpenDiff} />
               ) : (
-                <MessageBubble
+                <div
                   key={index}
-                  message={message}
-                  grouped={index > 0 && messages[index - 1].from === message.from && !messages[index - 1].card}
-                />
+                  className={cn(
+                    "flex items-end gap-1.5",
+                    message.from === "me" || message.from === "seller" ? "justify-end" : "justify-start"
+                  )}
+                >
+                  <MessageBubble
+                    message={message}
+                    grouped={index > 0 && messages[index - 1].from === message.from && !messages[index - 1].card}
+                  />
+                  {renderMessageAction ? renderMessageAction(message, index) : null}
+                </div>
               )
             )}
           </div>
@@ -149,21 +168,14 @@ function ConversationThread({
                 }}
                 className="flex shrink-0 items-center gap-2 border-t border-border p-3"
               >
-                {onProposeDeal ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      aria-label="More options"
-                      className="grid size-10 shrink-0 place-items-center rounded-full border border-border text-foreground/70 transition-colors hover:bg-muted"
-                    >
-                      <PlusIcon className="size-4" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" side="top">
-                      <DropdownMenuItem onClick={onProposeDeal}>
-                        <HandshakeIcon className="size-4" />
-                        Proposal
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                {conversationId ? (
+                  <ChatComposerPopover
+                    conversationId={conversationId}
+                    viewer={viewer}
+                    viewerName={viewerName}
+                    parties={composerParties}
+                    onProposeDeal={onProposeDeal}
+                  />
                 ) : null}
                 <input
                   value={draftText}

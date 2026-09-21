@@ -33,19 +33,19 @@ type AdminNavItem = DashboardNavItem & {
  * isn't the thing being restricted here, posting/assigning/managing is.
  */
 const adminNavItems: AdminNavItem[] = [
-  { label: "Chat", href: "/admin/chat", icon: MessagesSquareIcon, group: "activity" },
-  { label: "Announcements", href: "/admin/announcements", icon: MegaphoneIcon, group: "activity" },
-  { label: "Home", href: "/admin", icon: HouseIcon, group: "menu" },
-  { label: "Buyer queue", href: "/admin/review-queue/buyer", icon: UserRoundCheckIcon, group: "menu", permission: "onboarding.review" },
-  { label: "Seller queue", href: "/admin/review-queue/seller", icon: StoreIcon, group: "menu", permission: "onboarding.review" },
-  { label: "Deals", href: "/admin/deals", icon: HandshakeIcon, group: "menu", permission: ["deals.work", "deals.viewAll"] },
-  { label: "Contracts", href: "/admin/contracts", icon: FileSignatureIcon, group: "menu", permission: "deals.work" },
-  { label: "Listings", href: "/admin/listings", icon: PackageSearchIcon, group: "menu", permission: "listings.moderate" },
-  { label: "Logistics", href: "/admin/logistics", icon: ShipIcon, group: "logistics", permission: ["deals.work", "deals.viewAll"] },
-  { label: "Finance", href: "/admin/finance", icon: WalletIcon, group: "finance", permission: ["deals.work", "deals.viewAll"] },
-  { label: "Team", href: "/admin/team", icon: UsersRoundIcon, group: "general", permission: ["users.manage", "roles.manage"] },
-  { label: "Profile", href: "/admin/profile", icon: UserRoundIcon, group: "general" },
-  { label: "Settings", href: "/admin/settings", icon: SettingsIcon, group: "general" },
+  { label: "Chat", href: "/internal/chat", icon: MessagesSquareIcon, group: "activity" },
+  { label: "Announcements", href: "/internal/announcements", icon: MegaphoneIcon, group: "activity" },
+  { label: "Home", href: "/internal", icon: HouseIcon, group: "menu" },
+  { label: "Buyer queue", href: "/internal/review-queue/buyer", icon: UserRoundCheckIcon, group: "menu", permission: "onboarding.review" },
+  { label: "Seller queue", href: "/internal/review-queue/seller", icon: StoreIcon, group: "menu", permission: "onboarding.review" },
+  { label: "Deals", href: "/internal/deals", icon: HandshakeIcon, group: "menu", permission: ["deals.work", "deals.viewAll"] },
+  { label: "Contracts", href: "/internal/contracts", icon: FileSignatureIcon, group: "menu", permission: "deals.work" },
+  { label: "Listings", href: "/internal/listings", icon: PackageSearchIcon, group: "menu", permission: "listings.moderate" },
+  { label: "Logistics", href: "/internal/logistics", icon: ShipIcon, group: "logistics", permission: ["deals.work", "deals.viewAll"] },
+  { label: "Finance", href: "/internal/finance", icon: WalletIcon, group: "finance", permission: ["deals.work", "deals.viewAll"] },
+  { label: "Team", href: "/internal/team", icon: UsersRoundIcon, group: "general", permission: ["users.manage", "roles.manage"] },
+  { label: "Profile", href: "/internal/profile", icon: UserRoundIcon, group: "general" },
+  { label: "Settings", href: "/internal/settings", icon: SettingsIcon, group: "general" },
 ]
 
 function visibleAdminNav(can: (permission: Permission) => boolean): DashboardNavItem[] {

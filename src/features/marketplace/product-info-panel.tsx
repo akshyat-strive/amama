@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { Trash2Icon } from "lucide-react"
 
-import { cropLabels } from "@/features/dashboard/demo-data"
+import { productLabel } from "@/features/marketplace/catalog"
 import { cropImageUrl } from "@/features/onboarding/steps"
 import { formatInr } from "@/features/marketplace/currency"
 import { GradeBadge } from "@/features/marketplace/grade-badge"
@@ -28,7 +28,7 @@ import type { Listing } from "@/features/marketplace/listing-store"
  * page's own footer now (see `SellerProductView`), not this panel's.
  */
 function ProductInfoPanel({ listing }: { listing: Listing }) {
-  const cropLabel = cropLabels[listing.cropId] ?? listing.cropId
+  const cropLabel = productLabel(listing.cropId)
 
   return (
     <div className="flex flex-col gap-4">

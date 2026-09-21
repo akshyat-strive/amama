@@ -21,7 +21,7 @@ function I18nRoot({ children }: { children: React.ReactNode }) {
   // The dashboard and the admin module's own consoles (KAM, master admin)
   // all have their own topbar with a chip for this in the same corner —
   // the fixed global switcher would only sit on top of it there.
-  const hasOwnSwitcher = pathname.includes("/dashboard") || pathname.startsWith("/admin")
+  const hasOwnSwitcher = pathname.includes("/dashboard") || pathname.startsWith("/internal")
 
   React.useEffect(() => {
     document.documentElement.lang = locale.tag

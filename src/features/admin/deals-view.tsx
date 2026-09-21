@@ -167,13 +167,24 @@ function EveryDealSection({
   const users = useUsers()
   // Lets a link (the Home page's own deal preview cards, say) land
   // straight on a specific filter — `?filter=active` — rather than
-  // always opening on the default "needs a team member" one.
+  // always opening on the default "needs a team member" one. `?deal=`
+  // (the Logistics board's own shipment links) goes one step further:
+  // it opens on whichever filter actually contains that deal and starts
+  // it already expanded, so a link to a specific shipment doesn't dump
+  // someone on a list they still have to search.
   const searchParams = useSearchParams()
   const requestedFilter = searchParams.get("filter")
-  const [filter, setFilter] = React.useState<Filter>(
-    filters.some((entry) => entry.id === requestedFilter) ? (requestedFilter as Filter) : "needs-a-team-member"
-  )
-  const [expandedId, setExpandedId] = React.useState<string | null>(null)
+  const requestedDealId = searchParams.get("deal")
+  const requestedDeal = requestedDealId ? deals.find((deal) => deal.id === requestedDealId) : null
+  const [filter, setFilter] = React.useState<Filter>(() => {
+    if (requestedDeal) {
+      return requestedDeal.status === "active" && requestedDeal.assignedKamId === null
+        ? "needs-a-team-member"
+        : (requestedDeal.status as Filter)
+    }
+    return filters.some((entry) => entry.id === requestedFilter) ? (requestedFilter as Filter) : "needs-a-team-member"
+  })
+  const [expandedId, setExpandedId] = React.useState<string | null>(requestedDealId)
 
   const activeDeals = deals.filter((deal) => deal.status === "active")
   const needsTeamMember = activeDeals.filter((deal) => deal.assignedKamId === null)
@@ -275,7 +286,7 @@ function DealContractAction({ deal, me }: { deal: Deal; me: { id: string; name: 
   if (contract) {
     return (
       <Link
-        href={`/admin/contracts?contract=${contract.id}`}
+        href={`/internal/contracts?contract=${contract.id}`}
         className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted"
       >
         <FileSignatureIcon className="size-3.5" />
@@ -479,14 +490,21 @@ function DealCard({
   )
 }
 
-const shipmentEventLabels: Record<ShipmentEventType, string> = {
+// Deliberately not every `ShipmentEventType`: the farm-pickup → export-QC
+// leg of the pipeline is the seller's own checklist on their Shipments
+// page (see `seller-shipments-view.tsx`), not something a KAM quick-logs
+// from here. This stays the coarser in-flight/export subset it always was.
+const shipmentEventLabels: Partial<Record<ShipmentEventType, string>> = {
   booked: "Booked",
   "gate-in": "Gate-in at origin",
   loaded: "Loaded on vessel",
   departed: "Departed origin",
   "in-transit": "In transit",
   "arrived-port": "Arrived at destination port",
+  documentation: "Documents filed",
   customs: "Customs cleared",
+  "vgm-filed": "VGM filed",
+  "leo-issued": "Let Export Order issued",
   "out-for-delivery": "Out for delivery",
   delivered: "Delivered",
   delayed: "Delayed",
@@ -495,14 +513,17 @@ const shipmentEventLabels: Record<ShipmentEventType, string> = {
 /** What logging a given checkpoint implies for the shipment's own summary
  *  status — so "we cleared customs" also flips the badge to "in transit"
  *  without a second, separate edit. */
-const statusForEvent: Record<ShipmentEventType, ShipmentStatus> = {
+const statusForEvent: Partial<Record<ShipmentEventType, ShipmentStatus>> = {
   booked: "booked",
   "gate-in": "in-transit",
   loaded: "in-transit",
   departed: "in-transit",
   "in-transit": "in-transit",
   "arrived-port": "in-transit",
+  documentation: "booked",
   customs: "in-transit",
+  "vgm-filed": "booked",
+  "leo-issued": "booked",
   "out-for-delivery": "in-transit",
   delivered: "arrived",
   delayed: "delayed",
@@ -1007,7 +1028,7 @@ function ShipmentLogForm({ dealId, shipmentId }: { dealId: string; shipmentId: s
     addShipmentEvent(
       dealId,
       shipmentId,
-      { type, label: shipmentEventLabels[type], location: location.trim() || null, note: note.trim() || null },
+      { type, label: shipmentEventLabels[type] ?? type, location: location.trim() || null, note: note.trim() || null },
       { status: statusForEvent[type] }
     )
     setLocation("")

@@ -25,6 +25,9 @@ import type { ChatParty, ConversationCard } from "@/features/marketplace/convers
 import { CardShell, Figure, type CardTone } from "@/features/marketplace/chat-card-shell"
 import { formatInr } from "@/features/marketplace/currency"
 import { DealTermsDialog } from "@/features/marketplace/deal-terms-dialog"
+import { FormRequestCard } from "@/features/marketplace/form-request-card"
+import { RfqCard } from "@/features/marketplace/rfq-card"
+import { RfqQuoteCard } from "@/features/marketplace/rfq-quote-card"
 import {
   commentOnRound,
   confirmDeal,
@@ -34,6 +37,7 @@ import {
   type NegotiationRound,
 } from "@/features/marketplace/deal-store"
 import { ContractChatCard } from "@/features/contracts/contract-chat-cards"
+import { ContractRequestCard } from "@/features/contracts/contract-request-card"
 
 const outcomeCopy = {
   accepted: { icon: CheckIcon, className: "text-amama-deep", label: "Accepted" },
@@ -342,6 +346,18 @@ function ChatCard({
     return (
       <ProposalCard dealId={card.dealId} roundId={card.roundId} viewer={viewer} viewerName={viewerName} />
     )
+  }
+  if (card.kind === "form-request") {
+    return <FormRequestCard requestId={card.requestId} viewer={viewer} viewerName={viewerName} />
+  }
+  if (card.kind === "rfq") {
+    return <RfqCard rfqId={card.rfqId} sellerId={card.sellerId} viewer={viewer} viewerName={viewerName} />
+  }
+  if (card.kind === "rfq-quote") {
+    return <RfqQuoteCard rfqId={card.rfqId} quoteId={card.quoteId} viewer={viewer} viewerName={viewerName} />
+  }
+  if (card.kind === "contract-request") {
+    return <ContractRequestCard dealId={card.dealId} viewer={viewer} viewerName={viewerName} />
   }
   return <ContractChatCard card={card} viewer={viewer} viewerName={viewerName} />
 }

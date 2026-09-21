@@ -1,27 +1,9 @@
 "use client"
 
-import * as React from "react"
+import { apiRequest, createFetchStore } from "@/lib/api/fetch-store"
+import type { OnboardingRole } from "@/features/onboarding/types"
 
-import type {
-  EntityType,
-  OnboardingRole,
-  SellerSubType,
-} from "@/features/onboarding/types"
-
-const STORAGE_KEY = "amama.verification"
-
-/**
- * Where an application sits in Key Account Manager review. Nobody reaches
- * the dashboard on "pending" — a trade account that hasn't had its KYC
- * documents checked by a human isn't an account yet, it's a request for
- * one.
- */
-export type ReviewStatus =
-  | "not-submitted"
-  | "pending"
-  | "approved"
-  | "changes-requested"
-
+export type ReviewStatus = "not-submitted" | "pending" | "approved" | "changes-requested"
 export type DocumentReviewStatus = "pending" | "approved" | "rejected"
 
 export type SubmittedDocument = {
@@ -29,249 +11,103 @@ export type SubmittedDocument = {
   name: string
   size: number
   required: boolean
-  /** Per-document sign-off, independent of the submission's own overall
-   *  status — a KAM can accept nine documents and send just the tenth
-   *  back, rather than the whole application. */
   reviewStatus: DocumentReviewStatus
   reviewNote: string | null
-  /** The file's own contents, as a data URL — `null` if it was over
-   *  `PREVIEW_CAP_BYTES` (see `document-upload-card.tsx`) or predates this
-   *  field. A KAM's review view needs to actually open what was uploaded,
-   *  not just its name and size, and this is the only thing here that
-   *  survives from the applicant's tab into a KAM's own. */
+  /** Real files now live in object storage, not inline — always `null`
+   *  from this endpoint. A KAM previews/downloads via a presigned URL
+   *  instead (see `review-queue-view.tsx`), fetched only when they
+   *  actually open a document rather than inlined for every row. */
   dataUrl: string | null
 }
 
+/** What a signed-in buyer/seller can see about *their own* application —
+ *  never anyone else's, so unlike the old prototype this has no
+ *  `applicant` field: the caller already knows who they are. The admin
+ *  review queue (many applicants at once) is a separate hook below. */
 export type Submission = {
   role: OnboardingRole
   status: ReviewStatus
-  applicant: {
-    fullName: string
-    email: string
-    country: string
-    entityType: EntityType
-    sellerSubType?: SellerSubType
-  }
   documents: SubmittedDocument[]
   submittedAt: string | null
-  reviewedAt: string | null
-  /** The KAM's reason, when they send an application back. */
   reviewerNote: string | null
-  /** Which KAM actually decided this — `null` until `approve`/`requestChanges`
-   *  sets it, so Master Admin can count real per-KAM verification stats
-   *  instead of an anonymous aggregate. */
-  reviewedByKamId: string | null
-  reviewedByKamName: string | null
 }
 
-export type Store = Record<OnboardingRole, Submission | null>
-
-const emptyStore: Store = { buyer: null, seller: null }
-
-/*
- * Same external-store shape as `i18n-context` and `onboarding-context`.
- * `localStorage`, not `sessionStorage`: a review outlives the tab the
- * application was filled in on — that's the whole point of it being a
- * review — and the KAM console is a separate route reading the same store.
- *
- * A real build puts this behind an API with the KAM on the other side of
- * it. Keeping the shape submission-shaped (rather than a loose "approved"
- * boolean) is what makes that swap a change of transport rather than a
- * change of model.
- */
-let snapshot: Store = emptyStore
-let restored = false
-const listeners = new Set<() => void>()
-
-/** Backfills the per-document review fields for anything already saved in
- *  `localStorage` before they existed — same one-level merge every other
- *  store here does for exactly this reason. */
-function normalizeDocument(document: Partial<SubmittedDocument>): SubmittedDocument {
-  return { reviewStatus: "pending", reviewNote: null, dataUrl: null, ...document } as SubmittedDocument
+type ProfileResponse = {
+  profile: { reviewStatus: "draft" | ReviewStatus; submittedAt: string | null; reviewerNote: string | null } | null
+  documents: SubmittedDocument[]
 }
 
-function normalizeSubmission(submission: Partial<Submission> | null): Submission | null {
-  if (!submission) return null
+const roles: OnboardingRole[] = ["buyer", "seller"]
+const stores = Object.fromEntries(
+  roles.map((role) => [role, createFetchStore<ProfileResponse | null>(`/api/onboarding/${role}`, null)])
+) as Record<OnboardingRole, ReturnType<typeof createFetchStore<ProfileResponse | null>>>
+
+function toSubmission(role: OnboardingRole, data: ProfileResponse | null): Submission | null {
+  if (!data?.profile || data.profile.reviewStatus === "draft") return null
   return {
-    reviewedByKamId: null,
-    reviewedByKamName: null,
-    ...submission,
-    documents: (submission.documents ?? []).map(normalizeDocument),
-  } as Submission
-}
-
-function restoreOnce() {
-  if (restored || typeof window === "undefined") return
-  restored = true
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      const parsed = { ...emptyStore, ...JSON.parse(raw) } as Store
-      snapshot = {
-        buyer: normalizeSubmission(parsed.buyer),
-        seller: normalizeSubmission(parsed.seller),
-      }
-    }
-  } catch {
-    // Private mode or blocked storage — carry on with nothing submitted.
+    role,
+    status: data.profile.reviewStatus,
+    documents: data.documents,
+    submittedAt: data.profile.submittedAt,
+    reviewerNote: data.profile.reviewerNote,
   }
 }
 
-function subscribe(listener: () => void) {
-  restoreOnce()
-  listeners.add(listener)
-  return () => {
-    listeners.delete(listener)
-  }
-}
-
-function getSnapshot() {
-  restoreOnce()
-  return snapshot
-}
-
-function getServerSnapshot() {
-  return emptyStore
-}
-
-function write(next: Store) {
-  snapshot = next
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-  } catch {
-    // Persistence is best-effort.
-  }
-  listeners.forEach((listener) => listener())
-}
-
+/**
+ * Reads *my own* application for both roles — in practice only the one
+ * matching the signed-in account's kind ever resolves to non-null; asking
+ * for the other role 403s, which the underlying fetch store just quietly
+ * caches as `null` rather than throwing, matching the old prototype's
+ * always-null-for-the-role-you-aren't shape.
+ */
 function useVerification() {
-  const submissions = React.useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getServerSnapshot
-  )
+  const buyer = stores.buyer.useStore()
+  const seller = stores.seller.useStore()
+  const buyerLoaded = stores.buyer.useIsLoaded()
+  const sellerLoaded = stores.seller.useIsLoaded()
+  const submissions: Record<OnboardingRole, Submission | null> = {
+    buyer: toSubmission("buyer", buyer),
+    seller: toSubmission("seller", seller),
+  }
+  const loaded: Record<OnboardingRole, boolean> = { buyer: buyerLoaded, seller: sellerLoaded }
 
-  return React.useMemo(
-    () => ({
-      submissions,
-      statusFor: (role: OnboardingRole): ReviewStatus =>
-        submissions[role]?.status ?? "not-submitted",
+  return {
+    submissions,
+    /** Whether `role`'s status has actually come back from the server —
+     *  check this before trusting `statusFor`, which otherwise can't tell
+     *  "still loading" apart from a real `not-submitted`. */
+    isLoaded: (role: OnboardingRole): boolean => loaded[role],
+    statusFor: (role: OnboardingRole): ReviewStatus => submissions[role]?.status ?? "not-submitted",
 
-      submit: (
-        role: OnboardingRole,
-        applicant: Submission["applicant"],
-        documents: SubmittedDocument[]
-      ) =>
-        write({
-          ...snapshot,
-          [role]: {
-            role,
-            status: "pending",
-            applicant,
-            documents,
-            submittedAt: new Date().toISOString(),
-            reviewedAt: null,
-            reviewerNote: null,
-            reviewedByKamId: null,
-            reviewedByKamName: null,
-          },
+    submit: async (
+      role: OnboardingRole,
+      applicant: Record<string, unknown>,
+      documents: Array<{ id: string; name: string; size: number; required: boolean; dataUrl: string | null }>
+    ) => {
+      await apiRequest(`/api/onboarding/${role}/submit`, {
+        method: "POST",
+        body: JSON.stringify({
+          fields: applicant,
+          documents: documents.map((document) => ({ ...document, dataUrl: document.dataUrl ?? "" })),
         }),
+      })
+      await stores[role].invalidate()
+    },
 
-      approve: (role: OnboardingRole, kam: { id: string; name: string }) => {
-        const existing = snapshot[role]
-        if (!existing) return
-        write({
-          ...snapshot,
-          [role]: {
-            ...existing,
-            status: "approved",
-            reviewedAt: new Date().toISOString(),
-            reviewerNote: null,
-            reviewedByKamId: kam.id,
-            reviewedByKamName: kam.name,
-          },
-        })
-      },
-
-      requestChanges: (role: OnboardingRole, note: string, kam: { id: string; name: string }) => {
-        const existing = snapshot[role]
-        if (!existing) return
-        write({
-          ...snapshot,
-          [role]: {
-            ...existing,
-            status: "changes-requested",
-            reviewedAt: new Date().toISOString(),
-            reviewerNote: note,
-            reviewedByKamId: kam.id,
-            reviewedByKamName: kam.name,
-          },
-        })
-      },
-
-      /** Marks one document within a submission approved or rejected — the
-       *  overall application can stay "pending" while individual documents
-       *  already have a verdict, since a KAM works through them one at a
-       *  time rather than all-or-nothing. */
-      setDocumentStatus: (
-        role: OnboardingRole,
-        documentId: string,
-        status: DocumentReviewStatus,
-        note: string | null = null
-      ) => {
-        const existing = snapshot[role]
-        if (!existing) return
-        write({
-          ...snapshot,
-          [role]: {
-            ...existing,
-            documents: existing.documents.map((document) =>
-              document.id === documentId
-                ? { ...document, reviewStatus: status, reviewNote: note }
-                : document
-            ),
-          },
-        })
-      },
-
-      /** Sends just the documents a KAM flagged back in, merged into the
-       *  existing submission rather than replacing it — anything the KAM
-       *  didn't reject (approved or still-pending) stays exactly as it was.
-       *  The touched documents go back to "pending" review, and the
-       *  submission as a whole goes back to "pending" too, since it needs
-       *  another look — but only for the pieces that changed, not a full
-       *  from-scratch resubmission. */
-      resubmitDocuments: (role: OnboardingRole, updatedDocuments: SubmittedDocument[]) => {
-        const existing = snapshot[role]
-        if (!existing) return
-        const updatedById = new Map(updatedDocuments.map((document) => [document.id, document]))
-        write({
-          ...snapshot,
-          [role]: {
-            ...existing,
-            status: "pending",
-            documents: existing.documents.map(
-              (document) => updatedById.get(document.id) ?? document
-            ),
-            submittedAt: new Date().toISOString(),
-            reviewedAt: null,
-            reviewerNote: null,
-          },
-        })
-      },
-
-      reset: () => write(emptyStore),
-    }),
-    [submissions]
-  )
+    /** Same submit endpoint — a resubmission only ever carries a fresh set
+     *  of documents for whatever was rejected, so it's the same "replace
+     *  what's there" write the first submission already does. */
+    resubmitDocuments: async (
+      role: OnboardingRole,
+      documents: Array<{ id: string; name: string; size: number; required: boolean; dataUrl: string | null }>
+    ) => {
+      await apiRequest(`/api/onboarding/${role}/submit`, {
+        method: "POST",
+        body: JSON.stringify({ fields: {}, documents: documents.map((document) => ({ ...document, dataUrl: document.dataUrl ?? "" })) }),
+      })
+      await stores[role].invalidate()
+    },
+  }
 }
 
-/** Seeds a fixed pair of submissions, but only if the store is genuinely
- *  empty — see `seed-data.ts`. */
-function seedSubmissionsIfEmpty(store: Partial<Store>) {
-  restoreOnce()
-  if (snapshot.buyer || snapshot.seller) return
-  write({ ...emptyStore, ...store })
-}
-
-export { useVerification, seedSubmissionsIfEmpty }
+export { useVerification }

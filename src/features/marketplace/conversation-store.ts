@@ -29,6 +29,11 @@ export type ConversationCard =
   /** One round of the price/quantity negotiation — the offer, and its
    *  accept/decline/counter outcome once there is one. */
   | { kind: "proposal"; dealId: string; roundId: string }
+  /** A buyer or seller asking for this agreed deal to be turned into a
+   *  contract, before any KAM has picked it up — see `requestContract` in
+   *  `deal-store.ts`. Resolves in place once a contract exists: the same
+   *  card starts showing who picked it up instead of an assign prompt. */
+  | { kind: "contract-request"; dealId: string }
   /** The contract a KAM opened off an agreed deal. */
   | { kind: "contract"; contractId: string }
   /** A term-sheet form and/or document checklist the KAM is asking one
@@ -40,6 +45,26 @@ export type ConversationCard =
   /** Shipment date options the KAM can actually honour, for the buyer to
    *  pick from. */
   | { kind: "shipment-dates"; contractId: string }
+  /** A form/document request any party sends any other, straight from the
+   *  chat composer's own "+" picker — the same "ask for details" shape as
+   *  `request` above, just conversation-scoped instead of tied to a
+   *  contract a KAM has to have opened first. */
+  | { kind: "form-request"; requestId: string }
+  /** A buyer's structured RFQ, sent to this seller alongside however many
+   *  others it also went to — see `rfq-store.ts`. `sellerId` is which
+   *  seller *this particular posting* is about: the same RFQ posts one
+   *  card per targeted seller, one into each of their own threads with the
+   *  buyer, so a card is always unambiguous about whose quote it's asking
+   *  for even though the underlying RFQ has many. */
+  | { kind: "rfq"; rfqId: string; sellerId: string }
+  /** One seller's formal quote against an RFQ — posted only into that
+   *  seller's own thread with the buyer. */
+  | { kind: "rfq-quote"; rfqId: string; quoteId: string }
+  /** The term sheet opened once a contract exists — clicking it opens the
+   *  clause-by-clause negotiation panel. */
+  | { kind: "term-sheet"; contractId: string }
+  /** The purchase order the buyer issued against an agreed term sheet. */
+  | { kind: "po"; contractId: string }
 
 export type ConversationMessage = {
   /** `system` is the platform itself speaking — a listing-change log line,

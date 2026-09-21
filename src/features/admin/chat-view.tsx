@@ -1,9 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { ChevronLeftIcon, MessageCircleIcon, UsersIcon, type LucideIcon } from "lucide-react"
+import { ChevronLeftIcon, MessageCircleIcon, PinIcon, UsersIcon, type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ADMIN_SELECTED_CLASS } from "@/features/admin/admin-ui"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { useUsers } from "@/features/admin/user-store"
@@ -23,7 +27,17 @@ import {
   useConversations,
   type Conversation,
 } from "@/features/marketplace/conversation-store"
-import { conversationIsAgreed, useDeals } from "@/features/marketplace/deal-store"
+import { proposeClause, useContracts, type Contract } from "@/features/contracts/contract-store"
+import { useDeals } from "@/features/marketplace/deal-store"
+import { conversationNeedsKam, useRfqs } from "@/features/marketplace/rfq-store"
+
+/** A rough first pass at "the number in this message" — the amount, the
+ *  unit if there is one right after it — good enough to pre-fill a clause
+ *  proposal that the KAM still reviews and can edit before sending. */
+function extractFirstNumberLike(text: string): string | null {
+  const match = text.match(/[$₹€]?\s?[\d][\d,]*(?:\.\d+)?\s?(?:MT|t\b|kg|USD|INR|%|days?)?/i)
+  return match ? match[0].trim() : null
+}
 
 type StaffChannel = {
   kind: "staff"
@@ -102,6 +116,7 @@ function ChatView() {
   const users = useUsers()
   const conversations = useConversations()
   const deals = useDeals()
+  const rfqs = useRfqs()
   const staffStore = useStaffChatStore()
   const [tab, setTab] = React.useState<Tab>("external")
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
@@ -126,12 +141,13 @@ function ChatView() {
   ]
 
   // The privacy gate. Two parties haggling over a price are doing it
-  // between themselves; the desk only gets the thread once they've shaken
-  // hands on it and there's an actual deal to manage. Everything before
-  // that — including declined attempts that never became a deal — stays
-  // off this list entirely.
+  // between themselves; the desk only gets the thread once there's real
+  // business for it to manage — either an agreed deal, or a buyer having
+  // formalized enough intent to publish an RFQ (see `conversationNeedsKam`).
+  // Everything before that — including declined attempts that never became
+  // a deal — stays off this list entirely.
   const conversationRows: ConversationRow[] = conversations
-    .filter((conversation) => conversationIsAgreed(deals, conversation.id))
+    .filter((conversation) => conversationNeedsKam(deals, rfqs, conversation))
     .map((conversation) => ({
       kind: "conversation",
       id: conversation.id,
@@ -186,7 +202,7 @@ function ChatView() {
             {items.length === 0 ? (
               <p className="px-3 py-4 text-[13px] text-muted-foreground">
                 {tab === "external"
-                  ? "No agreed deals yet. Buyer–seller conversations open to the desk once both sides accept a deal."
+                  ? "Nothing yet. Buyer–seller conversations open to the desk once a deal is agreed or a buyer publishes an RFQ."
                   : "Nobody else has signed in yet."}
               </p>
             ) : tab === "external" ? (
@@ -367,6 +383,9 @@ function ConversationPane({
   // (buyer left, seller right) instead of the "me"/"them" a first-person
   // inbox would use. `toThreadMessages` also drops anything scoped away
   // from the KAM, and carries the interactive cards through.
+  const contracts = useContracts()
+  const contract = contracts.find((entry) => entry.conversationId === conversation.id) ?? null
+
   const messages = toThreadMessages(conversation.messages, "kam").map((message) => {
     if (message.from === "system") {
       const side = message.text.startsWith(conversation.buyerName)
@@ -403,8 +422,87 @@ function ConversationPane({
       viewerName={kamName}
       placeholder="Message both sides…"
       onSend={(text) => sendMessage(conversation.id, "kam", text, { fromName: kamName })}
+      conversationId={conversation.id}
+      composerParties={[
+        { party: "buyer", name: conversation.buyerName },
+        { party: "seller", name: conversation.sellerName },
+      ]}
+      renderMessageAction={
+        contract && contract.clauses.length > 0
+          ? (message) =>
+              message.from === "buyer" || message.from === "seller" ? (
+                <PinToClauseButton contract={contract} text={message.text} kamName={kamName} />
+              ) : null
+          : undefined
+      }
       className="min-h-[420px] flex-1 bg-card lg:min-h-0"
     />
+  )
+}
+
+/** The "one-click extract" the KAM gets on any buyer/seller message once a
+ *  contract's term sheet exists — pick which clause a number in the chat
+ *  belongs to, edit it if the guess isn't quite right, and send it as a
+ *  proposal without retyping it from scratch. Still just a proposal: both
+ *  sides still have to actually agree it (see `proposeClause`). */
+function PinToClauseButton({
+  contract,
+  text,
+  kamName,
+}: {
+  contract: Contract
+  text: string
+  kamName: string
+}) {
+  const [open, setOpen] = React.useState(false)
+  const [clauseId, setClauseId] = React.useState(contract.clauses[0]?.id ?? "")
+  const [value, setValue] = React.useState("")
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next)
+        if (next) setValue(extractFirstNumberLike(text) ?? text)
+      }}
+    >
+      <PopoverTrigger
+        aria-label="Use in term sheet"
+        className="grid size-7 shrink-0 place-items-center self-center rounded-full text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <PinIcon className="size-3.5" />
+      </PopoverTrigger>
+      <PopoverContent side="top" className="w-[260px] p-3">
+        <p className="px-1 pb-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+          Use in term sheet
+        </p>
+        <div className="flex flex-col gap-2">
+          <Select value={clauseId} onValueChange={(next) => next && setClauseId(next)}>
+            <SelectTrigger size="sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {contract.clauses.map((clause) => (
+                <SelectItem key={clause.id} value={clause.id}>
+                  {clause.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input value={value} onChange={(event) => setValue(event.target.value)} className="h-8 text-[12px]" />
+          <Button
+            size="sm"
+            disabled={!value.trim()}
+            onClick={() => {
+              proposeClause(contract.id, clauseId, value.trim(), "kam", kamName, text)
+              setOpen(false)
+            }}
+          >
+            Propose this value
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }
 

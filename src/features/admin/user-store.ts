@@ -1,173 +1,51 @@
 "use client"
 
-import * as React from "react"
+import { apiRequest, createFetchStore } from "@/lib/api/fetch-store"
+import type { AdminUser } from "@/features/admin/lib/admin-users-repository"
 
-export type AdminUser = {
-  id: string
-  name: string
-  email: string
-  /** Plaintext, on purpose — this is a client-side prototype with no real
-   *  backend anywhere; every store here is `localStorage`. Never do this
-   *  against a real account system. The whole point of the `/creds` page
-   *  is to read this value back out for a demo login shortcut. */
-  password: string
-  roleId: string
-  createdAt: string
-  /** `null` for the seeded accounts; the creating user's id otherwise. */
-  createdBy: string | null
-}
+export type { AdminUser }
 
-const STORAGE_KEY = "amama.admin.users"
+/** Every seeded/created demo account still uses this same password —
+ *  purely a UI convenience constant now (the real credential lives in
+ *  Managed Better Auth), same as before. */
 const DEMO_PASSWORD = "User@123"
 
-/**
- * Four accounts across all three seeded roles (see `role-store.ts`) —
- * Priya and Arjun's names are deliberately real KAM names already baked
- * into `listing-store.ts`'s seed listings' `moderatedBy` field, so "By
- * team member" stats are non-zero the moment anyone signs in, not just
- * after they personally click something.
- */
-const SEED_USERS: AdminUser[] = [
-  {
-    id: "admin@amama.com",
-    name: "Master Admin",
-    email: "admin@amama.com",
-    password: DEMO_PASSWORD,
-    roleId: "master-admin",
-    createdAt: "2026-08-01T09:00:00.000Z",
-    createdBy: null,
-  },
-  {
-    id: "priya@amama.com",
-    name: "Priya Nair",
-    email: "priya@amama.com",
-    password: DEMO_PASSWORD,
-    roleId: "master-kam",
-    createdAt: "2026-08-01T09:05:00.000Z",
-    createdBy: null,
-  },
-  {
-    id: "arjun@amama.com",
-    name: "Arjun Mehta",
-    email: "arjun@amama.com",
-    password: DEMO_PASSWORD,
-    roleId: "kam",
-    createdAt: "2026-08-01T09:06:00.000Z",
-    createdBy: null,
-  },
-  {
-    id: "leela@amama.com",
-    name: "Leela Krishnan",
-    email: "leela@amama.com",
-    password: DEMO_PASSWORD,
-    roleId: "compliance",
-    createdAt: "2026-08-01T09:07:00.000Z",
-    createdBy: null,
-  },
-]
-
-let snapshot: AdminUser[] = []
-let restored = false
-const listeners = new Set<() => void>()
-const emptyUsers: AdminUser[] = []
-
-/**
- * A browser that onboarded before "Master KAM" existed has Priya's seeded
- * record frozen on the old `roleId: "kam"` — `restoreOnce` only writes
- * `SEED_USERS` when the key is empty, so her promotion in that constant
- * never reaches an already-seeded browser on its own (see the matching
- * backfill in `role-store.ts`). Upgrades just her row, by id, so any real
- * account someone has since created or edited is left untouched.
- */
-function backfillSeedUsers(users: AdminUser[]): AdminUser[] {
-  const masterKam = SEED_USERS.find((user) => user.roleId === "master-kam")
-  if (!masterKam) return users
-  return users.map((user) => (user.id === masterKam.id ? { ...user, roleId: "master-kam" } : user))
-}
-
-function restoreOnce() {
-  if (restored || typeof window === "undefined") return
-  restored = true
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      const restoredUsers = backfillSeedUsers(JSON.parse(raw) as AdminUser[])
-      snapshot = restoredUsers
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(restoredUsers))
-    } else {
-      snapshot = SEED_USERS
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
-    }
-  } catch {
-    snapshot = SEED_USERS
-  }
-}
-
-function subscribe(listener: () => void) {
-  restoreOnce()
-  listeners.add(listener)
-  return () => {
-    listeners.delete(listener)
-  }
-}
-
-function getSnapshot() {
-  restoreOnce()
-  return snapshot
-}
-
-function getServerSnapshot() {
-  return emptyUsers
-}
-
-function write(next: AdminUser[]) {
-  snapshot = next
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-  } catch {
-    // Persistence is best-effort.
-  }
-  listeners.forEach((listener) => listener())
-}
+const store = createFetchStore<AdminUser[]>("/api/admin/users", [])
 
 function useUsers(): AdminUser[] {
-  return React.useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+  return store.useStore()
 }
 
-function findUserByEmail(email: string): AdminUser | null {
-  restoreOnce()
-  return snapshot.find((user) => user.id === email.trim().toLowerCase()) ?? null
+/** Whether the roster's own fetch has resolved — a Home-page widget reads
+ *  this to show a loading skeleton instead of briefly flashing "nobody's
+ *  signed in yet" before the real names arrive. */
+function useUsersLoaded(): boolean {
+  return store.useIsLoaded()
 }
 
-function createUser(
-  input: { name: string; email: string; password: string; roleId: string },
-  createdBy: string
-): { ok: true; user: AdminUser } | { ok: false; error: string } {
-  restoreOnce()
-  const id = input.email.trim().toLowerCase()
-  if (!id) return { ok: false, error: "An email is required." }
-  if (snapshot.some((user) => user.id === id)) return { ok: false, error: "That email is already in use." }
-  const user: AdminUser = {
-    id,
-    name: input.name.trim() || "New team member",
-    email: input.email.trim(),
-    password: input.password.trim() || DEMO_PASSWORD,
-    roleId: input.roleId,
-    createdAt: new Date().toISOString(),
-    createdBy,
+async function createUser(input: {
+  name: string
+  email: string
+  password: string
+  roleId: string
+}): Promise<{ ok: true; user: AdminUser } | { ok: false; error: string }> {
+  try {
+    const user = await apiRequest<AdminUser>("/api/admin/users", { method: "POST", body: JSON.stringify(input) })
+    await store.invalidate()
+    return { ok: true, user }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Couldn't create that account." }
   }
-  write([...snapshot, user])
-  return { ok: true, user }
 }
 
-function updateUser(id: string, patch: Partial<Pick<AdminUser, "name" | "roleId" | "password">>) {
-  restoreOnce()
-  write(snapshot.map((user) => (user.id === id ? { ...user, ...patch } : user)))
+async function updateUser(id: string, patch: { roleId: string }): Promise<void> {
+  await apiRequest(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(patch) })
+  await store.invalidate()
 }
 
-function deleteUser(id: string) {
-  restoreOnce()
-  write(snapshot.filter((user) => user.id !== id))
+async function deleteUser(id: string): Promise<void> {
+  await apiRequest(`/api/admin/users/${id}`, { method: "DELETE" })
+  await store.invalidate()
 }
 
-export { useUsers, findUserByEmail, createUser, updateUser, deleteUser, DEMO_PASSWORD }
+export { useUsers, useUsersLoaded, createUser, updateUser, deleteUser, DEMO_PASSWORD }

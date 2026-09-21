@@ -39,6 +39,12 @@ const iconToneStyles: Record<CardTone, string> = {
  * Lives apart from the cards themselves so the deal cards and the contract
  * cards can both use it without importing each other.
  */
+/** Who called off the thing this card points at, and when — the one shared
+ *  "cancelled" treatment every cancellable card (a form request, an RFQ, a
+ *  term-sheet clause, a PO) renders the same way, instead of five separate
+ *  ad-hoc dimmed states. */
+export type CardCancelled = { at: string; byName: string }
+
 function CardShell({
   icon: Icon,
   tone = "neutral",
@@ -46,6 +52,7 @@ function CardShell({
   subtitle,
   children,
   footer,
+  cancelled,
 }: {
   icon: React.ComponentType<{ className?: string }>
   tone?: CardTone
@@ -53,21 +60,36 @@ function CardShell({
   subtitle?: string | null
   children?: React.ReactNode
   footer?: React.ReactNode
+  cancelled?: CardCancelled | null
 }) {
   return (
-    <div className="w-full max-w-[92%] overflow-hidden rounded-[20px] border border-border bg-card sm:max-w-[420px]">
+    <div
+      className={cn(
+        "w-full max-w-[92%] overflow-hidden rounded-[20px] border border-border bg-card sm:max-w-[420px]",
+        cancelled && "opacity-60"
+      )}
+    >
       <div className="p-4">
         <div className="flex items-start gap-3">
           <span className={cn("grid size-9 shrink-0 place-items-center rounded-full", iconToneStyles[tone])}>
             <Icon className="size-[18px]" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-[14px] font-bold leading-tight text-foreground">{title}</p>
+            <p className={cn("text-[14px] font-bold leading-tight text-foreground", cancelled && "line-through")}>
+              {title}
+            </p>
             {subtitle ? <p className="mt-0.5 text-[12px] text-muted-foreground">{subtitle}</p> : null}
           </div>
         </div>
-        {children ? <div className="mt-3.5">{children}</div> : null}
-        {footer ? <div className="mt-3.5">{footer}</div> : null}
+        {children ? <div className={cn("mt-3.5", cancelled && "pointer-events-none")}>{children}</div> : null}
+        {cancelled ? (
+          <p className="mt-3.5 text-[12px] font-medium text-muted-foreground">
+            Cancelled by {cancelled.byName} ·{" "}
+            {new Date(cancelled.at).toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric" })}
+          </p>
+        ) : footer ? (
+          <div className="mt-3.5">{footer}</div>
+        ) : null}
       </div>
     </div>
   )

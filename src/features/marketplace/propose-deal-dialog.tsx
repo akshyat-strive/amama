@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { cropLabels } from "@/features/dashboard/demo-data"
+import { productLabel } from "@/features/marketplace/catalog"
 import type { Conversation } from "@/features/marketplace/conversation-store"
 import { DealTermsDialog } from "@/features/marketplace/deal-terms-dialog"
 import { proposeDeal } from "@/features/marketplace/deal-store"
@@ -44,7 +44,7 @@ function ProposeDealDialog({
       submitLabel="Send proposal"
       initial={initial}
       onSubmit={(terms) => {
-        const cropLabel = cropLabels[listing.cropId] ?? listing.cropId
+        const cropLabel = productLabel(listing.cropId)
         proposeDeal({
           conversationId: conversation.id,
           listingId: listing.id,

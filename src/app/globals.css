@@ -349,3 +349,75 @@ html[lang="kn"] {
     transform: none;
   }
 }
+
+/*
+ * The two paid plan cards (Settings → Plans). Both share one diagonal
+ * "shine" sweep (`plan-shine`) crossing the card every few seconds — the
+ * one moving element that reads as "this surface is metal/glass", not a
+ * static flat-color card with a fancy name. Only the gradient underneath
+ * and the shine's own opacity change between them; the sweep itself is
+ * identical so neither reads as a cheaper effort than the other.
+ *
+ * Deliberately hard-coded colors rather than oklch design tokens: these are
+ * the one place in the app meant to look like a different *material*
+ * (metallic gold, black glass) rather than a themed surface, and neither
+ * plan should repaint itself if the app's own brand palette changes later.
+ */
+@keyframes plan-shine {
+  0% {
+    background-position: 160% 0;
+  }
+  55% {
+    background-position: -60% 0;
+  }
+  100% {
+    background-position: -60% 0;
+  }
+}
+
+.plan-gold {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(
+    135deg,
+    #6b4a12 0%,
+    #caa03d 20%,
+    #f6e3a1 40%,
+    #b8860b 58%,
+    #eecb73 78%,
+    #6b4a12 100%
+  );
+}
+
+.plan-gold::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 35%, oklch(1 0 0 / 65%) 50%, transparent 65%);
+  background-size: 220% 100%;
+  animation: plan-shine 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.plan-pro {
+  position: relative;
+  isolation: isolate;
+  background: radial-gradient(130% 160% at 12% -10%, #2e2e2e 0%, #121212 55%, #000000 100%);
+}
+
+.plan-pro::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 40%, oklch(1 0 0 / 14%) 52%, transparent 64%);
+  background-size: 220% 100%;
+  animation: plan-shine 3.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plan-gold::after,
+  .plan-pro::after {
+    animation: none;
+  }
+}

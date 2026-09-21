@@ -12,8 +12,8 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { cropLabels } from "@/features/dashboard/demo-data"
 import { cropImageUrl } from "@/features/onboarding/steps"
+import { productLabel } from "@/features/marketplace/catalog"
 import { formatInr } from "@/features/marketplace/currency"
 import { GradeBadge } from "@/features/marketplace/grade-badge"
 import { toggleWishlist, useWishlist } from "@/features/marketplace/wishlist-store"
@@ -42,7 +42,7 @@ function ListingCard({
   ownerView?: boolean
   personId?: string
 }) {
-  const cropLabel = cropLabels[listing.cropId] ?? listing.cropId
+  const cropLabel = productLabel(listing.cropId)
   const verified = listing.moderationStatus === "verified"
   const wishlist = useWishlist(personId ?? "")
   const wishlisted = !!personId && wishlist.includes(listing.id)

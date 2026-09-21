@@ -6,7 +6,7 @@ import { ArrowRightIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { cropLabels } from "@/features/dashboard/demo-data"
+import { productLabel } from "@/features/marketplace/catalog"
 import { cropImageUrl } from "@/features/onboarding/steps"
 import { formatInr } from "@/features/marketplace/currency"
 import { GradeBadge } from "@/features/marketplace/grade-badge"
@@ -36,7 +36,7 @@ function SnapshotCard({
   listing: Listing
   changed: (keyof Listing)[]
 }) {
-  const cropLabel = cropLabels[listing.cropId] ?? listing.cropId
+  const cropLabel = productLabel(listing.cropId)
   const isChanged = (field: keyof Listing) => changed.includes(field)
 
   return (

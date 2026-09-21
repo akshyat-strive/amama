@@ -45,23 +45,29 @@ function BuyerSourcingPageInner() {
         : [...prev.sourcing, id],
     }))
 
-  // Reached from the Profile page's "Edit product list" link, rather than
-  // walking the wizard in order — every pick already saves immediately (see
-  // `toggle` above), so there's nothing left to "continue" into. Both the
-  // back arrow and the primary button return straight to Profile instead of
-  // the next/previous onboarding step.
-  const fromProfile = useSearchParams().get("from") === "profile"
-  const profileHref = "/buyer/dashboard/profile"
+  // Reached from the Profile page's "Edit product list" link, or the
+  // marketplace's "Edit buying interests" popover, rather than walking the
+  // wizard in order — every pick already saves immediately (see `toggle`
+  // above), so there's nothing left to "continue" into. Both the back arrow
+  // and the primary button return straight to wherever the buyer came from
+  // instead of the next/previous onboarding step.
+  const from = useSearchParams().get("from")
+  const returnHref =
+    from === "profile"
+      ? "/buyer/dashboard/profile"
+      : from === "marketplace"
+        ? "/buyer/dashboard/sourcing"
+        : null
 
   const target = nextStep("buyer", "sourcing", entityType)
   const back = previousStep("buyer", "sourcing", entityType)
-  const continueHref = fromProfile ? profileHref : target?.href
+  const continueHref = returnHref ?? target?.href
 
   return (
     <StepShell
       step={stepIndex("buyer", "sourcing", entityType) + 1}
       totalSteps={effectiveSteps("buyer", entityType).length}
-      backHref={fromProfile ? profileHref : back?.href ?? "/"}
+      backHref={returnHref ?? back?.href ?? "/"}
       title={t("onboarding.sourcing.title")}
       description={t("onboarding.sourcing.description")}
       skipHref={continueHref}

@@ -19,6 +19,7 @@ import {
   previousStep,
   stepIndex,
 } from "@/features/onboarding/steps"
+import { IncotermInfoButton } from "@/features/marketplace/incoterm-picker"
 
 export default function BuyerVolumePage() {
   const router = useRouter()
@@ -69,8 +70,9 @@ export default function BuyerVolumePage() {
         </fieldset>
 
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-[14px] font-semibold">
+          <legend className="mb-1 flex items-center gap-1.5 text-[14px] font-semibold">
             {t("onboarding.volume.incotermLegend")}
+            <IncotermInfoButton />
           </legend>
           <SelectableGroup>
             {incoterms.map((term) => (

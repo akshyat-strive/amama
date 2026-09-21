@@ -65,6 +65,7 @@ import {
 import { TermSheetDialog } from "@/features/contracts/term-sheet-dialog"
 import type { ChatParty } from "@/features/marketplace/conversation-store"
 import { formatInr } from "@/features/marketplace/currency"
+import { IncotermInfoButton } from "@/features/marketplace/incoterm-picker"
 import {
   requestContract,
   useDeals,
@@ -658,7 +659,7 @@ function ContractDetail({
           <Term label="Price" value={`${formatInr(contract.terms.pricePerTonneUsd)}/t`} />
           <Term label="Quantity" value={`${contract.terms.quantityMt} MT`} />
           <Term label="Total value" value={formatInr(contract.terms.pricePerTonneUsd * contract.terms.quantityMt)} />
-          <Term label="Incoterm" value={contract.terms.incoterm ?? "—"} />
+          <Term label="Incoterm" value={contract.terms.incoterm ?? "—"} labelExtra={<IncotermInfoButton />} />
           <Term label="Payment" value={contract.terms.paymentTerm ?? "—"} />
           <Term label="Origin" value={contract.terms.originPort ?? "—"} />
           <Term label="Destination" value={contract.terms.destinationPort ?? "—"} />
@@ -1010,10 +1011,13 @@ function StageRail({ stage }: { stage: Contract["stage"] }) {
   )
 }
 
-function Term({ label, value }: { label: string; value: string }) {
+function Term({ label, value, labelExtra }: { label: string; value: string; labelExtra?: React.ReactNode }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</dt>
+      <dt className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+        {labelExtra}
+      </dt>
       <dd className="truncate text-[14px] font-semibold text-foreground">{value}</dd>
     </div>
   )

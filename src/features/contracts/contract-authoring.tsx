@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { IncotermInfoButton, IncotermSelect } from "@/features/marketplace/incoterm-picker"
 import {
   askShipmentDates,
   CONTRACT_STAGE_LABELS,
@@ -153,12 +154,16 @@ function TermsPanel({ contract }: { contract: Contract }) {
           placeholder="e.g. 30% advance, 70% against B/L"
           onChange={(value) => updateTerms(contract.id, { paymentTerm: value || null })}
         />
-        <LabelledInput
-          label="Incoterm"
-          value={contract.terms.incoterm ?? ""}
-          placeholder="e.g. CIF"
-          onChange={(value) => updateTerms(contract.id, { incoterm: value || null })}
-        />
+        <label className="flex flex-col gap-1.5 text-[12px] font-medium text-foreground">
+          <span className="flex items-center gap-1.5">
+            Incoterm
+            <IncotermInfoButton />
+          </span>
+          <IncotermSelect
+            value={contract.terms.incoterm}
+            onValueChange={(value) => updateTerms(contract.id, { incoterm: value })}
+          />
+        </label>
         <LabelledInput
           label="Origin port"
           value={contract.terms.originPort ?? ""}

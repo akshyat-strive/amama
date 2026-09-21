@@ -32,6 +32,7 @@ import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { useUsers, type AdminUser } from "@/features/admin/user-store"
 import { contractForDeal, createContract, useContracts } from "@/features/contracts/contract-store"
 import { formatInr } from "@/features/marketplace/currency"
+import { IncotermInfoButton, IncotermSelect } from "@/features/marketplace/incoterm-picker"
 import { ShipmentTracker } from "@/features/marketplace/shipment-tracker"
 import { OrderJourney } from "@/features/orders/order-journey"
 import {
@@ -737,7 +738,6 @@ function StageCard({ title, children }: { title: string; children: React.ReactNo
   )
 }
 
-const incotermOptions = ["FOB", "CIF", "CFR", "EXW", "DAP"]
 const paymentTermOptions = ["Escrow", "Letter of Credit", "Advance payment", "Open account"]
 
 function CostingForm({ deal }: { deal: Deal }) {
@@ -745,22 +745,14 @@ function CostingForm({ deal }: { deal: Deal }) {
     <StageCard title="Costing & Invoicing">
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1.5 text-[13px] font-medium text-foreground">
-          Incoterm
-          <Select
-            value={deal.costing.incoterm ?? undefined}
-            onValueChange={(value) => updateCosting(deal.id, { incoterm: value as string })}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent>
-              {incotermOptions.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <span className="flex items-center gap-1.5">
+            Incoterm
+            <IncotermInfoButton />
+          </span>
+          <IncotermSelect
+            value={deal.costing.incoterm}
+            onValueChange={(value) => updateCosting(deal.id, { incoterm: value ?? "" })}
+          />
         </label>
         <label className="flex flex-col gap-1.5 text-[13px] font-medium text-foreground">
           Payment term

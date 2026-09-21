@@ -13,11 +13,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { IncotermInfoButton, IncotermSelect } from "@/features/marketplace/incoterm-picker"
 import { createRfq, type RfqSpec } from "@/features/marketplace/rfq-store"
-
-const INCOTERMS = ["EXW", "FOB", "CFR", "CIF", "DAP", "DDP"]
 
 export type RfqCandidateSeller = {
   sellerId: string
@@ -218,19 +216,11 @@ function RfqFields({
             />
           </label>
           <label className="flex flex-col gap-1.5 text-[13px] font-medium text-foreground">
-            Incoterm
-            <Select value={incoterm} onValueChange={(value) => setIncoterm(value ?? null)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Optional" />
-              </SelectTrigger>
-              <SelectContent>
-                {INCOTERMS.map((term) => (
-                  <SelectItem key={term} value={term}>
-                    {term}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <span className="flex items-center gap-1.5">
+              Incoterm
+              <IncotermInfoButton />
+            </span>
+            <IncotermSelect value={incoterm} onValueChange={setIncoterm} />
           </label>
         </div>
 

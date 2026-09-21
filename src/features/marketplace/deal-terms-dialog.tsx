@@ -12,15 +12,9 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { formatRupees, inrToUsd, usdToInr } from "@/features/marketplace/currency"
+import { IncotermInfoButton, IncotermSelect } from "@/features/marketplace/incoterm-picker"
 
 export type DealTerms = {
   pricePerTonneUsd: number
@@ -29,11 +23,6 @@ export type DealTerms = {
   deliveryWindow: string | null
   note: string | null
 }
-
-/** The shipping terms a grower or importer actually argues about. Kept to
- *  the six that cover essentially all agri trade rather than the full
- *  Incoterms list, so the picker stays scannable. */
-const INCOTERMS = ["EXW", "FOB", "CFR", "CIF", "DAP", "DDP"]
 
 /**
  * One form for both halves of a negotiation: making the first offer and
@@ -158,19 +147,11 @@ function TermsFields({
 
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1.5 text-[13px] font-medium text-foreground">
-            Incoterm
-            <Select value={incoterm} onValueChange={(value) => setIncoterm(value ?? null)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Optional" />
-              </SelectTrigger>
-              <SelectContent>
-                {INCOTERMS.map((term) => (
-                  <SelectItem key={term} value={term}>
-                    {term}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <span className="flex items-center gap-1.5">
+              Incoterm
+              <IncotermInfoButton />
+            </span>
+            <IncotermSelect value={incoterm} onValueChange={setIncoterm} />
           </label>
           <label className="flex flex-col gap-1.5 text-[13px] font-medium text-foreground">
             Delivery window

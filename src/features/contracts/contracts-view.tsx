@@ -1,10 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   AlertTriangleIcon,
-  ArrowLeftIcon,
   CalendarDaysIcon,
   ChevronDownIcon,
   CheckIcon,
@@ -12,11 +11,11 @@ import {
   ClipboardListIcon,
   ClockIcon,
   FileCheck2Icon,
-  FileSignatureIcon,
   HandshakeIcon,
   MessageSquareIcon,
   PenLineIcon,
   ReceiptIcon,
+  FileTextIcon,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -37,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Sheet, SheetContent, SheetCloseButton } from "@/components/ui/sheet"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { useUsers } from "@/features/admin/user-store"
 import { ContractAuthoring } from "@/features/contracts/contract-authoring"
@@ -71,6 +71,7 @@ import {
   type Deal,
   type NegotiationRound,
 } from "@/features/marketplace/deal-store"
+import { StageDots } from "@/features/orders/order-journey"
 
 const clauseStatusStyles: Record<ClauseStatus, string> = {
   pending: "bg-status-warning/10 text-status-warning",
@@ -111,6 +112,8 @@ function ContractsSkeleton() {
   )
 }
 
+type ContractsTab = "requests" | "prepared"
+
 function ContractsWorkspace({
   viewer,
   identity,
@@ -118,25 +121,50 @@ function ContractsWorkspace({
   viewer: ChatParty
   identity: { id: string; name: string }
 }) {
+  const router = useRouter()
+  const pathname = usePathname()
   const contracts = useContracts()
   const deals = useDeals()
   const searchParams = useSearchParams()
-  const [selectedId, setSelectedId] = React.useState<string | null>(null)
 
-  const visible = React.useMemo(
+  const prepared = React.useMemo(
     () => (viewer === "kam" ? contracts : contractsForParty(contracts, identity.id)),
     [contracts, identity.id, viewer]
   )
 
-  // No auto-select: the list starts full width, the way Google Chat's own
-  // thread list does, and only narrows into a rail once something is
-  // actually open — either clicked here, or landed on directly via a
-  // `?contract=` deep link (the chat cards' "Open contract" links, which
-  // *are* a deliberate destination and should still work exactly as before).
-  const requestedId = searchParams.get("contract")
-  const effectiveId =
-    selectedId ?? (requestedId && visible.some((entry) => entry.id === requestedId) ? requestedId : null)
-  const selected = effectiveId ? (visible.find((entry) => entry.id === effectiveId) ?? null) : null
+  // A term sheet "request" is an agreed deal with no contract opened
+  // against it yet — a buyer/seller's own nudge on their own deals, or
+  // (for a KAM) every trader's nudge that nobody's picked up.
+  const requests = React.useMemo(
+    () =>
+      deals.filter(
+        (deal) =>
+          deal.status === "active" &&
+          !contractForDeal(contracts, deal.id) &&
+          (viewer === "kam"
+            ? !!deal.contractRequestedAt
+            : viewer === "buyer"
+              ? deal.buyerId === identity.id
+              : deal.sellerId === identity.id)
+      ),
+    [deals, contracts, viewer, identity.id]
+  )
+
+  const tab: ContractsTab = searchParams.get("tab") === "prepared" ? "prepared" : "requests"
+  const selectedId = searchParams.get("contract")
+  const selected = selectedId ? (prepared.find((entry) => entry.id === selectedId) ?? null) : null
+
+  const setParams = (next: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    for (const [key, value] of Object.entries(next)) {
+      if (value === null) params.delete(key)
+      else params.set(key, value)
+    }
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+  const setTab = (next: ContractsTab) => setParams({ tab: next === "requests" ? null : next, contract: null })
+  const openContract = (id: string) => setParams({ contract: id })
+  const closeSheet = () => setParams({ contract: null })
 
   return (
     <div>
@@ -147,172 +175,164 @@ function ContractsWorkspace({
           : "The agreements your account manager is putting together for your deals."}
       </p>
 
-      {viewer === "kam" ? (
-        <TermSheetRequestQueue deals={deals} contracts={contracts} me={identity} />
-      ) : (
-        <ReadyForTermSheet deals={deals} contracts={contracts} viewer={viewer} identity={identity} />
-      )}
+      <div role="tablist" aria-label="Contract lists" className="mt-5 flex w-fit gap-1 rounded-full bg-muted p-1">
+        <ContractsTabButton
+          label="Term sheet requests"
+          count={requests.length}
+          active={tab === "requests"}
+          onClick={() => setTab("requests")}
+        />
+        <ContractsTabButton
+          label="Prepared term sheets"
+          count={prepared.length}
+          active={tab === "prepared"}
+          onClick={() => setTab("prepared")}
+        />
+      </div>
 
-      {visible.length === 0 ? (
-        <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border px-5 py-16 text-center">
-          <FileSignatureIcon className="size-6 text-muted-foreground" />
-          <p className="text-[15px] font-semibold">No contracts yet</p>
-          <p className="max-w-sm text-[13px] text-muted-foreground">
+      {tab === "requests" ? (
+        requests.length === 0 ? (
+          <p className="mt-6 rounded-2xl border border-dashed border-border px-5 py-10 text-center text-[13px] text-muted-foreground">
             {viewer === "kam"
-              ? "Open a contract from an agreed deal on the Deals page and it'll appear here."
-              : "Once you and your counterparty agree a deal, your account manager opens a contract and it shows up here."}
+              ? "No agreed deals are waiting on a term sheet right now."
+              : "Once you and your counterparty agree a deal, request a term sheet and it'll show up here."}
           </p>
-        </div>
-      ) : (
-        <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-start">
-          {/* Full width and nothing selected reads as a browsing gallery —
-              richer cards, since there's room. The moment something's
-              picked it becomes the rail: narrow, compact, and hidden
-              outright on a phone (no room to show a list next to a detail
-              pane there, so the detail takes the whole screen and a back
-              arrow returns to the list, same as a mobile chat app). */}
-          <ul
-            className={cn(
-              "flex flex-col gap-2",
-              selected ? "lg:w-[280px] lg:shrink-0" : "w-full",
-              selected && "hidden lg:flex"
-            )}
-          >
-            {visible.map((contract) =>
-              selected ? (
-                <li key={contract.id}>
-                  <CompactContractRow
-                    contract={contract}
-                    active={contract.id === selected.id}
-                    onSelect={() => setSelectedId(contract.id)}
-                  />
-                </li>
-              ) : (
-                <li key={contract.id}>
-                  <ContractGalleryCard contract={contract} onSelect={() => setSelectedId(contract.id)} />
-                </li>
-              )
-            )}
+        ) : (
+          <ul className="mt-4 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+            {requests.map((deal) => (
+              <li key={deal.id}>
+                {viewer === "kam" ? (
+                  <KamRequestRow deal={deal} contracts={contracts} me={identity} />
+                ) : (
+                  <TraderRequestRow deal={deal} viewer={viewer as "buyer" | "seller"} identity={identity} />
+                )}
+              </li>
+            ))}
           </ul>
-
-          {selected ? (
-            <div className="min-w-0 flex-1">
-              <button
-                type="button"
-                onClick={() => setSelectedId(null)}
-                className="mb-3 inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground lg:hidden"
-              >
-                <ArrowLeftIcon className="size-4" />
-                All contracts
-              </button>
-              <ContractDetail contract={selected} viewer={viewer} identity={identity} />
-            </div>
-          ) : null}
-        </div>
+        )
+      ) : prepared.length === 0 ? (
+        <p className="mt-6 rounded-2xl border border-dashed border-border px-5 py-10 text-center text-[13px] text-muted-foreground">
+          {viewer === "kam"
+            ? "Open a contract from an agreed deal on the Deals page and it'll appear here."
+            : "Once your account manager opens a contract, it shows up here."}
+        </p>
+      ) : (
+        <ul className="mt-4 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+          {prepared.map((contract) => (
+            <li key={contract.id}>
+              <ContractRow contract={contract} viewer={viewer} onSelect={() => openContract(contract.id)} />
+            </li>
+          ))}
+        </ul>
       )}
+
+      <Sheet open={selected !== null} onOpenChange={(open) => !open && closeSheet()}>
+        <SheetContent side="responsive" className="overflow-y-auto">
+          {/* <SheetCloseButton /> */}
+          {selected ? <ContractDetail contract={selected} viewer={viewer} identity={identity} /> : null}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
 
-/** A contract's own "what am I looking at" signal — a disputed clause
- *  outranks everything else (it's the one state that needs someone's
- *  attention right now), then the two states worth celebrating get their
- *  own mark, and every ordinary in-progress stage reads as the same
- *  neutral handshake. Shared by the gallery card and the compact row so a
- *  contract's badge never changes meaning between the two. */
-function contractBadge(contract: Contract): { icon: React.ComponentType<{ className?: string }>; tone: "neutral" | "warning" | "success" } {
-  if (contract.clauses.some((clause) => clause.status === "disputed")) {
-    return { icon: AlertTriangleIcon, tone: "warning" }
-  }
-  if (contract.stage === "final") return { icon: FileCheck2Icon, tone: "success" }
-  if (contract.stage === "signatures") return { icon: PenLineIcon, tone: "neutral" }
-  return { icon: HandshakeIcon, tone: "neutral" }
-}
-
-const badgeToneStyles: Record<"neutral" | "warning" | "success", string> = {
-  neutral: "bg-amama-subtle text-amama-deep",
-  warning: "bg-status-warning/15 text-status-warning",
-  success: "bg-amama-deep text-white",
-}
-
-/** The narrow-rail row, once something's selected — compact, just enough
- *  to tell contracts apart while the detail pane does the real work. */
-function CompactContractRow({
-  contract,
+function ContractsTabButton({
+  label,
+  count,
   active,
-  onSelect,
+  onClick,
 }: {
-  contract: Contract
+  label: string
+  count: number
   active: boolean
-  onSelect: () => void
+  onClick: () => void
 }) {
-  const badge = contractBadge(contract)
-  const BadgeIcon = badge.icon
   return (
     <button
       type="button"
-      onClick={onSelect}
-      aria-current={active ? "true" : undefined}
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
       className={cn(
-        "flex w-full items-start gap-2.5 rounded-[18px] border p-3.5 text-start transition-colors",
-        active ? "border-amama-deep bg-amama-subtle" : "border-border bg-card hover:bg-muted"
+        "rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors",
+        active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
       )}
     >
-      <span className={cn("grid size-8 shrink-0 place-items-center rounded-full", badgeToneStyles[badge.tone])}>
-        <BadgeIcon className="size-[15px]" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-bold text-foreground">{contract.listingTitle}</p>
-        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{contract.reference}</p>
-        <p className="mt-1.5 inline-flex rounded-full bg-card px-2 py-0.5 text-[11px] font-semibold text-amama-deep">
-          {CONTRACT_STAGE_LABELS[contract.stage]}
-        </p>
-      </div>
+      {label} <span className="tabular-nums text-muted-foreground/80">{count}</span>
     </button>
   )
 }
 
-/** The full-width browsing card — shown only while nothing's selected, so
- *  it can afford to say more: the stage as a filled progress bar rather
- *  than just a label, since at this width there's room for the fuller
- *  answer to "where is this one" without opening it. Led with the badge
- *  and the product itself (what a KAM or trader actually scans a list
- *  for) rather than the reference code, which is a lookup key, not a
- *  headline. */
-function ContractGalleryCard({ contract, onSelect }: { contract: Contract; onSelect: () => void }) {
+/** Same multicolumn "excel sheet" row shape used across Shipments and
+ *  Orders — identity and stage on the left, two label/value reference
+ *  columns in the middle, a right-aligned headline value with its own
+ *  progress readout beneath it. */
+function ContractRow({
+  contract,
+  viewer,
+  onSelect,
+}: {
+  contract: Contract
+  viewer: ChatParty
+  onSelect: () => void
+}) {
   const stageIndex = CONTRACT_STAGE_ORDER.indexOf(contract.stage)
-  const progressPct = ((stageIndex + 1) / CONTRACT_STAGE_ORDER.length) * 100
-  const badge = contractBadge(contract)
-  const BadgeIcon = badge.icon
+  const total = CONTRACT_STAGE_ORDER.length
+  const disputed = contract.clauses.some((clause) => clause.status === "disputed")
+  const counterparty = viewer === "buyer" ? contract.sellerName : viewer === "seller" ? contract.buyerName : `${contract.buyerName} ↔ ${contract.sellerName}`
 
   return (
     <button
       type="button"
       onClick={onSelect}
-      className="w-full rounded-2xl border border-border bg-card p-4 text-start transition-colors hover:border-amama-deep/40 hover:bg-muted"
+      className="group grid w-full grid-cols-1 items-center gap-3 bg-white px-4 py-4 text-start transition-colors hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:grid-cols-[1.3fr_0.85fr_0.85fr_1fr]"
     >
-      <div className="flex items-start gap-3">
-        <span className={cn("grid size-10 shrink-0 place-items-center rounded-full", badgeToneStyles[badge.tone])}>
-          <BadgeIcon className="size-[18px]" />
+      {/* Col 1: Identity & Stage */}
+      <div className="min-w-0 space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="truncate text-[13px] font-semibold text-foreground">{contract.listingTitle}</p>
+          <span
+            className={cn(
+              "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium",
+              disputed ? "bg-destructive/10 text-destructive" : "bg-amama-subtle text-amama-deep"
+            )}
+          >
+            <span aria-hidden className={cn("size-1.5 rounded-full", disputed ? "bg-destructive" : "bg-amama-deep")} />
+            {CONTRACT_STAGE_LABELS[contract.stage]}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+          <span className="font-medium text-foreground/80">{contract.reference}</span>
+        </div>
+        <p className="truncate text-[12px] text-muted-foreground">
+          {contract.buyerName} ↔ {contract.sellerName} · managed by{" "}
+          <span className="font-medium text-foreground">{contract.kamName}</span>
+        </p>
+      </div>
+
+      {/* Col 2: Counterparty */}
+      <div className="hidden min-w-0 flex-col justify-center text-[12px] sm:flex">
+        <span className="text-muted-foreground">Counterparty</span>
+        <span className="truncate font-semibold text-foreground">{counterparty}</span>
+      </div>
+
+      {/* Col 3: KAM */}
+      <div className="hidden min-w-0 flex-col justify-center text-[12px] sm:flex">
+        <span className="text-muted-foreground">KAM</span>
+        <span className="truncate font-semibold text-foreground">{contract.kamName}</span>
+      </div>
+
+      {/* Col 4: Contract value + stage progress */}
+      <div className="flex w-full items-center justify-between gap-3 tabular-nums sm:w-auto sm:flex-col sm:items-end sm:gap-1">
+        <span className="text-[14px] font-semibold tracking-tight text-foreground sm:text-[18px]">
+          {formatInr(contract.terms.pricePerTonneUsd * contract.terms.quantityMt)}
         </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="truncate text-[15px] font-bold tracking-tight text-foreground">{contract.listingTitle}</p>
-              <p className="mt-0.5 truncate text-[12px] text-muted-foreground">{contract.reference}</p>
-            </div>
-            <span className="shrink-0 rounded-full bg-amama-subtle px-2.5 py-1 text-[11px] font-semibold text-amama-deep">
-              {CONTRACT_STAGE_LABELS[contract.stage]}
-            </span>
-          </div>
-          <p className="mt-2 truncate text-[12px] text-muted-foreground">
-            {contract.buyerName} ↔ {contract.sellerName}
-          </p>
-          <p className="mt-2 text-[13px] font-semibold text-foreground tabular-nums">
-            {formatInr(contract.terms.pricePerTonneUsd)}/t × {contract.terms.quantityMt} MT
-          </p>
-          <div aria-hidden className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-            <div className="h-full rounded-full bg-amama-deep" style={{ width: `${progressPct}%` }} />
+        <div className="flex items-center gap-2 sm:w-32 sm:justify-end">
+          <span className="text-[11px] font-medium text-muted-foreground">
+            {stageIndex + 1}/{total}
+          </span>
+          <div className="w-20">
+            <StageDots total={total} currentIndex={stageIndex} />
           </div>
         </div>
       </div>
@@ -320,148 +340,143 @@ function ContractGalleryCard({ contract, onSelect }: { contract: Contract; onSel
   )
 }
 
-/**
- * A buyer or seller's own nudge: any deal they're party to that's agreed
- * but has no contract yet. Silent once there's nothing to ask for — this
- * is a prompt, not a permanent fixture of the page.
- */
-function ReadyForTermSheet({
-  deals,
-  contracts,
+/** An action row, not a navigable one — there's nothing to open yet, just
+ *  a nudge to raise (or wait on) a term sheet request. Same column shape
+ *  as `ContractRow` so the two tabs read as one list pattern, but a plain
+ *  `div` rather than a `button`, since it holds its own button/select. */
+function TraderRequestRow({
+  deal,
   viewer,
   identity,
 }: {
-  deals: Deal[]
-  contracts: Contract[]
-  viewer: ChatParty
+  deal: Deal
+  viewer: "buyer" | "seller"
   identity: { id: string; name: string }
 }) {
-  const pending = deals.filter(
-    (deal) =>
-      deal.status === "active" &&
-      (viewer === "buyer" ? deal.buyerId === identity.id : deal.sellerId === identity.id) &&
-      !contractForDeal(contracts, deal.id)
-  )
-  if (pending.length === 0) return null
+  const counterparty = viewer === "buyer" ? deal.sellerName : deal.buyerName
 
   return (
-    <section className="mt-6 rounded-2xl border border-border bg-card p-5">
-      <h2 className="text-[15px] font-semibold">Ready for a term sheet</h2>
-      <p className="mt-0.5 text-[13px] text-muted-foreground">
-        Agreed deals that haven&apos;t become paperwork yet.
-      </p>
-      <ul className="mt-3 flex flex-col gap-2">
-        {pending.map((deal) => {
-          const counterparty = viewer === "buyer" ? deal.sellerName : deal.buyerName
-          return (
-            <li
-              key={deal.id}
-              className="flex flex-wrap items-center gap-3 rounded-[14px] bg-muted px-3.5 py-3"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-semibold text-foreground">{deal.listingTitle}</p>
-                <p className="truncate text-[12px] text-muted-foreground">
-                  with {counterparty} · {formatInr(deal.agreedPricePerTonneUsd)}/t × {deal.agreedQuantityMt} MT
-                </p>
-              </div>
-              {deal.contractRequestedAt ? (
-                <span className="shrink-0 rounded-full bg-status-warning/10 px-3 py-1 text-[12px] font-semibold text-status-warning">
-                  Requested {formatDate(deal.contractRequestedAt)}
-                </span>
-              ) : (
-                <Button size="sm" onClick={() => requestContract(deal.id, viewer as "buyer" | "seller", identity.name)}>
-                  Request a term sheet
-                </Button>
-              )}
-            </li>
-          )
-        })}
-      </ul>
-    </section>
+    <div className="grid w-full grid-cols-1 items-center gap-3 bg-white px-4 py-4 sm:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_0.7fr]">
+      <div className="min-w-0 space-y-1">
+        <p className="truncate text-[13px] font-semibold text-foreground">{deal.listingTitle}</p>
+        <p className="text-[12px] text-muted-foreground">{deal.agreedQuantityMt} MT</p>
+      </div>
+
+      <div className="hidden min-w-0 flex-col justify-center text-[12px] sm:flex">
+        <span className="text-muted-foreground">Counterparty</span>
+        <span className="truncate font-semibold text-foreground">{counterparty}</span>
+      </div>
+
+      <div className="hidden min-w-0 flex-col justify-center text-[12px] sm:flex">
+        <span className="text-muted-foreground">Requested</span>
+        <span className="truncate font-semibold text-foreground">
+          {deal.contractRequestedAt ? formatDate(deal.contractRequestedAt) : "Not yet"}
+        </span>
+      </div>
+
+      <div className="hidden min-w-0 flex-col justify-center text-[12px] tabular-nums sm:flex">
+        <span className="text-muted-foreground">Value</span>
+        <span className="truncate font-semibold text-foreground">
+          {formatInr(deal.agreedPricePerTonneUsd * deal.agreedQuantityMt)}
+        </span>
+      </div>
+
+      <div className="flex w-full items-center justify-end">
+        {deal.contractRequestedAt ? (
+          <span className="shrink-0 rounded-full bg-status-warning/10 px-3 py-1 text-[11px] font-semibold text-status-warning">
+            Requested
+          </span>
+        ) : (
+          <Button size="sm" onClick={() => requestContract(deal.id, viewer, identity.name)}>
+            Request
+          </Button>
+        )}
+      </div>
+    </div>
   )
 }
 
-/**
- * The KAM side of the same signal — every agreed deal a trader has asked
- * to formalize, that nobody's picked up yet. Self-claim needs no special
- * grant (see the identical reasoning on `assignKam` in `deals-view.tsx`);
- * handing it to someone else does, and shows what everyone's already
- * carrying so a Master KAM isn't reassigning blind.
- */
-function TermSheetRequestQueue({
-  deals,
+/** The KAM side of the same row shape — self-claim needs no special grant
+ *  (see the identical reasoning on `assignKam` in `deals-view.tsx`);
+ *  handing it to someone else does, and shows what everyone's already
+ *  carrying so a Master KAM isn't reassigning blind. */
+function KamRequestRow({
+  deal,
   contracts,
   me,
 }: {
-  deals: Deal[]
+  deal: Deal
   contracts: Contract[]
   me: { id: string; name: string }
 }) {
   const admin = useCurrentAdmin()
   const users = useUsers()
-
-  const queue = deals.filter(
-    (deal) => deal.status === "active" && deal.contractRequestedAt && !contractForDeal(contracts, deal.id)
-  )
-  if (queue.length === 0 || !admin) return null
+  if (!admin) return null
 
   const workload = (userId: string) => contracts.filter((contract) => contract.kamId === userId).length
 
   return (
-    <section className="mt-6 rounded-2xl border border-border bg-card p-5">
-      <h2 className="text-[15px] font-semibold">
-        Term sheet requests <span className="font-normal text-muted-foreground">· {queue.length}</span>
-      </h2>
-      <p className="mt-0.5 text-[13px] text-muted-foreground">
-        Agreed deals waiting for someone to open the paperwork.
-      </p>
-      <ul className="mt-3 flex flex-col gap-2">
-        {queue.map((deal) => (
-          <li key={deal.id} className="flex flex-wrap items-center gap-3 rounded-[14px] bg-muted px-3.5 py-3">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-semibold text-foreground">{deal.listingTitle}</p>
-              <p className="truncate text-[12px] text-muted-foreground">
-                {deal.buyerName} ↔ {deal.sellerName} · requested by{" "}
-                {deal.contractRequestedBy === "seller" ? deal.sellerName : deal.buyerName} ·{" "}
-                {deal.contractRequestedAt ? formatDate(deal.contractRequestedAt) : "—"}
-              </p>
-            </div>
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
-              {admin.can("deals.work") ? (
-                <Button size="sm" variant="outline" onClick={() => createContract(deal, me)}>
-                  Start the term sheet
-                </Button>
-              ) : null}
-              {admin.can("deals.assign") ? (
-                <Select
-                  onValueChange={(value) => {
-                    const user = users.find((entry) => entry.id === value)
-                    if (user) createContract(deal, user)
-                  }}
-                >
-                  <SelectTrigger size="sm">
-                    <SelectValue placeholder="Assign to…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.length === 0 ? (
-                      <SelectItem value="none" disabled>
-                        Nobody has signed in yet
-                      </SelectItem>
-                    ) : (
-                      users.map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          {user.name} — {workload(user.id)} open
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              ) : null}
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <div className="grid w-full grid-cols-1 items-center gap-3 bg-white px-4 py-4 sm:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_1.1fr]">
+      <div className="min-w-0 space-y-1">
+        <p className="truncate text-[13px] font-semibold text-foreground">{deal.listingTitle}</p>
+        <p className="text-[12px] text-muted-foreground">{deal.agreedQuantityMt} MT</p>
+      </div>
+
+      <div className="hidden min-w-0 flex-col justify-center text-[12px] sm:flex">
+        <span className="text-muted-foreground">Counterparty</span>
+        <span className="truncate font-semibold text-foreground">
+          {deal.buyerName} ↔ {deal.sellerName}
+        </span>
+      </div>
+
+      <div className="hidden min-w-0 flex-col justify-center text-[12px] sm:flex">
+        <span className="text-muted-foreground">Requested</span>
+        <span className="truncate font-semibold text-foreground">
+          {deal.contractRequestedBy === "seller" ? deal.sellerName : deal.buyerName} ·{" "}
+          {deal.contractRequestedAt ? formatDate(deal.contractRequestedAt) : "—"}
+        </span>
+      </div>
+
+      <div className="hidden min-w-0 flex-col justify-center text-[12px] tabular-nums sm:flex">
+        <span className="text-muted-foreground">Value</span>
+        <span className="truncate font-semibold text-foreground">
+          {formatInr(deal.agreedPricePerTonneUsd * deal.agreedQuantityMt)}
+        </span>
+      </div>
+
+      <div className="flex w-full flex-wrap items-center justify-end gap-2">
+        {admin.can("deals.work") ? (
+          <Button size="sm" variant="outline" onClick={() => createContract(deal, me)}>
+            Start the term sheet
+          </Button>
+        ) : null}
+        {admin.can("deals.assign") ? (
+          <Select
+            onValueChange={(value) => {
+              const user = users.find((entry) => entry.id === value)
+              if (user) createContract(deal, user)
+            }}
+          >
+            <SelectTrigger size="sm">
+              <SelectValue placeholder="Assign to…" />
+            </SelectTrigger>
+            <SelectContent>
+              {users.length === 0 ? (
+                <SelectItem value="none" disabled>
+                  Nobody has signed in yet
+                </SelectItem>
+              ) : (
+                users.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.name} — {workload(user.id)} open
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        ) : null}
+      </div>
+    </div>
   )
 }
 
@@ -539,23 +554,22 @@ function actionItemsFor(contract: Contract, viewer: ChatParty): string[] {
 }
 
 function ActionItemsBanner({ items }: { items: string[] }) {
+  if (items.length === 0) return null
+
   return (
-    <section className="rounded-2xl border border-status-warning/25 bg-status-warning/5 p-4">
-      <h3 className="flex items-center gap-2 text-[13px] font-semibold text-foreground">
-        <ClipboardCheckIcon className="size-4 text-status-warning" />
-        Needs your attention
-      </h3>
-      <ul className="mt-2 flex flex-col gap-1">
-        {items.map((item) => (
-          <li key={item} className="flex items-baseline gap-2 text-[13px] text-foreground">
-            <span aria-hidden className="text-status-warning">
-              ·
-            </span>
-            {item}
-          </li>
+    <div className="border-b border-slate-200 py-2 text-[12px]">
+      <div className="flex items-baseline justify-between gap-2 pb-1">
+        <span className="font-semibold text-slate-900">Needs attention</span>
+      </div>
+      <div className="space-y-0.5 text-slate-700 leading-normal">
+        {items.map((item, idx) => (
+          <div key={item} className="flex items-baseline gap-1.5 break-words">
+            <span className="select-none text-slate-400">·</span>
+            <span className="flex-1">{item}</span>
+          </div>
         ))}
-      </ul>
-    </section>
+      </div>
+    </div>
   )
 }
 
@@ -573,38 +587,77 @@ function ContractDetail({
   const isTrader = viewer === "buyer" || viewer === "seller"
   const myRequests = isTrader ? requestsForParty(contract, viewer) : contract.requests
   const actionItems = actionItemsFor(contract, viewer)
+  const disputed = contract.clauses.some((clause) => clause.status === "disputed")
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Overview — who, what, where in the process, and the commercial
-          terms. Everything a reader needs to orient before anything else,
-          grouped in the one place that's always visible. */}
-      <section className="rounded-2xl border border-border bg-card p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-[17px] font-bold tracking-tight">{contract.reference}</h2>
-            <p className="mt-0.5 text-[13px] text-muted-foreground">{contract.listingTitle}</p>
-            <p className="mt-1 text-[13px] text-muted-foreground">
-              {contract.buyerName} ↔ {contract.sellerName} · managed by{" "}
-              <span className="font-medium text-foreground">{contract.kamName}</span>
-            </p>
+    <div className="flex flex-col gap-4 pb-2">
+      {/* Header — the reference is a lookup key, so it stays small; the
+          product itself is the real headline. */}
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-mono text-[12px] text-muted-foreground">{contract.reference}</p>
+          <h2 className="mt-0.5 truncate text-[19px] font-semibold tracking-tight text-foreground">
+            {contract.listingTitle}
+          </h2>
+        </div>
+        <br />
+        <span
+          className={cn(
+            "flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
+            disputed ? "bg-destructive/10 text-destructive" : "bg-amama-subtle text-amama-deep"
+          )}
+        >
+          <span aria-hidden className={cn("size-1.5 rounded-full", disputed ? "bg-destructive" : "bg-amama-deep")} />
+          {CONTRACT_STAGE_LABELS[contract.stage]}
+        </span>
+      </div>
+
+      {/* Who's actually party to this — the identifiable info a reader
+          scans for first, given its own big, legible name each rather
+          than folded into one small sentence. */}
+      <div className="my-4 flex w-full items-center justify-between text-[18px] font-bold tracking-tight text-slate-900">
+        <span className="flex-1 leading-4 text-left">{contract.buyerName}</span>
+        
+        {/* Center exchange bridge aligned horizontally across baseline */}
+        <div className="flex shrink-0 items-center gap-3 px-6">
+          <div className="flex w-16 items-center justify-between select-none">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <span key={i} className="size-1.5 rounded-full bg-slate-300" />
+            ))}
           </div>
-          <span className="shrink-0 rounded-full bg-amama-subtle px-3 py-1 text-[12px] font-semibold text-amama-deep">
-            {CONTRACT_STAGE_LABELS[contract.stage]}
-          </span>
+
+          {/* KAM metadata stacked cleanly without squeezing vertical space */}
+          <div className="flex flex-col text-center">
+            <span className="text-[12px] font-semibold text-slate-700 leading-none">
+              {contract.kamName}
+            </span>
+            <span className="mt-1 text-[10px] font-medium uppercase tracking-wider text-slate-400 leading-none">
+              KAM
+            </span>
+          </div>
+
+          <div className="flex w-16 items-center justify-between select-none">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <span key={i} className="size-1.5 rounded-full bg-slate-300" />
+            ))}
+          </div>
         </div>
 
-        <div className="mt-4">
-          <StageRail stage={contract.stage} />
-        </div>
+        <span className="flex-1 text-right leading-4">{contract.sellerName}</span>
+      </div>
 
-        <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {/* What to do next, if anything — answered before any of the detail
+          sections that explain *why*. */}
+      {actionItems.length > 0 ? <ActionItemsBanner items={actionItems} /> : null}
+
+      {/* Where things stand, and what was actually agreed — one card,
+          since the stage rail and the terms it produced are one story. */}
+      <section className="rounded-2xl border border-border bg-card p-5">
+        <StageRail stage={contract.stage} />
+        <dl className="mt-4 grid grid-cols-1 gap-x-4 gap-y-3 border-t border-border pt-4 sm:grid-cols-1">
           <Term label="Price" value={`${formatInr(contract.terms.pricePerTonneUsd)}/t`} />
           <Term label="Quantity" value={`${contract.terms.quantityMt} MT`} />
-          <Term
-            label="Total value"
-            value={formatInr(contract.terms.pricePerTonneUsd * contract.terms.quantityMt)}
-          />
+          <Term label="Total value" value={formatInr(contract.terms.pricePerTonneUsd * contract.terms.quantityMt)} />
           <Term label="Incoterm" value={contract.terms.incoterm ?? "—"} />
           <Term label="Payment" value={contract.terms.paymentTerm ?? "—"} />
           <Term label="Origin" value={contract.terms.originPort ?? "—"} />
@@ -612,10 +665,6 @@ function ContractDetail({
           <Term label="Quality" value={contract.terms.qualitySpec ?? "—"} />
         </dl>
       </section>
-
-      {/* What to do next, if anything — answered before any of the detail
-          sections that explain *why*. */}
-      {actionItems.length > 0 ? <ActionItemsBanner items={actionItems} /> : null}
 
       {/* Paperwork: the term sheet and the PO issued off it, together —
           they're one sequential story (clauses agreed → PO locks them in),
@@ -646,9 +695,8 @@ function ContractDetail({
       ) : null}
 
       {/* Draft, its approvals or signatures, and any changes raised
-          against it — again one story (a draft, and what's still open on
-          it) rather than a draft card followed by a separate amendments
-          card that only makes sense next to it. */}
+          against it — again one story rather than a draft card followed
+          by a separate amendments card that only makes sense next to it. */}
       {contract.draftBody ? (
         <DraftSection contract={contract} viewer={viewer} viewerName={identity.name} />
       ) : null}
@@ -677,12 +725,15 @@ function ContractDetail({
         </section>
       ) : null}
 
+      {/* Its own distinct, dashed-border callout already — no need for a
+          second wrapping card around it. */}
       {viewer === "kam" ? <ContractAuthoring contract={contract} kamName={identity.name} /> : null}
 
       {/* History — how the price was actually agreed. Real and worth
           keeping, but it's the past, not something to act on, so it's
           collapsed by default rather than competing with everything above
-          it for the same amount of attention. */}
+          it for the same amount of attention. Already its own single
+          disclosure — no need to wrap it in a second one. */}
       {deal ? <NegotiationHistory deal={deal} /> : null}
     </div>
   )
@@ -918,41 +969,52 @@ function IssuePoFields({
   )
 }
 
-/** The seven steps, as a rail. Reads as "where are we" at a glance, which
- *  is the single most common question anyone opens a contract to answer. */
 function StageRail({ stage }: { stage: Contract["stage"] }) {
   const currentIndex = CONTRACT_STAGE_ORDER.indexOf(stage)
+
   return (
-    <ol className="flex flex-wrap gap-1.5">
+    <div className="grid grid-cols-2 overflow-hidden text-[12px]">
       {CONTRACT_STAGE_ORDER.map((entry, index) => {
         const done = index < currentIndex
         const current = index === currentIndex
+
         return (
-          <li
+          <div
             key={entry}
             className={cn(
-              "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
+              "flex items-center justify-between px-2.5 py-1.5 transition-colors",
               current
-                ? "bg-amama-deep text-white"
+                ? "bg-amber-50/90 font-semibold text-slate-900"
                 : done
-                  ? "bg-amama-subtle text-amama-deep"
-                  : "bg-muted text-muted-foreground"
+                  ? "bg-slate-100/70 text-slate-700"
+                  : "bg-transparent text-slate-400"
             )}
           >
-            {done ? <CheckIcon className="size-3" /> : null}
-            {CONTRACT_STAGE_LABELS[entry]}
-          </li>
+            <span className="truncate">{CONTRACT_STAGE_LABELS[entry]}</span>
+            <span
+              className={cn(
+                "shrink-0 pl-2 font-mono text-[11px] select-none",
+                current
+                  ? "font-bold text-amber-600"
+                  : done
+                    ? "text-emerald-600"
+                    : "text-slate-300"
+              )}
+            >
+              {done ? "✓" : current ? "●" : "·"}
+            </span>
+          </div>
         )
       })}
-    </ol>
+    </div>
   )
 }
 
 function Term({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</dt>
-      <dd className="truncate text-[14px] font-bold text-foreground">{value}</dd>
+      <dt className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</dt>
+      <dd className="truncate text-[14px] font-semibold text-foreground">{value}</dd>
     </div>
   )
 }
@@ -1001,20 +1063,54 @@ function RequestRow({
   const [open, setOpen] = React.useState(false)
   const progress = requestProgress(request)
   const isRecipient = viewer === request.party
+  const isSubmitted = request.status === "submitted"
 
   return (
-    <li className="flex flex-wrap items-center gap-2 rounded-[14px] bg-muted px-3 py-2.5">
-      <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-semibold text-foreground">{request.title}</p>
-        <p className="text-[12px] text-muted-foreground">
-          {viewer === "kam" ? `${request.party === "buyer" ? contract.buyerName : contract.sellerName} · ` : ""}
-          {progress.done}/{progress.total} required items ·{" "}
-          {request.status === "submitted" ? "submitted" : "in progress"}
-        </p>
-      </div>
-      <Button size="sm" variant={request.status === "submitted" ? "outline" : "default"} onClick={() => setOpen(true)}>
-        {isRecipient && request.status !== "submitted" ? "Fill this in" : "View"}
-      </Button>
+    <>
+      <li className="group flex items-center justify-between gap-4 border-b border-slate-100 py-2.5 text-start last:border-b-0 hover:bg-slate-50/60">
+        {/* Left: Request Title & Metadata */}
+        <div className="min-w-0 flex-1 space-y-0.5">
+          <p className="truncate text-[13px] font-semibold text-slate-900">
+            {request.title}
+          </p>
+          <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-slate-500">
+            {viewer === "kam" && (
+              <>
+                <span className="font-medium text-slate-700">
+                  {request.party === "buyer" ? contract.buyerName : contract.sellerName}
+                </span>
+                <span>•</span>
+              </>
+            )}
+            <span className="tabular-nums font-medium text-slate-700">
+              {progress.done}/{progress.total}
+            </span>
+            <span>fields</span>
+            <span>•</span>
+            <span className={cn(
+              "font-medium capitalize",
+              isSubmitted ? "text-emerald-600" : "text-amber-600"
+            )}>
+              {request.status.replace("_", " ")}
+            </span>
+          </div>
+        </div>
+
+        {/* Right: Minimal inline trigger */}
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className={cn(
+            "inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-sm font-semibold transition-colors",
+            isSubmitted
+              ? "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              : "bg-slate-900 text-white hover:bg-slate-800"
+          )}
+        >
+          <span>{isRecipient && !isSubmitted ? "Fill in" : "View"}</span>
+        </button>
+      </li>
+
       <TermSheetDialog
         open={open}
         onOpenChange={setOpen}
@@ -1023,7 +1119,7 @@ function RequestRow({
         partyName={viewerName}
         readOnly={!isRecipient}
       />
-    </li>
+    </>
   )
 }
 

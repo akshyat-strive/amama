@@ -309,36 +309,49 @@ function ShipmentTracker({ shipment, actions }: { shipment: Shipment; actions?: 
     <div className="w-full rounded-2xl border border-border bg-card p-4 sm:p-5">
       {/* Header — the shipment's own reference number as the title, its
           live status (and delay flag) at the end. */}
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="truncate text-[18px] font-extrabold tracking-tight text-foreground">
-            {shipment.documentNumber || "Not booked yet"}
-          </h3>
-          <p className="mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-[12px] text-muted-foreground">
-            <ModeIcon aria-hidden className="size-3.5 shrink-0" />
-            <span className="truncate">{shipment.carrier}</span>
-          </p>
-        </div>
-        <span className={cn("flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium", status.pill)}>
-          <span aria-hidden className={cn("size-1.5 rounded-full", status.dot)} />
-          {status.label}
-        </span>
-      </div>
+      <div className="space-y-3">
+        {/* Top Row: Identity paired tightly with status pill */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex items-center gap-2">
+            <h3 className="truncate text-[16px] font-bold tabular-nums text-foreground">
+              {shipment.documentNumber || "Not booked yet"}
+            </h3>
+            <span className="text-muted-foreground/40">•</span>
+            <span className="inline-flex items-center gap-1.5 truncate text-[12px] text-muted-foreground">
+              <ModeIcon aria-hidden className="size-3.5 shrink-0 text-foreground/80" />
+              <span className="truncate">{shipment.carrier}</span>
+            </span>
+          </div>
 
-      {/* A small-width route-plus-progress block, right under the title —
-          not stretched across the card. */}
-      <div className="mt-3 max-w-[240px]">
-        <div className="flex items-center gap-1.5 text-[15px] font-extrabold tracking-tight text-foreground tabular-nums">
-          <span>{portCode(shipment.origin)}</span>
-          <ArrowRightIcon aria-hidden className="size-3.5 text-muted-foreground" />
-          <span>{portCode(shipment.destination)}</span>
+          <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium", status.pill)}>
+            <span aria-hidden className={cn("size-1.5 rounded-full", status.dot)} />
+            {status.label}
+          </span>
         </div>
-        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{whenLine}</p>
-        <div aria-hidden className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className={cn("h-full rounded-full transition-[width] duration-500", isDelayed ? "bg-destructive" : "bg-amama-deep")}
-            style={{ width: `${Math.max(3, progress)}%` }}
-          />
+
+        {/* Hero Corridor Block: Centered priority SRC → DES + wider matching progress bar */}
+        <div className="flex flex-col items-center py-1 tabular-nums">
+          <div className="flex items-center gap-2 text-[22px] font-semibold tracking-tight text-foreground">
+            <span>{portCode(shipment.origin)}</span>
+            <span className="text-muted-foreground/50 text-[18px]">→</span>
+            <span>{portCode(shipment.destination)}</span>
+          </div>
+
+          <p className="mt-0.5 text-[11px] text-muted-foreground">{whenLine}</p>
+
+          {/* Centered track matching route footprint width */}
+          <div className="mt-2 flex w-full max-w-[200px] flex-col items-center gap-1">
+            <div aria-hidden className="h-1 w-full overflow-hidden rounded-full bg-slate-200/80">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all duration-500",
+                  isDelayed ? "bg-destructive/85" : "bg-amama-deep/85"
+                )}
+                style={{ width: `${Math.max(4, progress)}%` }}
+              />
+            </div>
+            <span className="text-[10px] tabular-nums font-medium text-muted-foreground">{progress}%</span>
+          </div>
         </div>
       </div>
 

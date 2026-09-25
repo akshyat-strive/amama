@@ -137,9 +137,6 @@ function SellerRfqsWorkspace() {
     return (
       <div>
         <h1 className="text-[28px] font-bold tracking-tight">RFQs</h1>
-        <p className="mt-1 text-[13px] text-muted-foreground">
-          Requirements buyers have published for products like yours — quote to be considered.
-        </p>
         <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border px-5 py-16 text-center">
           <ClipboardListIcon className="size-6 text-muted-foreground" />
           <p className="text-[15px] font-semibold">No RFQs yet</p>
@@ -155,9 +152,6 @@ function SellerRfqsWorkspace() {
   return (
     <div className={PAGE_TABS_SPACE}>
       <h1 className="text-[28px] font-bold tracking-tight">RFQs</h1>
-      <p className="mt-1 text-[13px] text-muted-foreground">
-        Requirements buyers have published for products like yours — quote to be considered.
-      </p>
 
       <PageTabs
         label="RFQ lists"

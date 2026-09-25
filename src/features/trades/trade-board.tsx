@@ -182,6 +182,60 @@ function TradeCard({ trade, perspective, href }: { trade: W.Trade; perspective: 
   )
 }
 
+/** A horizontal scroller that, on desktop, spans the whole canvas edge to
+ *  edge but pads its content back in line with the page — so the first
+ *  column starts where the heading does and only scrolling carries the
+ *  columns out to the edges. */
+function BleedScroller({ className, children }: { className?: string; children: React.ReactNode }) {
+  const ref = React.useRef<HTMLDivElement>(null)
+  const [bleed, setBleed] = React.useState({ left: 0, right: 0 })
+
+  React.useLayoutEffect(() => {
+    const node = ref.current
+    const column = node?.parentElement
+    const canvas = node?.closest("main")
+    if (!node || !column || !canvas) return
+    const desktop = window.matchMedia("(min-width: 768px)")
+    const measure = () => {
+      if (!desktop.matches) {
+        setBleed({ left: 0, right: 0 })
+        return
+      }
+      const inner = column.getBoundingClientRect()
+      const outer = canvas.getBoundingClientRect()
+      setBleed({
+        left: Math.max(0, Math.round(inner.left - outer.left)),
+        right: Math.max(0, Math.round(outer.left + canvas.clientWidth - inner.right)),
+      })
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(canvas)
+    observer.observe(column)
+    desktop.addEventListener("change", measure)
+    return () => {
+      observer.disconnect()
+      desktop.removeEventListener("change", measure)
+    }
+  }, [])
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        marginLeft: -bleed.left,
+        marginRight: -bleed.right,
+        paddingLeft: bleed.left,
+        paddingRight: bleed.right,
+        scrollPaddingInline: `${bleed.left}px ${bleed.right}px`,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
 function columnsFor(grouping: Grouping, trades: W.Trade[]) {
   if (grouping === "phase") {
     return W.PHASES.map((phase) => ({
@@ -212,7 +266,7 @@ function Board({ trades, perspective, basePath }: { trades: W.Trade[]; perspecti
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const view: View = searchParams.get("view") === "list" ? "list" : "board"
+  const view: View = searchParams.get("view") === "board" ? "board" : "list"
   const groupParam = searchParams.get("group")
   const grouping: Grouping = groupParam === "stage" || groupParam === "status" ? groupParam : "phase"
   const chainParam = searchParams.get("chain")
@@ -283,10 +337,10 @@ function Board({ trades, perspective, basePath }: { trades: W.Trade[]; perspecti
         label="View"
         className="mt-5"
         value={view}
-        onChange={(next) => setParams({ view: next === "board" ? null : next })}
+        onChange={(next) => setParams({ view: next === "list" ? null : next })}
         tabs={[
-          { value: "board", label: "Board", icon: Columns3Icon },
           { value: "list", label: "List", icon: ListIcon },
+          { value: "board", label: "Board", icon: Columns3Icon },
         ]}
       />
 
@@ -341,36 +395,45 @@ function Board({ trades, perspective, basePath }: { trades: W.Trade[]; perspecti
           <EmptyNote>No trades match</EmptyNote>
         </div>
       ) : view === "board" ? (
-        <div className="-mx-1 mt-4 flex gap-3 overflow-x-auto px-1 pb-3">
-          {columnsFor(grouping, visible).map((column) => (
-            <section
-              key={column.key}
-              className={cn(
-                "flex shrink-0 flex-col rounded-[20px] bg-muted/70",
-                column.trades.length === 0
-                  ? "w-[150px]"
-                  : grouping === "phase"
-                    ? "w-[264px] 2xl:w-auto 2xl:min-w-[250px] 2xl:flex-1 2xl:basis-0"
-                    : "w-[264px]"
-              )}
-            >
-              <header className="flex items-center justify-between gap-2 px-3.5 pt-3 pb-2">
-                <h2 className="flex min-w-0 items-baseline gap-1.5 text-[13px] font-semibold text-foreground">
-                  <span className="truncate">{column.title}</span>
-                  {column.caption ? <span className="font-mono text-[11px] font-normal text-muted-foreground">{column.caption}</span> : null}
+        <BleedScroller className="mt-4 flex gap-3 overflow-x-auto pb-3">
+          {columnsFor(grouping, visible).map((column) =>
+            column.trades.length === 0 ? (
+              <section
+                key={column.key}
+                aria-label={`${column.title}, empty`}
+                title={`${column.title} · empty`}
+                className="flex w-11 shrink-0 flex-col items-center gap-2.5 rounded-[20px] bg-muted/50 py-3 transition-[width] duration-300"
+              >
+                <span className="text-[12px] font-medium text-muted-foreground tabular-nums">0</span>
+                <h2 className="text-[12.5px] font-semibold whitespace-nowrap text-muted-foreground [writing-mode:vertical-rl]">
+                  {column.title}
+                  {column.caption ? <span className="ms-1.5 font-mono text-[11px] font-normal">{column.caption}</span> : null}
                 </h2>
-                <span className="text-[12px] font-medium text-muted-foreground tabular-nums">{column.trades.length}</span>
-              </header>
-              <div className="flex min-h-20 flex-col gap-2 px-2 pb-2">
-                {column.trades.length === 0 ? (
-                  <p className="rounded-[14px] border border-dashed border-border px-2 py-5 text-center text-[12px] text-muted-foreground">Empty</p>
-                ) : (
-                  column.trades.map((trade) => <TradeCard key={trade.id} trade={trade} perspective={perspective} href={hrefFor(trade)} />)
+              </section>
+            ) : (
+              <section
+                key={column.key}
+                className={cn(
+                  "flex shrink-0 flex-col rounded-[20px] bg-muted/70 transition-[width] duration-300",
+                  grouping === "phase" ? "w-[264px] 2xl:w-auto 2xl:min-w-[250px] 2xl:flex-1 2xl:basis-0" : "w-[264px]"
                 )}
-              </div>
-            </section>
-          ))}
-        </div>
+              >
+                <header className="flex items-center justify-between gap-2 px-3.5 pt-3 pb-2">
+                  <h2 className="flex min-w-0 items-baseline gap-1.5 text-[13px] font-semibold text-foreground">
+                    <span className="truncate">{column.title}</span>
+                    {column.caption ? <span className="font-mono text-[11px] font-normal text-muted-foreground">{column.caption}</span> : null}
+                  </h2>
+                  <span className="text-[12px] font-medium text-muted-foreground tabular-nums">{column.trades.length}</span>
+                </header>
+                <div className="flex min-h-20 flex-col gap-2 px-2 pb-2">
+                  {column.trades.map((trade) => (
+                    <TradeCard key={trade.id} trade={trade} perspective={perspective} href={hrefFor(trade)} />
+                  ))}
+                </div>
+              </section>
+            )
+          )}
+        </BleedScroller>
       ) : (
         <div className="mt-4 overflow-hidden rounded-[20px] border border-border bg-card">
           <div className="hidden grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_9rem_8rem_7rem_1rem] gap-4 border-b border-border px-5 py-2.5 text-[11.5px] text-muted-foreground lg:grid">

@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { BuildingIcon, SproutIcon, StoreIcon } from "lucide-react"
 
+import { AmamaWordmark } from "@/components/brand/amama-wordmark"
+
 export const metadata: Metadata = { title: "amama" }
 
 const roles = [
@@ -33,7 +35,9 @@ export default function Home() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-6 py-16">
       <div className="w-full max-w-3xl">
-        <p className="text-center text-2xl font-bold tracking-tight text-amama-deep">amama</p>
+        <p className="flex justify-center text-amama-deep">
+          <AmamaWordmark className="h-6" />
+        </p>
         <h1 className="mt-4 text-center text-[28px] font-bold tracking-tight text-balance sm:text-[34px]">
           Who&apos;s signing in?
         </h1>

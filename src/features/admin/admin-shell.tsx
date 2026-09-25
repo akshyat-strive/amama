@@ -1,12 +1,9 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChartNoAxesGantt } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { AccountMenu } from "@/features/dashboard/account-menu"
 import { useSignOut } from "@/features/auth/use-sign-out"
 import { LanguageSwitcher } from "@/features/i18n/components/language-switcher"
@@ -16,6 +13,7 @@ import { visibleAdminNav } from "@/features/admin/admin-nav-config"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { seedAdminDemoData } from "@/features/admin/seed-data"
 import { FullPageLoader } from "@/components/ui/full-page-loader"
+import { SidebarToggle, TopbarActions, TopbarBrand } from "@/features/dashboard/topbar-parts"
 
 /** Same rail-width constant and rationale as `DashboardShell` — see there
  *  for why one `sidebarOpen` boolean resolves to three different visual
@@ -79,28 +77,14 @@ function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-dvh bg-card">
-      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center gap-3 bg-transparent pr-4 sm:pr-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-l-none border-l-0 border-black bg-amama text-amama-foreground hover:bg-amama-hover hover:text-white"
-          aria-label={sidebarOpen ? "Close navigation" : "Open navigation"}
-          aria-pressed={sidebarOpen}
-          onClick={toggleSidebar}
-        >
-          <ChartNoAxesGantt />
-        </Button>
-        <Link href="/internal" className="text-xl font-bold tracking-tight text-amama-deep">
-          amama
-        </Link>
-        <span className="hidden items-center gap-2 sm:flex">
-          <span aria-hidden className="h-4 w-px bg-border" />
-          <span className="text-[15px] font-medium text-muted-foreground">{admin.role.name}</span>
-        </span>
+      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center gap-4 bg-transparent ps-3 pe-4 sm:pe-6">
+        <SidebarToggle open={sidebarOpen} onToggle={toggleSidebar} />
+        <TopbarBrand href="/internal" role={admin.role.name} />
 
-        <div className="ms-auto flex items-center gap-2 sm:gap-3">
+        <TopbarActions>
           <LanguageSwitcher variant="inline" />
           <AccountMenu
+            grouped
             name={admin.user.name}
             subtitle={admin.role.name}
             profileHref="/internal/profile"
@@ -109,7 +93,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
               void signOut()
             }}
           />
-        </div>
+        </TopbarActions>
       </header>
 
       <div className="relative flex h-full overflow-hidden md:gap-4">

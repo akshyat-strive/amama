@@ -1,11 +1,8 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { ChartNoAxesGantt } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { AccountMenu } from "@/features/dashboard/account-menu"
 import { useSignOut } from "@/features/auth/use-sign-out"
 import { LanguageSwitcher } from "@/features/i18n/components/language-switcher"
@@ -17,6 +14,7 @@ import { upsertBuyerProfile } from "@/features/marketplace/buyer-directory"
 import { buyerIdentity } from "@/features/marketplace/identity"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
+import { SidebarToggle, TopbarActions, TopbarBrand } from "@/features/dashboard/topbar-parts"
 
 const SIDEBAR_STORAGE_KEY = "amama.dashboardSidebarOpen"
 
@@ -101,33 +99,14 @@ function DashboardShell({
 
   return (
     <div className="h-dvh bg-card">
-      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center gap-3 bg-transparent pr-4 sm:pr-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-l-none border-l-0 border-black bg-amama text-amama-foreground hover:bg-amama-hover hover:text-white"
-          aria-label={sidebarOpen ? "Close navigation" : "Open navigation"}
-          aria-pressed={sidebarOpen}
-          onClick={toggleSidebar}
-        >
-          <ChartNoAxesGantt />
-        </Button>
-        <Link
-          href="/"
-          className="text-xl font-bold tracking-tight text-amama-deep"
-        >
-          amama
-        </Link>
-        <span className="hidden items-center gap-2 sm:flex">
-          <span aria-hidden className="h-4 w-px bg-border" />
-          <span className="text-[15px] font-medium text-muted-foreground">
-            {role === "buyer" ? "buyer" : "seller"}
-          </span>
-        </span>
+      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center gap-4 bg-transparent ps-3 pe-4 sm:pe-6">
+        <SidebarToggle open={sidebarOpen} onToggle={toggleSidebar} />
+        <TopbarBrand href="/" role={role === "seller" ? "Seller" : undefined} />
 
-        <div className="ms-auto flex items-center gap-2 sm:gap-3">
+        <TopbarActions>
           <LanguageSwitcher variant="inline" />
           <AccountMenu
+            grouped
             name={displayName}
             subtitle={person.email.trim() || null}
             profileHref={`/${role}/dashboard/profile`}
@@ -136,7 +115,7 @@ function DashboardShell({
               void signOut()
             }}
           />
-        </div>
+        </TopbarActions>
       </header>
 
       {/* The sidebar-to-body gap is one `gap-4` (16px) — the same value the

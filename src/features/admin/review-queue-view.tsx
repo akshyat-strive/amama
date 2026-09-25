@@ -345,9 +345,6 @@ function ReviewQueueView({ role }: { role: OnboardingRole }) {
   return (
     <div className={PAGE_TABS_SPACE}>
       <h1 className="text-[28px] font-bold tracking-tight">{roleLabel} queue</h1>
-      <p className="mt-1 text-[13px] text-muted-foreground">
-        {roleLabel} onboarding applications, and the documents behind each one.
-      </p>
 
       <PageTabs
         label={`${roleLabel} lists`}

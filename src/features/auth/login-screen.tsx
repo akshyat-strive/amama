@@ -21,6 +21,7 @@ import { authClient } from "@/lib/auth/client"
 import { apiRequest } from "@/lib/api/fetch-store"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import { emptyBuyer, emptySeller, type BuyerDraft, type OnboardingRole, type SellerDraft } from "@/features/onboarding/types"
+import { AmamaWordmark } from "@/components/brand/amama-wordmark"
 
 // Provider names are brand names, not translated — only the surrounding
 // "Continue with {provider}" template comes from the dictionary.
@@ -191,9 +192,9 @@ function LoginScreen({ role }: { role: OnboardingRole }) {
       <div className="flex h-full flex-col overflow-y-auto px-6 py-8 sm:px-12 lg:px-16 lg:py-12">
         <Link
           href="/"
-          className="shrink-0 text-2xl font-bold tracking-tight text-amama-deep"
+          className="shrink-0 self-start text-amama-deep"
         >
-          amama
+          <AmamaWordmark className="h-[18px]" />
         </Link>
 
         <div className="flex flex-1 flex-col justify-end py-8">

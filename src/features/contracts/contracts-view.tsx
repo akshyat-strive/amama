@@ -171,11 +171,6 @@ function ContractsWorkspace({
   return (
     <div className={PAGE_TABS_SPACE}>
       <h1 className="text-[28px] font-bold tracking-tight">Contracts</h1>
-      <p className="mt-1 text-[13px] text-muted-foreground">
-        {viewer === "kam"
-          ? "Every agreed deal being turned into paperwork."
-          : "The agreements your account manager is putting together for your deals."}
-      </p>
 
       <PageTabs
         label="Contract lists"

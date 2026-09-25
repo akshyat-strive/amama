@@ -46,12 +46,15 @@ function AccountMenu({
   profileHref,
   settingsHref,
   onSignOut,
+  grouped = false,
 }: {
   name: string
   subtitle?: string | null
   profileHref: string
   settingsHref: string
   onSignOut: () => void
+  /** Sitting inside a topbar group — no floating shadow of its own. */
+  grouped?: boolean
 }) {
   const router = useRouter()
   const initials = initialsFor(name)
@@ -62,7 +65,10 @@ function AccountMenu({
         aria-label="Account menu"
         title={name}
         className={cn(
-          "grid size-10 shrink-0 place-items-center rounded-full bg-muted text-[13px] font-semibold text-foreground shadow-floating outline-none transition-colors hover:bg-muted/70",
+          "grid shrink-0 place-items-center rounded-full font-semibold outline-none transition-colors",
+          grouped
+            ? "size-8 bg-muted/70 text-[12px] text-foreground/80 hover:bg-green-300 hover:text-foreground"
+            : "size-10 bg-muted text-[13px] text-foreground shadow-floating hover:bg-muted/70",
           "focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:ring-offset-2"
         )}
       >

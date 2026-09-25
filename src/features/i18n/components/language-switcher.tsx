@@ -27,10 +27,9 @@ import { locales, nameFor } from "@/features/i18n/locales"
  * dictionary worth switching to yet — see the `status` field's own doc
  * comment in `locales.ts`.
  *
- * The dashboard topbar has its own row of floating chips for this exact
- * purpose, so it renders this with `variant="inline"` instead of letting the
- * fixed corner version stack on top of the account avatar sitting in that
- * same corner.
+ * The dashboard topbar groups this with the account avatar in one shared
+ * wrapper, so it renders `variant="inline"` — a plain item with no shadow
+ * of its own — instead of the fixed corner version.
  */
 function LanguageSwitcher({
   variant = "fixed",
@@ -45,9 +44,12 @@ function LanguageSwitcher({
         aria-label={t("language.trigger")}
         lang={locale.tag}
         className={cn(
-          buttonVariants({ variant: "outline", size: "sm" }),
-          "border-transparent bg-card font-medium shadow-floating hover:bg-muted",
-          variant === "fixed" && "fixed end-3 top-3 z-50 border-border/60 bg-card/90 shadow-sm backdrop-blur-sm"
+          variant === "fixed"
+            ? cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "fixed end-3 top-3 z-50 border-border/60 bg-card/90 font-medium shadow-sm backdrop-blur-sm hover:bg-muted"
+              )
+            : "inline-flex h-8 shrink-0 items-center rounded-full bg-muted/70 px-3 text-[13px] font-medium text-foreground/80 outline-none transition-colors hover:bg-green-300 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
         )}
       >
         {nameFor(locale, locale.code)}

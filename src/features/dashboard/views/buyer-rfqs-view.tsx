@@ -70,10 +70,6 @@ function BuyerRfqsWorkspace() {
   return (
     <div>
       <h1 className="text-[28px] font-bold tracking-tight">RFQs</h1>
-      <p className="mt-1 text-[13px] text-muted-foreground">
-        Requirements you&apos;ve published to several sellers at once — compare what comes back before you
-        commit to one.
-      </p>
 
       {mine.length === 0 ? (
         <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border px-5 py-16 text-center">

@@ -99,9 +99,6 @@ function SellerBuyersView() {
   return (
     <div>
       <h1 className="text-[28px] font-bold tracking-tight">Buyers</h1>
-      <p className="mt-1 text-[13px] text-muted-foreground">
-        Buyers sourcing a crop you actually have listed — reach out first.
-      </p>
 
       {matches.length === 0 ? (
         <div className="mt-8 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border py-16 text-center">

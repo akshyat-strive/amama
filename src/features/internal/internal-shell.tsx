@@ -23,6 +23,7 @@ import {
   PrimaryRail,
 } from "@/features/internal/shell-parts"
 import { sectionForPath, TOWER_SECTIONS } from "@/features/internal/tower-nav"
+import { AmamaWordmark } from "@/components/brand/amama-wordmark"
 
 /**
  * The internal control tower's persistent frame.
@@ -96,8 +97,8 @@ function InternalShell({ children }: { children: React.ReactNode }) {
               <PanelLeftIcon className="size-[18px]" />
             </Button>
 
-            <Link href="/internal/trades" className="text-xl font-bold tracking-tight text-amama-deep">
-              amama
+            <Link href="/internal/trades" className="text-amama-deep">
+              <AmamaWordmark />
             </Link>
             <span className="hidden items-center gap-2 sm:flex">
               <span aria-hidden className="h-4 w-px bg-border" />

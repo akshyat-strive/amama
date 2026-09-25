@@ -78,7 +78,6 @@ function LogisticsView() {
   return (
     <div>
       <h1 className="text-[28px] font-bold tracking-tight">Logistics</h1>
-      <p className="mt-1 text-[13px] text-muted-foreground">Every shipment across every deal, by where it is.</p>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <AdminStatCard label="Shipments" value={String(rows.length)} />

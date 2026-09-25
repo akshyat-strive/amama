@@ -18,6 +18,7 @@ import { authClient } from "@/lib/auth/client"
 import { invalidateCurrentAdmin } from "@/features/admin/current-admin"
 import { useDemoDirectory } from "@/features/admin/demo-directory"
 import { DEMO_PASSWORD } from "@/features/admin/user-store"
+import { AmamaWordmark } from "@/components/brand/amama-wordmark"
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
@@ -73,8 +74,8 @@ function AdminLoginScreen() {
   return (
     <div className="grid h-dvh grid-cols-1 overflow-hidden bg-background lg:grid-cols-2">
       <div className="flex h-full flex-col overflow-y-auto px-6 py-8 sm:px-12 lg:px-16 lg:py-12">
-        <Link href="/" className="shrink-0 text-2xl font-bold tracking-tight text-amama-deep">
-          amama
+        <Link href="/" className="shrink-0 self-start text-amama-deep">
+          <AmamaWordmark className="h-[18px]" />
         </Link>
 
         <div className="flex flex-1 flex-col justify-end py-8">

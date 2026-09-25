@@ -15,17 +15,6 @@ import { OrderJourney, StageDots } from "@/features/orders/order-journey"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
 
-const copy: Record<OnboardingRole, { title: string; description: string }> = {
-  buyer: {
-    title: "Orders",
-    description: "Every purchase order you've placed, and where it stands.",
-  },
-  seller: {
-    title: "Orders",
-    description: "Every buyer order placed against what you supply.",
-  },
-}
-
 type OrdersTab = "live" | "eta"
 
 /** The same dot-pill shape `LiveOrderRow` uses for its stage pill — kept
@@ -73,7 +62,6 @@ function OrdersWorkspace({ role }: { role: OnboardingRole }) {
   const searchParams = useSearchParams()
   const { draft } = useOnboarding()
   const person = role === "buyer" ? draft.buyer : draft.seller
-  const content = copy[role]
 
   const orders = React.useMemo(
     () =>
@@ -114,8 +102,7 @@ function OrdersWorkspace({ role }: { role: OnboardingRole }) {
 
   return (
     <div className={PAGE_TABS_SPACE}>
-      <h1 className="text-[28px] font-bold tracking-tight">{content.title}</h1>
-      <p className="mt-1 text-[13px] text-muted-foreground">{content.description}</p>
+      <h1 className="text-[28px] font-bold tracking-tight">Orders</h1>
 
       <PageTabs
         label="Order lists"

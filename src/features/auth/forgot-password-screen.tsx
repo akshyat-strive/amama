@@ -16,6 +16,7 @@ import { EditorialImage } from "@/components/ui/editorial-image"
 import { useI18n } from "@/features/i18n/i18n-context"
 import { loginContent } from "@/features/auth/login-content"
 import type { OnboardingRole } from "@/features/onboarding/types"
+import { AmamaWordmark } from "@/components/brand/amama-wordmark"
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
@@ -48,9 +49,9 @@ function ForgotPasswordScreen({ role }: { role: OnboardingRole }) {
       <div className="flex h-full flex-col overflow-y-auto px-6 py-8 sm:px-12 lg:px-16 lg:py-12">
         <Link
           href="/"
-          className="shrink-0 text-2xl font-bold tracking-tight text-amama-deep"
+          className="shrink-0 self-start text-amama-deep"
         >
-          amama
+          <AmamaWordmark className="h-[18px]" />
         </Link>
 
         <div className="flex flex-1 flex-col justify-end py-8">

@@ -15,6 +15,8 @@ import { buyerIdentity } from "@/features/marketplace/identity"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
 import { SidebarToggle, TopbarActions, TopbarBrand } from "@/features/dashboard/topbar-parts"
+import { TopbarNotifications } from "@/features/trades/topbar-notifications"
+import { TopbarSearch } from "@/features/trades/topbar-search"
 
 const SIDEBAR_STORAGE_KEY = "amama.dashboardSidebarOpen"
 
@@ -102,8 +104,10 @@ function DashboardShell({
       <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center gap-4 bg-transparent ps-3 pe-4 sm:pe-6">
         <SidebarToggle open={sidebarOpen} onToggle={toggleSidebar} />
         <TopbarBrand href="/" role={role === "seller" ? "Seller" : undefined} />
+        <TopbarSearch perspective={role} email={person.email} basePath={`/${role}/dashboard/trades`} />
 
         <TopbarActions>
+          <TopbarNotifications perspective={role} email={person.email} basePath={`/${role}/dashboard/trades`} />
           <LanguageSwitcher variant="inline" />
           <AccountMenu
             grouped

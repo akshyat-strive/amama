@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { LogOutIcon, SettingsIcon, UserRoundIcon } from "lucide-react"
+import { ChevronDownIcon, LogOutIcon, SettingsIcon, UserRoundIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import {
@@ -65,14 +65,22 @@ function AccountMenu({
         aria-label="Account menu"
         title={name}
         className={cn(
-          "grid shrink-0 place-items-center rounded-full font-semibold outline-none transition-colors",
+          "shrink-0 rounded-full font-semibold outline-none transition-colors",
           grouped
-            ? "size-8 bg-muted/70 text-[12px] text-foreground/80 hover:bg-green-300 hover:text-foreground"
-            : "size-10 bg-muted text-[13px] text-foreground shadow-floating hover:bg-muted/70",
+            ? "group/account flex h-8 items-center gap-2 bg-muted/70 ps-0.5 pe-2.5 text-[12.5px] text-foreground/80 hover:bg-green-300 hover:text-foreground"
+            : "grid size-10 place-items-center bg-muted text-[13px] text-foreground shadow-floating hover:bg-muted/70",
           "focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:ring-offset-2"
         )}
       >
-        {initials}
+        {grouped ? (
+          <>
+            <span className="grid size-7 place-items-center rounded-full bg-card text-[11px] text-foreground">{initials}</span>
+            <span className="hidden max-w-24 truncate sm:block">{name.trim().split(/\s+/)[0]}</span>
+            <ChevronDownIcon aria-hidden className="hidden size-3.5 opacity-60 transition-transform group-data-[popup-open]/account:rotate-180 sm:block" />
+          </>
+        ) : (
+          initials
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-56 p-1.5">
         <div className="flex items-center gap-3 px-2.5 py-2">

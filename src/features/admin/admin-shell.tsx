@@ -14,6 +14,8 @@ import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { seedAdminDemoData } from "@/features/admin/seed-data"
 import { FullPageLoader } from "@/components/ui/full-page-loader"
 import { SidebarToggle, TopbarActions, TopbarBrand } from "@/features/dashboard/topbar-parts"
+import { TopbarNotifications } from "@/features/trades/topbar-notifications"
+import { TopbarSearch } from "@/features/trades/topbar-search"
 
 /** Same rail-width constant and rationale as `DashboardShell` — see there
  *  for why one `sidebarOpen` boolean resolves to three different visual
@@ -80,8 +82,10 @@ function AdminShell({ children }: { children: React.ReactNode }) {
       <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center gap-4 bg-transparent ps-3 pe-4 sm:pe-6">
         <SidebarToggle open={sidebarOpen} onToggle={toggleSidebar} />
         <TopbarBrand href="/internal" role={admin.role.name} />
+        <TopbarSearch perspective="internal" email="" basePath="/internal/trade-desk" />
 
         <TopbarActions>
+          <TopbarNotifications perspective="internal" email="" basePath="/internal/trade-desk" />
           <LanguageSwitcher variant="inline" />
           <AccountMenu
             grouped

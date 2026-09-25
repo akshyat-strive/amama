@@ -130,17 +130,50 @@ const seasonMonths = ["Apr", "May", "Jun", "Jul", "Aug", "Sep"]
 // walk, so the chart is identical on every render of the same order book.
 const rampShape = [0.22, 0.38, 0.55, 0.7, 0.85, 1]
 
-export type VolumePoint = { month: string; volume: number }
+// Last season ramped later and finished lower — the same fixed shape idea,
+// so the comparison is stable across renders.
+const lastSeasonShape = [0.18, 0.3, 0.44, 0.6, 0.74, 0.88]
+
+export type VolumePoint = { month: string; volume: number; lastSeason: number }
 
 /** A deterministic season-to-date volume curve, scaled to the order book's
- *  actual total tonnage — no `Math.random`, so server and client render
- *  the same chart on the same data. */
+ *  actual total tonnage, with last season's curve alongside — no
+ *  `Math.random`, so server and client render the same chart. */
 export function buildVolumeSeries(orders: DemoOrder[]): VolumePoint[] {
   const total = orders.reduce((sum, order) => sum + order.tonnes, 0)
   return seasonMonths.map((month, index) => ({
     month,
     volume: Math.round(total * rampShape[index]),
+    lastSeason: Math.round(total * lastSeasonShape[index]),
   }))
+}
+
+export type LotMeta = {
+  lotId: string
+  farmer: string
+  farmerId: string
+  region: string
+  harvestedOn: string
+  grade: string
+  quantity: string
+  destination: string
+  counterparty: string
+}
+
+/** The identity fields printed behind a carton's QR — the inspector's
+ *  key/value header, read from the same order the trace is built from. */
+export function buildLotMeta(order: DemoOrder, growerName: string): LotMeta {
+  return {
+    lotId: order.lots[0],
+    farmer: growerName,
+    farmerId: "F-001",
+    region: "Dindori, Nashik, Maharashtra",
+    harvestedOn: "10 Sep 2026",
+    grade: order.grade,
+    quantity: `${order.tonnes} MT`,
+    destination: order.destination,
+    counterparty: order.counterparty,
+  }
 }
 
 export type StatusBreakdown = { status: TradeStatus; count: number }

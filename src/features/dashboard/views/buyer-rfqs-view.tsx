@@ -4,7 +4,16 @@ import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { CheckIcon, ClipboardListIcon } from "lucide-react"
 
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetCloseButton } from "@/components/ui/sheet"
 import { formatInr } from "@/features/marketplace/currency"
 import { buyerIdentity } from "@/features/marketplace/identity"
@@ -88,7 +97,7 @@ function BuyerRfqsWorkspace() {
       <Sheet open={selected !== null} onOpenChange={(open) => !open && closeSheet()}>
         <SheetContent side="responsive" className="overflow-y-auto">
           <SheetCloseButton />
-          {selected ? <RfqComparison rfq={selected} myName={buyer.name} /> : null}
+          {selected ? <RfqComparison key={selected.id} rfq={selected} myName={buyer.name} /> : null}
         </SheetContent>
       </Sheet>
     </div>
@@ -125,96 +134,219 @@ function BuyerRfqListRow({ rfq, onSelect }: { rfq: Rfq; onSelect: () => void }) 
   )
 }
 
-/** Every seller's quote side by side — the whole point of an RFQ over a
- *  one-on-one negotiation. Sorted cheapest-first so the buyer's eye lands
- *  on the number that matters most without having to scan. A plain
- *  divider list rather than a card per quote, same as everywhere else a
- *  list of comparable records shows up in this app. */
+const STATUS_LABEL: Record<Rfq["status"], string> = { open: "Open", closed: "Closed", cancelled: "Cancelled" }
+
+/** The sheet is for reading and choosing, not for firing actions from
+ *  every row: quotes are a single-choice list, and the one decision the
+ *  buyer can make here sits in the footer, behind a confirmation — because
+ *  accepting one quote closes the RFQ for every other seller. */
 function RfqComparison({ rfq, myName }: { rfq: Rfq; myName: string }) {
   const sorted = [...rfq.quotes]
     .filter((quote) => quote.status !== "withdrawn")
     .sort((a, b) => a.pricePerTonneUsd - b.pricePerTonneUsd)
+  const accepted = sorted.find((quote) => quote.status === "accepted") ?? null
+  const decidable = rfq.status === "open" && !accepted
+  const [selectedId, setSelectedId] = React.useState<string | null>(decidable ? (sorted[0]?.id ?? null) : null)
+  const [confirming, setConfirming] = React.useState(false)
+  const selected = sorted.find((quote) => quote.id === selectedId) ?? null
+  const others = sorted.filter((quote) => quote.id !== selectedId && quote.status === "submitted").length
+
+  const facts = [
+    { label: "Quantity", value: rfq.spec.quantityMt ? `${rfq.spec.quantityMt} MT` : null },
+    { label: "Destination", value: rfq.spec.destinationPort },
+    { label: "Incoterm", value: rfq.spec.incoterm },
+    { label: "Payment ask", value: rfq.spec.paymentTermPreference },
+  ].filter((fact): fact is { label: string; value: string } => Boolean(fact.value))
 
   return (
-    <div className="flex flex-col gap-4 pb-2">
+    <div className="flex flex-1 flex-col gap-5">
       <div>
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <h2 className="min-w-0 truncate text-[17px] font-bold tracking-tight text-foreground">{rfq.title}</h2>
-          <span className="shrink-0 rounded-full bg-amama-subtle px-2.5 py-1 text-[11px] font-semibold text-amama-deep">
-            {rfq.status === "open" ? "Open" : rfq.status === "closed" ? "Closed" : "Cancelled"}
+        <div className="flex items-start justify-between gap-3 pe-8">
+          <h2 className="min-w-0 text-[17px] font-bold tracking-tight text-foreground">{rfq.title}</h2>
+          <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-foreground">
+            {STATUS_LABEL[rfq.status]}
           </span>
         </div>
-        <p className="mt-1 text-[13px] text-muted-foreground">
-          {rfq.spec.quantityMt ? `${rfq.spec.quantityMt} MT` : "Quantity not set"}
-          {rfq.spec.destinationPort ? ` · ${rfq.spec.destinationPort}` : ""}
-          {rfq.spec.incoterm ? ` · ${rfq.spec.incoterm}` : ""}
-        </p>
-        {rfq.spec.notes ? <p className="mt-2 text-[13px] text-muted-foreground">{rfq.spec.notes}</p> : null}
+        {facts.length > 0 ? (
+          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5">
+            {facts.map((fact) => (
+              <div key={fact.label} className="min-w-0">
+                <dt className="text-[11.5px] text-muted-foreground">{fact.label}</dt>
+                <dd className="truncate text-[13px] font-semibold text-foreground">{fact.value}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
       </div>
 
       <div>
-        <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-          Quotes {sorted.length > 0 ? `· ${sorted.length}` : ""}
+        <p className="text-[12px] font-medium text-muted-foreground">
+          Quotes{sorted.length > 0 ? ` · ${sorted.length}` : ""}
         </p>
         {sorted.length === 0 ? (
           <p className="mt-2 rounded-2xl border border-dashed border-border px-4 py-8 text-center text-[13px] text-muted-foreground">
-            No quotes yet — sellers can see this RFQ in their own inbox.
+            No quotes yet
           </p>
         ) : (
-          <ul className="mt-2 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
-            {sorted.map((quote) => (
-              <li key={quote.id}>
-                <QuoteRow rfq={rfq} quote={quote} myName={myName} />
-              </li>
+          <div
+            role={decidable ? "radiogroup" : "list"}
+            aria-label="Quotes"
+            className="mt-2 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card"
+          >
+            {sorted.map((quote, index) => (
+              <QuoteRow
+                key={quote.id}
+                quote={quote}
+                lowest={index === 0 && sorted.length > 1}
+                selectable={decidable && quote.status === "submitted"}
+                selected={quote.id === selectedId}
+                onSelect={() => setSelectedId(quote.id)}
+              />
             ))}
-          </ul>
+          </div>
         )}
       </div>
+
+      {decidable && sorted.length > 0 ? (
+        <div className="sticky bottom-0 -mx-4 mt-auto -mb-4 border-t border-border bg-popover px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-[12px] text-muted-foreground">{selected ? selected.sellerName : "Pick a quote"}</p>
+              <p className="text-[15px] font-semibold text-foreground tabular-nums">
+                {selected ? formatInr(selected.pricePerTonneUsd * selected.quantityMt) : "—"}
+              </p>
+            </div>
+            <Button disabled={!selected} onClick={() => setConfirming(true)}>
+              Accept
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {selected ? (
+        <Dialog open={confirming} onOpenChange={setConfirming}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Accept {selected.sellerName}&apos;s quote?</DialogTitle>
+              <DialogDescription>
+                This closes the RFQ.{" "}
+                {others > 0 ? `${others} other quote${others === 1 ? "" : "s"} will be marked not selected.` : null}
+              </DialogDescription>
+            </DialogHeader>
+            <dl className="divide-y divide-border rounded-2xl border border-border text-[13px]">
+              {[
+                { label: "Price", value: `${formatInr(selected.pricePerTonneUsd)} / t` },
+                { label: "Quantity", value: `${selected.quantityMt} MT` },
+                { label: "Total", value: formatInr(selected.pricePerTonneUsd * selected.quantityMt) },
+                { label: "Incoterm", value: selected.incoterm ?? "—" },
+                { label: "Payment", value: selected.paymentTerm ?? "—" },
+              ].map((row) => (
+                <div key={row.label} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                  <dt className="text-muted-foreground">{row.label}</dt>
+                  <dd className="font-semibold text-foreground tabular-nums">{row.value}</dd>
+                </div>
+              ))}
+            </dl>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setConfirming(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  acceptQuote(rfq.id, selected.id, myName)
+                  setConfirming(false)
+                }}
+              >
+                <CheckIcon className="size-4" />
+                Accept quote
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      ) : null}
     </div>
   )
 }
 
-/** Same multicolumn "excel sheet" row shape used across Shipments, Orders
- *  and Contracts — identity on the left, a label/value payment-term
- *  column, a right-aligned total with the accept action beneath it. */
-function QuoteRow({ rfq, quote, myName }: { rfq: Rfq; quote: RfqQuote; myName: string }) {
+const QUOTE_STATE: Partial<Record<RfqQuote["status"], { label: string; className: string }>> = {
+  accepted: { label: "Accepted", className: "bg-amama-subtle text-amama-deep" },
+  "not-selected": { label: "Not selected", className: "bg-muted text-muted-foreground" },
+}
+
+/** One quote. When the RFQ is still open the whole row is the choice
+ *  (a radio), never a button of its own. */
+function QuoteRow({
+  quote,
+  lowest,
+  selectable,
+  selected,
+  onSelect,
+}: {
+  quote: RfqQuote
+  lowest: boolean
+  selectable: boolean
+  selected: boolean
+  onSelect: () => void
+}) {
   const total = quote.pricePerTonneUsd * quote.quantityMt
-  const canAccept = rfq.status === "open" && quote.status === "submitted"
-
-  return (
-    <div className="grid w-full grid-cols-1 items-center gap-3 bg-white px-4 py-4 sm:grid-cols-[1.2fr_0.9fr_1fr]">
-      <div className="min-w-0 space-y-1">
-        <p className="truncate text-[13px] font-semibold text-foreground">{quote.sellerName}</p>
-        <p className="text-[12px] text-muted-foreground">
-          {formatInr(quote.pricePerTonneUsd)}/t × {quote.quantityMt} MT
-          {quote.incoterm ? ` · ${quote.incoterm}` : ""}
-          {quote.deliveryWindow ? ` · ${quote.deliveryWindow}` : ""}
-        </p>
-      </div>
-
-      <div className="hidden min-w-0 flex-col justify-center text-[12px] sm:flex">
-        <span className="text-muted-foreground">Payment</span>
-        <span className="truncate font-semibold text-foreground">{quote.paymentTerm ?? "—"}</span>
-      </div>
-
-      <div className="flex w-full items-center justify-between gap-3 tabular-nums sm:w-auto sm:flex-col sm:items-end sm:gap-2">
-        <span className="text-[14px] font-semibold tracking-tight text-foreground sm:text-[18px]">
-          {formatInr(total)}
+  const state = QUOTE_STATE[quote.status]
+  const body = (
+    <>
+      {selectable ? (
+        <span
+          aria-hidden
+          className={cn(
+            "grid size-4 shrink-0 place-items-center rounded-full border",
+            selected ? "border-foreground bg-foreground" : "border-border"
+          )}
+        >
+          {selected ? <span className="size-1.5 rounded-full bg-background" /> : null}
         </span>
-        {canAccept ? (
-          <Button size="sm" onClick={() => acceptQuote(rfq.id, quote.id, myName)}>
-            <CheckIcon className="size-4" />
-            Accept
-          </Button>
-        ) : quote.status === "accepted" ? (
-          <span className="shrink-0 rounded-full bg-amama-deep px-3 py-1 text-[11px] font-semibold text-white">
-            Accepted
-          </span>
-        ) : quote.status === "not-selected" ? (
-          <span className="text-[11px] font-medium text-muted-foreground">Not selected</span>
+      ) : null}
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-1.5">
+          <span className="truncate text-[13.5px] font-semibold text-foreground">{quote.sellerName}</span>
+          {lowest ? (
+            <span className="shrink-0 rounded-full bg-amama-subtle px-1.5 py-0.5 text-[10.5px] font-semibold text-amama-deep">
+              Best rate
+            </span>
+          ) : null}
+        </span>
+        <span className="mt-0.5 block truncate text-[12px] text-muted-foreground tabular-nums">
+          {formatInr(quote.pricePerTonneUsd)}/t · {quote.quantityMt} MT
+          {quote.incoterm ? ` · ${quote.incoterm}` : ""}
+          {quote.paymentTerm ? ` · ${quote.paymentTerm}` : ""}
+        </span>
+      </span>
+      <span className="flex shrink-0 flex-col items-end gap-1">
+        <span className="text-[14px] font-semibold text-foreground tabular-nums">{formatInr(total)}</span>
+        {state ? (
+          <span className={cn("rounded-full px-2 py-0.5 text-[10.5px] font-semibold", state.className)}>{state.label}</span>
         ) : null}
+      </span>
+    </>
+  )
+
+  if (!selectable) {
+    return (
+      <div role="listitem" className="flex items-center gap-3 px-4 py-3.5">
+        {body}
       </div>
-    </div>
+    )
+  }
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onSelect}
+      className={cn(
+        "flex w-full items-center gap-3 px-4 py-3.5 text-start transition-colors",
+        selected ? "bg-muted" : "hover:bg-muted/60"
+      )}
+    >
+      {body}
+    </button>
   )
 }
 

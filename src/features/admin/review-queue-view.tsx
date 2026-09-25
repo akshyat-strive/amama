@@ -22,8 +22,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { ADMIN_SELECTED_CLASS, AdminEmptyState } from "@/features/admin/admin-ui"
+import { AdminEmptyState } from "@/features/admin/admin-ui"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
+import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
 import en from "@/features/i18n/translations/en"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
 import type { OnboardingRole } from "@/features/onboarding/types"
@@ -342,27 +343,26 @@ function ReviewQueueView({ role }: { role: OnboardingRole }) {
   const visible = mode === "registered" ? submissions : submissions.filter((entry) => QUEUE_STATUSES.includes(entry.reviewStatus))
 
   return (
-    <div>
+    <div className={PAGE_TABS_SPACE}>
       <h1 className="text-[28px] font-bold tracking-tight">{roleLabel} queue</h1>
       <p className="mt-1 text-[13px] text-muted-foreground">
         {roleLabel} onboarding applications, and the documents behind each one.
       </p>
 
-      <div className="mt-4 flex gap-2">
-        {MODES.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setMode(id)}
-            className={cn(
-              "rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors",
-              mode === id ? ADMIN_SELECTED_CLASS : "border-border text-foreground hover:bg-muted"
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <PageTabs
+        label={`${roleLabel} lists`}
+        className="mt-5"
+        value={mode}
+        onChange={setMode}
+        tabs={MODES.map(({ id, label }) => ({
+          value: id,
+          label,
+          count:
+            id === "queue"
+              ? submissions.filter((entry) => QUEUE_STATUSES.includes(entry.reviewStatus)).length
+              : submissions.length,
+        }))}
+      />
 
       {visible.length === 0 ? (
         <AdminEmptyState

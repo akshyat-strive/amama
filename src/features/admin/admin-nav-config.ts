@@ -12,6 +12,7 @@ import {
   UserRoundCheckIcon,
   UserRoundIcon,
   WalletIcon,
+  WaypointsIcon,
 } from "lucide-react"
 
 import type { Permission } from "@/features/admin/permissions"
@@ -40,6 +41,7 @@ const adminNavItems: AdminNavItem[] = [
   { label: "Seller queue", href: "/internal/review-queue/seller", icon: StoreIcon, group: "menu", permission: "onboarding.review" },
   { label: "Deals", href: "/internal/deals", icon: HandshakeIcon, group: "menu", permission: ["deals.work", "deals.viewAll"] },
   { label: "Contracts", href: "/internal/contracts", icon: FileSignatureIcon, group: "menu", permission: "deals.work" },
+  { label: "Trades", href: "/internal/trade-desk", icon: WaypointsIcon, group: "menu", permission: ["deals.work", "deals.viewAll"] },
   { label: "Listings", href: "/internal/listings", icon: PackageSearchIcon, group: "menu", permission: "listings.moderate" },
   { label: "Logistics", href: "/internal/logistics", icon: ShipIcon, group: "logistics", permission: ["deals.work", "deals.viewAll"] },
   { label: "Finance", href: "/internal/finance", icon: WalletIcon, group: "finance", permission: ["deals.work", "deals.viewAll"] },

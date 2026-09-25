@@ -4,9 +4,9 @@ import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { CheckIcon, ClipboardListIcon } from "lucide-react"
 
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetCloseButton } from "@/components/ui/sheet"
+import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
 import { formatInr } from "@/features/marketplace/currency"
 import { sellerIdentity } from "@/features/marketplace/identity"
 import { useListings } from "@/features/marketplace/listing-store"
@@ -153,16 +153,22 @@ function SellerRfqsWorkspace() {
   }
 
   return (
-    <div>
+    <div className={PAGE_TABS_SPACE}>
       <h1 className="text-[28px] font-bold tracking-tight">RFQs</h1>
       <p className="mt-1 text-[13px] text-muted-foreground">
         Requirements buyers have published for products like yours — quote to be considered.
       </p>
 
-      <div role="tablist" aria-label="RFQ lists" className="mt-5 flex w-fit gap-1 rounded-full bg-muted p-1">
-        <RfqTabButton label="Open RFQ" count={discoverable.length} active={tab === "open"} onClick={() => setTab("open")} />
-        <RfqTabButton label="Sent to you" count={mine.length} active={tab === "sent"} onClick={() => setTab("sent")} />
-      </div>
+      <PageTabs
+        label="RFQ lists"
+        className="mt-5"
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { value: "open", label: "Open", count: discoverable.length },
+          { value: "sent", label: "Invited", count: mine.length },
+        ]}
+      />
 
       {visible.length === 0 ? (
         <p className="mt-6 rounded-2xl border border-dashed border-border px-5 py-10 text-center text-[13px] text-muted-foreground">
@@ -199,33 +205,6 @@ function SellerRfqsWorkspace() {
         />
       ) : null}
     </div>
-  )
-}
-
-function RfqTabButton({
-  label,
-  count,
-  active,
-  onClick,
-}: {
-  label: string
-  count: number
-  active: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className={cn(
-        "rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors",
-        active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-      )}
-    >
-      {label} <span className={cn("tabular-nums", active ? "text-muted-foreground" : "text-muted-foreground/70")}>{count}</span>
-    </button>
   )
 }
 

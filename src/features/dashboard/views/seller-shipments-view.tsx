@@ -4,10 +4,10 @@ import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { ArrowRightIcon, ShipIcon, ThermometerIcon } from "lucide-react"
 
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetCloseButton } from "@/components/ui/sheet"
+import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import { sellerIdentity } from "@/features/marketplace/identity"
 import {
@@ -195,33 +195,6 @@ function ShipmentDetailSheet({
   )
 }
 
-function ShipmentsTabButton({
-  label,
-  count,
-  active,
-  onClick,
-}: {
-  label: string
-  count: number
-  active: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className={cn(
-        "rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors",
-        active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-      )}
-    >
-      {label} <span className={cn("tabular-nums", active ? "text-muted-foreground" : "text-muted-foreground/70")}>{count}</span>
-    </button>
-  )
-}
-
 /** `useSearchParams` opts a route out of static rendering unless it sits
  *  under a boundary — same fix already applied elsewhere in this app. */
 function SellerShipmentsView() {
@@ -299,23 +272,19 @@ function SellerShipmentsWorkspace() {
   }
 
   return (
-    <div>
+    <div className={PAGE_TABS_SPACE}>
       <h1 className="text-[28px] font-bold tracking-tight">Shipments</h1>
 
-      <div role="tablist" aria-label="Shipment lists" className="mt-5 flex w-fit gap-1 rounded-full bg-muted p-1">
-        <ShipmentsTabButton
-          label="Dispatch & cold chain"
-          count={dispatchQueue.length}
-          active={tab === "dispatch"}
-          onClick={() => setTab("dispatch")}
-        />
-        <ShipmentsTabButton
-          label="Tracked shipments"
-          count={trackedShipments.length}
-          active={tab === "tracked"}
-          onClick={() => setTab("tracked")}
-        />
-      </div>
+      <PageTabs
+        label="Shipment lists"
+        className="mt-5"
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { value: "dispatch", label: "Dispatch", count: dispatchQueue.length },
+          { value: "tracked", label: "Tracked", count: trackedShipments.length },
+        ]}
+      />
 
       {tab === "dispatch" ? (
         dispatchQueue.length === 0 ? (

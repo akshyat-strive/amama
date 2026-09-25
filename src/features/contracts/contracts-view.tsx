@@ -37,6 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetCloseButton } from "@/components/ui/sheet"
+import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { useUsers } from "@/features/admin/user-store"
 import { ContractAuthoring } from "@/features/contracts/contract-authoring"
@@ -168,7 +169,7 @@ function ContractsWorkspace({
   const closeSheet = () => setParams({ contract: null })
 
   return (
-    <div>
+    <div className={PAGE_TABS_SPACE}>
       <h1 className="text-[28px] font-bold tracking-tight">Contracts</h1>
       <p className="mt-1 text-[13px] text-muted-foreground">
         {viewer === "kam"
@@ -176,20 +177,16 @@ function ContractsWorkspace({
           : "The agreements your account manager is putting together for your deals."}
       </p>
 
-      <div role="tablist" aria-label="Contract lists" className="mt-5 flex w-fit gap-1 rounded-full bg-muted p-1">
-        <ContractsTabButton
-          label="Term sheet requests"
-          count={requests.length}
-          active={tab === "requests"}
-          onClick={() => setTab("requests")}
-        />
-        <ContractsTabButton
-          label="Prepared term sheets"
-          count={prepared.length}
-          active={tab === "prepared"}
-          onClick={() => setTab("prepared")}
-        />
-      </div>
+      <PageTabs
+        label="Contract lists"
+        className="mt-5"
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { value: "requests", label: "Requests", count: requests.length },
+          { value: "prepared", label: "Prepared", count: prepared.length },
+        ]}
+      />
 
       {tab === "requests" ? (
         requests.length === 0 ? (
@@ -234,33 +231,6 @@ function ContractsWorkspace({
         </SheetContent>
       </Sheet>
     </div>
-  )
-}
-
-function ContractsTabButton({
-  label,
-  count,
-  active,
-  onClick,
-}: {
-  label: string
-  count: number
-  active: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className={cn(
-        "rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors",
-        active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-      )}
-    >
-      {label} <span className="tabular-nums text-muted-foreground/80">{count}</span>
-    </button>
   )
 }
 

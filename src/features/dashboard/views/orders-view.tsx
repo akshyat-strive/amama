@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent, SheetCloseButton } from "@/components/ui/sheet"
+import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
 import { StatusPill, type TradeStatus } from "@/features/dashboard/dashboard-ui"
 import { buildOrderBook, TOTAL_GATES, type DemoOrder } from "@/features/dashboard/demo-data"
 import { formatInr } from "@/features/marketplace/currency"
@@ -112,14 +113,20 @@ function OrdersWorkspace({ role }: { role: OnboardingRole }) {
   const closeSheet = () => setParams({ order: null })
 
   return (
-    <div>
+    <div className={PAGE_TABS_SPACE}>
       <h1 className="text-[28px] font-bold tracking-tight">{content.title}</h1>
       <p className="mt-1 text-[13px] text-muted-foreground">{content.description}</p>
 
-      <div role="tablist" aria-label="Order lists" className="mt-5 flex w-fit gap-1 rounded-full bg-muted p-1">
-        <OrdersTabButton label="Live Orders" count={liveOrders.length} active={tab === "live"} onClick={() => setTab("live")} />
-        <OrdersTabButton label="ETA Orders" count={orders.length} active={tab === "eta"} onClick={() => setTab("eta")} />
-      </div>
+      <PageTabs
+        label="Order lists"
+        className="mt-5"
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { value: "live", label: "Live", count: liveOrders.length },
+          { value: "eta", label: "ETA", count: orders.length },
+        ]}
+      />
 
       {tab === "live" ? (
         liveOrders.length === 0 ? (
@@ -159,33 +166,6 @@ function OrdersWorkspace({ role }: { role: OnboardingRole }) {
         </SheetContent>
       </Sheet>
     </div>
-  )
-}
-
-function OrdersTabButton({
-  label,
-  count,
-  active,
-  onClick,
-}: {
-  label: string
-  count: number
-  active: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className={cn(
-        "rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors",
-        active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-      )}
-    >
-      {label} <span className="tabular-nums text-muted-foreground/80">{count}</span>
-    </button>
   )
 }
 

@@ -1,0 +1,1312 @@
+<title>AMAMA Trade Control Tower</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+:root{
+  --bg:#F2F5F6; --surf:#FFFFFF; --surf2:#E8EEEF; --surf3:#DCE5E7;
+  --line:#CFDBDD; --line-soft:#E2EAEB;
+  --ink:#101A1D; --ink2:#48585D; --ink3:#78898F;
+  --accent:#0B6E78; --accent-ink:#07555D; --accent-soft:#D5EAEC;
+  --ok:#14724A; --ok-soft:#D6EEE1;
+  --warn:#8E5A00; --warn-soft:#F7E8CC;
+  --crit:#A82A20; --crit-soft:#F7DEDB;
+  --chg:#5142A6; --chg-soft:#E2DEF7;
+  --na:#7E8E94; --na-soft:#E6EBEC;
+  --apple:#B23A2E;
+  --shadow:0 1px 2px rgba(16,26,29,.06),0 8px 24px -16px rgba(16,26,29,.28);
+  --f-ui:'Archivo','Helvetica Neue',Arial,sans-serif;
+  --f-read:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --f-mono:'IBM Plex Mono','SFMono-Regular',Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0C1214; --surf:#141D20; --surf2:#1B262A; --surf3:#233136;
+  --line:#2C3C41; --line-soft:#223035;
+  --ink:#E7EFF0; --ink2:#A2B2B7; --ink3:#78898F;
+  --accent:#43BFC4; --accent-ink:#7FD8DB; --accent-soft:#103238;
+  --ok:#59D39B; --ok-soft:#0F2E22;
+  --warn:#E0A752; --warn-soft:#33260F;
+  --crit:#F0857A; --crit-soft:#3A1917;
+  --chg:#A493F5; --chg-soft:#221C42;
+  --na:#7E8E94; --na-soft:#1D272B;
+  --apple:#EE8478;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
+}}
+:root[data-theme="dark"]{
+  --bg:#0C1214; --surf:#141D20; --surf2:#1B262A; --surf3:#233136;
+  --line:#2C3C41; --line-soft:#223035;
+  --ink:#E7EFF0; --ink2:#A2B2B7; --ink3:#78898F;
+  --accent:#43BFC4; --accent-ink:#7FD8DB; --accent-soft:#103238;
+  --ok:#59D39B; --ok-soft:#0F2E22;
+  --warn:#E0A752; --warn-soft:#33260F;
+  --crit:#F0857A; --crit-soft:#3A1917;
+  --chg:#A493F5; --chg-soft:#221C42;
+  --na:#7E8E94; --na-soft:#1D272B;
+  --apple:#EE8478;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-ui);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px}
+h1,h2,h3,h4{margin:0;font-family:var(--f-ui);text-wrap:balance;letter-spacing:-.011em}
+p{margin:0}
+a{color:var(--accent-ink)}
+button{font:inherit;color:inherit}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.read{font-family:var(--f-read);font-size:16.5px;line-height:1.62;color:var(--ink2)}
+.read strong{color:var(--ink);font-weight:600}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink3);font-weight:500}
+
+/* ---------- header ---------- */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
+.topin{display:flex;align-items:center;gap:14px;min-height:56px;flex-wrap:wrap;padding-block:8px}
+.brand{display:flex;align-items:baseline;gap:9px;margin-right:auto}
+.brand b{font-weight:700;font-size:15px;letter-spacing:-.02em}
+.brand span{font-family:var(--f-mono);font-size:10.5px;color:var(--ink3);
+  letter-spacing:.1em;text-transform:uppercase}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;
+  margin-inline:-20px;padding-inline:20px;max-width:100%}
+nav.tabs::-webkit-scrollbar{display:none}
+.tab{white-space:nowrap;border:0;background:transparent;color:var(--ink3);
+  padding:7px 11px;border-radius:7px;font-size:13.5px;font-weight:500;cursor:pointer}
+.tab:hover{color:var(--ink);background:var(--surf2)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.tab:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,
+ .stagebtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- generic ---------- */
+.sec{padding-block:30px 72px}
+.sechead{margin-bottom:22px;max-width:70ch}
+.sechead h2{font-size:clamp(22px,3.6vw,30px);font-weight:700;margin-top:6px}
+.sechead p{margin-top:9px}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:18px}
+.grid{display:grid;gap:14px}
+figure{margin:0}
+figcaption{font-size:13px;color:var(--ink3);margin-top:10px;max-width:74ch;
+  font-family:var(--f-read);line-height:1.5}
+.scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-mono);
+  font-size:10.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 7px;border-radius:5px;white-space:nowrap}
+.p-ok{background:var(--ok-soft);color:var(--ok)}
+.p-warn{background:var(--warn-soft);color:var(--warn)}
+.p-crit{background:var(--crit-soft);color:var(--crit)}
+.p-chg{background:var(--chg-soft);color:var(--chg)}
+.p-na{background:var(--na-soft);color:var(--na)}
+.p-acc{background:var(--accent-soft);color:var(--accent-ink)}
+
+/* ---------- overview ---------- */
+.hero{border:1px solid var(--line);border-radius:14px;background:var(--surf);
+  padding:clamp(20px,3.4vw,34px);box-shadow:var(--shadow)}
+.hero h1{font-size:clamp(27px,5.2vw,44px);font-weight:700;line-height:1.08;
+  letter-spacing:-.028em;margin-top:10px}
+.hero .lede{margin-top:16px;max-width:62ch}
+.shipcard{margin-top:24px;border-top:1px solid var(--line);padding-top:18px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px 22px}
+.sf .k{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink3)}
+.sf .v{margin-top:3px;font-size:14px;font-weight:600;line-height:1.3}
+.sf .v em{font-style:normal;font-family:var(--f-mono);font-weight:500;font-size:13px;
+  color:var(--accent-ink)}
+.phaselist{display:grid;grid-template-columns:repeat(auto-fit,minmax(196px,1fr));gap:12px}
+.phasecard{background:var(--surf);border:1px solid var(--line);border-radius:11px;
+  padding:14px;border-top:3px solid var(--pc,var(--accent))}
+.phasecard h4{font-size:14.5px;font-weight:600;margin-top:7px}
+.phasecard p{font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.48}
+.phasecard .rng{font-family:var(--f-mono);font-size:10.5px;color:var(--ink3);letter-spacing:.06em}
+
+/* ---------- flow map svg ---------- */
+.fig{background:var(--surf);border:1px solid var(--line);border-radius:12px;
+  padding:16px}
+svg.dia{display:block;max-width:100%;height:auto;color:var(--ink2)}
+svg.dia .nb{fill:var(--surf2);stroke:var(--line);stroke-width:1.2}
+svg.dia .nb-a{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.2}
+svg.dia .nb-c{fill:var(--crit-soft);stroke:var(--crit);stroke-width:1.2}
+svg.dia .nb-o{fill:var(--ok-soft);stroke:var(--ok);stroke-width:1.2}
+svg.dia .nn{fill:var(--ink3);font-family:var(--f-mono);font-size:11px;font-weight:500}
+svg.dia .nt{fill:var(--ink);font-family:var(--f-ui);font-size:13px;font-weight:600}
+svg.dia .ns{fill:var(--ink3);font-family:var(--f-ui);font-size:11px}
+svg.dia .ed{stroke:var(--ink3);stroke-width:1.4;fill:none}
+svg.dia .ed-c{stroke:var(--crit);stroke-width:1.5;fill:none;stroke-dasharray:5 4}
+svg.dia .el{fill:var(--ink3);font-family:var(--f-mono);font-size:10.5px}
+svg.dia .el-c{fill:var(--crit);font-family:var(--f-mono);font-size:10.5px;font-weight:500}
+svg.dia .band{fill:var(--surf2)}
+svg.dia .bandt{fill:var(--ink3);font-family:var(--f-mono);font-size:10px;letter-spacing:.1em}
+.mapnode{cursor:pointer}
+.mapnode:hover .nb{fill:var(--accent-soft);stroke:var(--accent)}
+
+/* ---------- stage explorer ---------- */
+.explorer{display:grid;grid-template-columns:262px minmax(0,1fr);gap:18px;align-items:start}
+.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 72px);
+  background:var(--surf);border:1px solid var(--line);border-radius:12px;
+  padding:8px;max-height:calc(100vh - 110px);overflow:auto}
+.railgrp{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--ink3);padding:11px 9px 5px}
+.stagebtn{display:flex;gap:9px;align-items:flex-start;width:100%;text-align:left;
+  border:0;background:transparent;padding:7px 9px;border-radius:8px;cursor:pointer;
+  border-left:2.5px solid transparent}
+.stagebtn:hover{background:var(--surf2)}
+.stagebtn[aria-current="true"]{background:var(--surf2);border-left-color:var(--accent)}
+.stagebtn .num{font-family:var(--f-mono);font-size:11px;color:var(--ink3);
+  padding-top:2px;font-weight:500}
+.stagebtn[aria-current="true"] .num{color:var(--accent-ink)}
+.stagebtn .nm{font-size:13.2px;font-weight:500;line-height:1.32}
+.stagebtn[aria-current="true"] .nm{font-weight:600}
+
+.detail{min-width:0}
+.dhead{background:var(--surf);border:1px solid var(--line);border-radius:12px;
+  padding:20px;box-shadow:var(--shadow)}
+.dhead .top{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.dnum{font-family:var(--f-mono);font-size:26px;font-weight:600;color:var(--accent);
+  line-height:1}
+.dhead h3{font-size:clamp(19px,3vw,25px);font-weight:700;letter-spacing:-.02em}
+.dmeta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.navbtns{display:flex;gap:8px;margin-left:auto}
+.nb-btn{border:1px solid var(--line);background:var(--surf2);border-radius:8px;
+  padding:6px 11px;font-size:12.5px;cursor:pointer;font-weight:500}
+.nb-btn:hover{background:var(--surf3)}
+.nb-btn:disabled{opacity:.4;cursor:not-allowed}
+
+.io{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;
+  margin-top:18px;background:var(--surf2);border-radius:10px;padding:14px}
+.io .lab{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink3)}
+.io .val{font-size:13.5px;margin-top:4px;line-height:1.42}
+.io .ar{color:var(--accent);font-size:19px}
+
+.blk{margin-top:16px;background:var(--surf);border:1px solid var(--line);
+  border-radius:12px;padding:18px}
+.blk>h4{font-size:12px;font-family:var(--f-mono);letter-spacing:.11em;
+  text-transform:uppercase;color:var(--ink3);font-weight:500;margin-bottom:12px}
+.actgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.act{border-left:2px solid var(--line);padding-left:12px}
+.act .t{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink3)}
+.act .b{font-size:13.6px;margin-top:4px;line-height:1.45;color:var(--ink2)}
+.act.trg{border-left-color:var(--accent)}
+.act.sys{border-left-color:var(--chg)}
+.act.hum{border-left-color:var(--warn)}
+.act.sla{border-left-color:var(--ok)}
+.notif{display:flex;gap:9px;align-items:flex-start;padding:9px 0;
+  border-top:1px dashed var(--line-soft);font-size:13.4px;color:var(--ink2)}
+.notif:first-of-type{border-top:0}
+
+/* doc table */
+table.dt{width:100%;border-collapse:collapse;font-size:13.2px;min-width:640px}
+table.dt th{text-align:left;font-family:var(--f-mono);font-size:9.5px;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);font-weight:500;
+  padding:0 10px 8px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+table.dt td{padding:10px 10px 10px 0;border-bottom:1px solid var(--line-soft);
+  vertical-align:top;line-height:1.42}
+table.dt tr:last-child td{border-bottom:0}
+table.dt td.nm{font-weight:600;color:var(--ink)}
+table.dt td.why{color:var(--ink2);font-family:var(--f-read);font-size:14px}
+
+/* scenarios */
+.scentabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.scentab{border:1px solid var(--line);background:var(--surf2);border-radius:8px;
+  padding:6px 11px;font-size:12.5px;cursor:pointer;font-weight:500;display:flex;gap:7px;align-items:center}
+.scentab .dot{width:7px;height:7px;border-radius:50%;background:var(--sc,var(--ink3))}
+.scentab[aria-selected="true"]{background:var(--sc-soft,var(--surf3));
+  border-color:var(--sc,var(--line));color:var(--sc,var(--ink))}
+.chain{list-style:none;margin:0;padding:0;counter-reset:ch}
+.chain li{position:relative;padding:0 0 16px 30px;counter-increment:ch}
+.chain li::before{content:counter(ch);position:absolute;left:0;top:0;width:20px;height:20px;
+  border-radius:50%;background:var(--sc-soft,var(--surf2));color:var(--sc,var(--ink2));
+  font-family:var(--f-mono);font-size:10.5px;font-weight:600;display:grid;place-items:center}
+.chain li::after{content:"";position:absolute;left:9.5px;top:22px;bottom:2px;width:1.5px;
+  background:var(--line)}
+.chain li:last-child{padding-bottom:0}
+.chain li:last-child::after{display:none}
+.chain .st{font-size:13.6px;line-height:1.42}
+.chain li.trigline .st{font-weight:600}
+.chain li.trigline::before{background:var(--sc,var(--ink2));color:var(--surf)}
+
+/* apple + erp callouts */
+.apple{border:1px solid var(--line);border-left:3px solid var(--apple);
+  background:var(--surf);border-radius:0 12px 12px 0;padding:16px 18px;margin-top:16px}
+.apple h4{font-size:12px;font-family:var(--f-mono);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--apple);font-weight:500}
+.apple p{margin-top:8px;font-family:var(--f-read);font-size:15.5px;line-height:1.58;color:var(--ink2)}
+.erp{border:1px solid var(--line);background:var(--surf2);border-radius:12px;
+  padding:16px 18px;margin-top:16px}
+.erp h4{font-size:12px;font-family:var(--f-mono);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--chg);font-weight:500}
+.erp .ln{display:flex;gap:10px;margin-top:9px;font-size:13.4px;flex-wrap:wrap}
+.erp .ln b{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ink3);font-weight:500;min-width:74px;padding-top:2px}
+.erp code{font-family:var(--f-mono);font-size:12px;background:var(--surf);
+  border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink2)}
+
+/* filters */
+.filters{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+select,input[type=search],input[type=number],input[type=range]{
+  font:inherit;font-size:13px;background:var(--surf);color:var(--ink);
+  border:1px solid var(--line);border-radius:8px;padding:6px 9px}
+input[type=range]{padding:0;accent-color:var(--accent);width:100%}
+.count{font-family:var(--f-mono);font-size:11.5px;color:var(--ink3);margin-left:auto}
+
+/* matrix */
+table.mx{width:100%;border-collapse:collapse;font-size:12.6px;min-width:860px}
+table.mx th{position:sticky;top:0;background:var(--surf);z-index:2;text-align:left;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink3);font-weight:500;padding:9px 10px 9px 0;border-bottom:1px solid var(--line)}
+table.mx td{padding:9px 10px 9px 0;border-bottom:1px solid var(--line-soft);
+  vertical-align:top;line-height:1.4}
+table.mx td.nm{font-weight:600;white-space:nowrap}
+table.mx td.why{font-family:var(--f-read);font-size:13.8px;color:var(--ink2);min-width:250px}
+table.mx .stg{font-family:var(--f-mono);font-size:11px;color:var(--accent-ink);
+  cursor:pointer;background:none;border:0;padding:0;text-decoration:underline;
+  text-underline-offset:2px;white-space:nowrap}
+
+/* cold chain calc */
+.calc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,320px);gap:18px;align-items:start}
+.ctrl{margin-bottom:15px}
+.ctrl .lb{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  font-size:13px;margin-bottom:5px}
+.ctrl .lb b{font-family:var(--f-mono);font-size:13px;color:var(--accent-ink);font-weight:600}
+.ctrl .hint{font-size:11.5px;color:var(--ink3);margin-top:4px;line-height:1.4}
+.verdict{border-radius:12px;padding:18px;border:1px solid var(--line);background:var(--surf)}
+.vnum{font-family:var(--f-mono);font-size:44px;font-weight:600;line-height:1;
+  letter-spacing:-.02em}
+.vbar{height:9px;border-radius:5px;background:var(--surf3);overflow:hidden;margin:14px 0 6px;
+  display:flex}
+.vbar i{display:block;height:100%}
+.vrow{display:flex;justify-content:space-between;font-size:12.6px;padding:6px 0;
+  border-top:1px dashed var(--line-soft)}
+.vrow b{font-family:var(--f-mono);font-weight:500}
+
+/* gaps */
+.gap{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.gap h4{font-size:14.5px;font-weight:600;display:flex;gap:9px;align-items:baseline}
+.gap h4 span{font-family:var(--f-mono);font-size:11px;color:var(--crit)}
+.gap p{margin-top:7px;font-family:var(--f-read);font-size:15px;line-height:1.55;color:var(--ink2)}
+
+footer{border-top:1px solid var(--line);padding-block:26px 40px;color:var(--ink3);font-size:12.5px}
+
+@media (max-width:900px){
+  .explorer{grid-template-columns:1fr}
+  .rail{position:static;max-height:none;display:flex;gap:4px;overflow-x:auto;padding:8px}
+  .railgrp{display:none}
+  .stagebtn{flex-direction:column;gap:2px;min-width:132px;border-left:0;
+    border-bottom:2.5px solid transparent;border-radius:8px 8px 0 0}
+  .stagebtn[aria-current="true"]{border-bottom-color:var(--accent)}
+  .calc{grid-template-columns:1fr}
+  .io{grid-template-columns:1fr;gap:10px}
+  .io .ar{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="wrap topin">
+    <div class="brand"><b>AMAMA TRADECHAIN</b><span>Control Tower</span></div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" data-sec="overview" aria-selected="true">Start here</button>
+      <button class="tab" role="tab" data-sec="flow" aria-selected="false">The flow</button>
+      <button class="tab" role="tab" data-sec="stages" aria-selected="false">16 stages</button>
+      <button class="tab" role="tab" data-sec="docs" aria-selected="false">Documents</button>
+      <button class="tab" role="tab" data-sec="scen" aria-selected="false">Scenarios</button>
+      <button class="tab" role="tab" data-sec="cold" aria-selected="false">Cold chain</button>
+      <button class="tab" role="tab" data-sec="erp" aria-selected="false">ERP model</button>
+      <button class="tab" role="tab" data-sec="gaps" aria-selected="false">Gaps</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ================= OVERVIEW ================= -->
+<section class="sec" id="sec-overview">
+  <div class="hero">
+    <div class="eyebrow">One trade, end to end</div>
+    <h1>Twenty tonnes of apples, sixteen stages, sixty-eight documents, and three clocks running at once.</h1>
+    <p class="lede read">Everything on this page follows one real shipment: <strong>Grade-A Royal Delicious apples from Himachal Pradesh to a wholesaler in Dubai</strong>. Every stage, document, exception and ERP table is explained against that one consignment, so the abstractions stay attached to something you can picture. Perishable trade is different from general cargo in exactly one way that changes everything downstream: <strong>the cargo is losing value every hour, and the clock started before you owned it.</strong></p>
+    <div class="shipcard">
+      <div class="sf"><div class="k">Transaction</div><div class="v"><em>AMT-2026-00418</em></div></div>
+      <div class="sf"><div class="k">Product</div><div class="v">Apple · Royal Delicious<br><em>Grade A · 100–125 count</em></div></div>
+      <div class="sf"><div class="k">Origin</div><div class="v">Kotkhai, Shimla<br><em>Himachal Pradesh</em></div></div>
+      <div class="sf"><div class="k">Buyer</div><div class="v">Al Noor Fresh Trading<br><em>Jebel Ali, UAE</em></div></div>
+      <div class="sf"><div class="k">Quantity</div><div class="v">20.0 MT<br><em>2,000 cartons · 20 pallets</em></div></div>
+      <div class="sf"><div class="k">Equipment</div><div class="v">1 × 40ft HC reefer<br><em>set point +0.5 °C</em></div></div>
+      <div class="sf"><div class="k">Terms</div><div class="v">CFR Jebel Ali<br><em>30% adv · 70% @ B/L +30d</em></div></div>
+      <div class="sf"><div class="k">Route</div><div class="v">Shimla → Mundra → Jebel Ali<br><em>6 days at sea</em></div></div>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:34px">
+    <div class="sechead" style="margin-bottom:4px">
+      <div class="eyebrow">Mechanism 1</div>
+      <h2>The ID spine: why one number has to survive the whole journey</h2>
+      <p class="read">A trade ERP is not really a workflow tool — it is an <strong>identity tool</strong>. One master Transaction ID is created the moment the contract is signed, and every record created afterwards inherits it. That inheritance is what lets a buyer complaint in Dubai be traced back to a specific tree block in Kotkhai in two clicks, and what lets Finance attribute a ₹40,000 claim to the exact stage that caused it.</p>
+    </div>
+    <div class="fig scrollx">
+      <figure>
+        <svg class="dia" viewBox="0 0 1080 300" role="img" aria-label="Diagram showing the Transaction ID created at contract signature, inherited by Lot ID, Pallet IDs, Container and seal, Bill of Lading and finally the invoice and payment, with a reverse trace arrow running from payment back to the farm.">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+            </marker>
+            <marker id="arc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#A82A20"/>
+            </marker>
+          </defs>
+          <text class="bandt" x="20" y="26">CREATED AT STAGE →</text>
+          <g class="g1">
+            <text class="nn" x="20" y="64">01 CONTRACT</text>
+            <rect class="nb-a" x="20" y="76" width="150" height="70" rx="9"/>
+            <text class="nt" x="34" y="102">Transaction ID</text>
+            <text class="nn" x="34" y="124">AMT-2026-00418</text>
+          </g>
+          <line class="ed" x1="176" y1="111" x2="188" y2="111" marker-end="url(#ar)"/>
+          <g>
+            <text class="nn" x="195" y="64">04 LOT</text>
+            <rect class="nb" x="195" y="76" width="150" height="70" rx="9"/>
+            <text class="nt" x="209" y="102">Lot ID</text>
+            <text class="nn" x="209" y="124">LOT-HP-APL-00112</text>
+          </g>
+          <line class="ed" x1="351" y1="111" x2="363" y2="111" marker-end="url(#ar)"/>
+          <g>
+            <text class="nn" x="370" y="64">08 PACKING</text>
+            <rect class="nb" x="370" y="76" width="150" height="70" rx="9"/>
+            <text class="nt" x="384" y="102">Pallet IDs</text>
+            <text class="nn" x="384" y="124">PLT-00112-01…20</text>
+          </g>
+          <line class="ed" x1="526" y1="111" x2="538" y2="111" marker-end="url(#ar)"/>
+          <g>
+            <text class="nn" x="545" y="64">10 STUFFING</text>
+            <rect class="nb" x="545" y="76" width="150" height="70" rx="9"/>
+            <text class="nt" x="559" y="102">Container + seal</text>
+            <text class="nn" x="559" y="124">MSKU 784123-6</text>
+          </g>
+          <line class="ed" x1="701" y1="111" x2="713" y2="111" marker-end="url(#ar)"/>
+          <g>
+            <text class="nn" x="720" y="64">14 VESSEL</text>
+            <rect class="nb" x="720" y="76" width="150" height="70" rx="9"/>
+            <text class="nt" x="734" y="102">Bill of Lading</text>
+            <text class="nn" x="734" y="124">MEDUMU4471</text>
+          </g>
+          <line class="ed" x1="876" y1="111" x2="888" y2="111" marker-end="url(#ar)"/>
+          <g>
+            <text class="nn" x="895" y="64">16 SETTLEMENT</text>
+            <rect class="nb-o" x="895" y="76" width="160" height="70" rx="9"/>
+            <text class="nt" x="909" y="102">Invoice + payout</text>
+            <text class="nn" x="909" y="124">INV-418 / SWIFT</text>
+          </g>
+          <text class="el" x="20" y="176">each record stores the parent ID — never a copied description</text>
+          <path class="ed-c" d="M975,158 L975,214 L100,214 L100,158" marker-end="url(#arc)"/>
+          <text class="el-c" x="360" y="236">recall / claim trace — payment → B/L → container → pallet → lot → farm block → farmer</text>
+          <text class="nn" x="20" y="272">AUDIT DIRECTION</text>
+          <text class="ns" x="150" y="272">forward = execution · backward = accountability. Both run on the same key.</text>
+        </svg>
+        <figcaption>Every downstream record carries the Transaction ID and its own child ID. Build this before you build any screen — retrofitting traceability into an ERP that stored descriptions instead of keys is the single most expensive mistake in this domain.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div style="margin-top:34px">
+    <div class="sechead">
+      <div class="eyebrow">The shape of the process</div>
+      <h2>Five phases, sixteen stages</h2>
+      <p class="read">The sixteen stages are not a flat list. They group into five phases, and each phase has a different owner, a different failure mode, and a different kind of risk. Getting this grouping right in the ERP matters because <strong>permissions, dashboards and escalation paths follow phases, not stages</strong>.</p>
+    </div>
+    <div class="phaselist" id="phaseList"></div>
+  </div>
+</section>
+
+<!-- ================= FLOW ================= -->
+<section class="sec" id="sec-flow" hidden>
+  <div class="sechead">
+    <div class="eyebrow">Mechanism 2</div>
+    <h2>The map — and the four places it loops backwards</h2>
+    <p class="read">Read left to right, row by row, like a snake. The solid arrows are the happy path that a demo will show you. The <strong>dashed red arrows are the ones that decide whether your ERP is any good</strong>: they are the four points where the process reverses, and each reversal is a different kind of expensive. Click any stage to open its full detail.</p>
+  </div>
+  <div class="fig scrollx">
+    <figure>
+      <svg class="dia" id="flowmap" viewBox="0 0 1130 700" role="img" aria-label="Snake-layout map of the sixteen trade stages in four rows, with four dashed backward arrows: Field QC reject returning to procurement, export QC reject pulling buffer pallets from cold storage, a customs query returning to document control, and a missed terminal cut-off returning to container booking."></svg>
+      <figcaption>Four reversals: a QC reject sends you back to sourcing (days lost), an export-QC reject pulls buffer pallets (margin lost), a customs query re-opens document control (hours lost against a cut-off), and a missed cut-off sends you back to booking (a whole week lost and shelf life burned). Every one of them must be a first-class state in the ERP, not an email.</figcaption>
+    </figure>
+  </div>
+
+  <div class="grid" style="margin-top:28px;grid-template-columns:repeat(auto-fit,minmax(255px,1fr))">
+    <div class="card"><div class="eyebrow">Handoffs</div><h4 style="margin-top:8px;font-size:15px">7 owner changes</h4><p class="read" style="font-size:14.5px;margin-top:7px">Trade Desk → Procurement → QC → Transport → Warehouse → Cold Chain → Freight → CHA → Finance. Every arrow between two different owners is where work is dropped. Your ERP earns its keep at the handoff, not inside the task.</p></div>
+    <div class="card"><div class="eyebrow">Hard deadlines</div><h4 style="margin-top:8px;font-size:15px">3 immovable cut-offs</h4><p class="read" style="font-size:14.5px;margin-top:7px">Terminal gate-in cut-off, VGM submission cut-off, and shipping-instruction cut-off. Miss any one and the container rolls to the next sailing — typically seven days, on cargo with a finite shelf life.</p></div>
+    <div class="card"><div class="eyebrow">Points of no return</div><h4 style="margin-top:8px;font-size:15px">2 irreversible gates</h4><p class="read" style="font-size:14.5px;margin-top:7px">Container sealing (stage 10) and vessel departure (stage 14). After the seal number is recorded you cannot correct the contents; after departure you cannot correct anything at all except paperwork and expectations.</p></div>
+  </div>
+</section>
+
+<!-- ================= STAGES ================= -->
+<section class="sec" id="sec-stages" hidden>
+  <div class="sechead">
+    <div class="eyebrow">Stage by stage</div>
+    <h2>What actually happens, who does it, and what it produces</h2>
+    <p class="read">Each stage is described the same way on purpose: <strong>trigger → system action → human action → documents → exceptions</strong>. If you build every stage of your ERP to that same shape, you get one screen template instead of sixteen, and one exception engine instead of sixteen inboxes.</p>
+  </div>
+  <div class="explorer">
+    <div class="rail" id="rail" role="tablist" aria-label="Stages"></div>
+    <div class="detail" id="detail"></div>
+  </div>
+</section>
+
+<!-- ================= DOCUMENTS ================= -->
+<section class="sec" id="sec-docs" hidden>
+  <div class="sechead">
+    <div class="eyebrow">Mechanism 3</div>
+    <h2>The document chain — what blocks what</h2>
+    <p class="read">Documents are not attachments. In export trade a document is a <strong>gate</strong>: a missing one does not create a to-do, it stops the container. The diagram shows the blocking chain for this apple shipment. The one marked in red — the phytosanitary certificate — is the single most common reason a perishable export misses its sailing, because it is issued by a government inspector on their schedule, not yours, and it has to be dated close to shipment.</p>
+  </div>
+  <div class="fig scrollx">
+    <figure>
+      <svg class="dia" viewBox="0 0 1060 430" role="img" aria-label="Diagram showing six export documents converging into the e-SANCHIT and shipping bill filing, which produces the Let Export Order, which permits terminal gate-in, which leads to the Bill of Lading and finally buyer payment. The phytosanitary certificate is highlighted as the most common blocker.">
+        <defs>
+          <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+          <marker id="ar2c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#A82A20"/></marker>
+        </defs>
+        <text class="bandt" x="16" y="22">SOURCE DOCUMENTS · STAGE 11</text>
+        <text class="bandt" x="430" y="22">FILING · STAGE 12</text>
+        <text class="bandt" x="720" y="22">RELEASE · STAGES 13–16</text>
+        <rect class="nb" x="16" y="40" width="200" height="40" rx="7"/><text class="nt" x="28" y="65">Commercial Invoice</text>
+        <rect class="nb" x="16" y="90" width="200" height="40" rx="7"/><text class="nt" x="28" y="115">Packing List (final)</text>
+        <rect class="nb" x="16" y="140" width="200" height="40" rx="7"/><text class="nt" x="28" y="165">Certificate of Origin</text>
+        <rect class="nb-c" x="16" y="190" width="200" height="40" rx="7"/><text class="nt" x="28" y="215">Phytosanitary Cert.</text>
+        <rect class="nb" x="16" y="240" width="200" height="40" rx="7"/><text class="nt" x="28" y="265">Insurance Certificate</text>
+        <rect class="nb" x="16" y="290" width="200" height="40" rx="7"/><text class="nt" x="28" y="315">VGM + Stuffing Report</text>
+        <path class="ed" d="M222,60 C300,60 300,180 386,180" marker-end="url(#ar2)"/>
+        <path class="ed" d="M222,110 C300,110 300,180 386,180" marker-end="url(#ar2)"/>
+        <path class="ed" d="M222,160 C300,160 300,180 386,180" marker-end="url(#ar2)"/>
+        <path class="ed-c" d="M222,210 C300,210 300,182 386,182" marker-end="url(#ar2c)"/>
+        <path class="ed" d="M222,260 C300,260 300,182 386,182" marker-end="url(#ar2)"/>
+        <path class="ed" d="M222,310 C300,310 300,184 386,184" marker-end="url(#ar2)"/>
+        <rect class="nb-a" x="392" y="150" width="190" height="66" rx="9"/>
+        <text class="nt" x="406" y="176">e-SANCHIT upload</text><text class="nn" x="406" y="198">+ Shipping Bill (ICEGATE)</text>
+        <line class="ed" x1="588" y1="183" x2="612" y2="183" marker-end="url(#ar2)"/>
+        <text class="el" x="588" y="170">assessed ≤24h</text>
+        <rect class="nb-o" x="618" y="150" width="160" height="66" rx="9"/>
+        <text class="nt" x="632" y="176">Let Export Order</text><text class="nn" x="632" y="198">LEO issued</text>
+        <line class="ed" x1="784" y1="183" x2="808" y2="183" marker-end="url(#ar2)"/>
+        <rect class="nb" x="814" y="150" width="160" height="66" rx="9"/>
+        <text class="nt" x="828" y="176">Terminal gate-in</text><text class="nn" x="828" y="198">before cut-off</text>
+        <path class="ed" d="M894,222 L894,266" marker-end="url(#ar2)"/>
+        <rect class="nb" x="814" y="272" width="160" height="60" rx="9"/>
+        <text class="nt" x="828" y="296">Bill of Lading</text><text class="nn" x="828" y="316">issued after sailing</text>
+        <path class="ed" d="M894,338 L894,378" marker-end="url(#ar2)"/>
+        <rect class="nb-o" x="814" y="384" width="160" height="40" rx="7"/>
+        <text class="nt" x="828" y="409">Buyer pays 70%</text>
+        <text class="el-c" x="16" y="358">Phytosanitary is the usual blocker: government-issued, inspection-dependent,</text>
+        <text class="el-c" x="16" y="374">and it must be dated close to sailing — so it cannot be obtained early and parked.</text>
+        <text class="el" x="16" y="400">Rule to encode: no document, no filing. No filing, no LEO. No LEO, no gate-in.</text>
+        <text class="el" x="16" y="416">No gate-in, no B/L. No B/L, no money. The chain has no shortcuts.</text>
+      </svg>
+      <figcaption>Six documents converge into one filing; one filing produces one release; that release unlocks the entire back half of the trade — including payment. This is why document control is a stage in its own right rather than a folder.</figcaption>
+    </figure>
+  </div>
+
+  <div class="blk" style="margin-top:26px">
+    <h4>Master document register — every document in the trade</h4>
+    <div class="filters">
+      <input type="search" id="docSearch" placeholder="Search documents…" aria-label="Search documents" style="min-width:190px">
+      <select id="docStage" aria-label="Filter by stage"><option value="">All stages</option></select>
+      <select id="docReq" aria-label="Filter by requirement">
+        <option value="">Mandatory + optional</option>
+        <option value="Mandatory">Mandatory only</option>
+        <option value="Optional">Optional only</option>
+      </select>
+      <span class="count" id="docCount"></span>
+    </div>
+    <div class="scrollx"><table class="mx" id="docTable">
+      <thead><tr><th>Document</th><th>Stage</th><th>Req.</th><th>Issued by</th><th>What it is for / what it blocks</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ================= SCENARIOS ================= -->
+<section class="sec" id="sec-scen" hidden>
+  <div class="sechead">
+    <div class="eyebrow">Exception handling</div>
+    <h2>Five scenarios, applied to every stage</h2>
+    <p class="read">Every stage can end in one of five ways. Your ERP does not need sixteen exception workflows — it needs <strong>five chains, parameterised by stage</strong>. Pick a scenario below and read down: the chain is the same shape everywhere, only the trigger and the recovery action change. This is the single biggest simplification available to you when you build.</p>
+  </div>
+  <div class="scentabs" id="scenTabs" role="tablist" aria-label="Scenario types"></div>
+  <div id="scenBody"></div>
+</section>
+
+<!-- ================= COLD CHAIN ================= -->
+<section class="sec" id="sec-cold" hidden>
+  <div class="sechead">
+    <div class="eyebrow">Mechanism 4</div>
+    <h2>Three clocks run at the same time — and they are not the same length</h2>
+    <p class="read">General cargo has one clock: the sailing schedule. Perishable cargo has three, and they compete. <strong>The cut-off clock is the shortest and hardest.</strong> <strong>The shelf-life clock started before you took delivery</strong> and cannot be paused, only slowed. <strong>The payment clock is the longest</strong> and is what actually consumes your working capital. A control tower that only shows the shipment clock will let you win the sailing and lose the trade.</p>
+  </div>
+  <div class="fig scrollx">
+    <figure>
+      <svg class="dia" viewBox="0 0 1080 360" role="img" aria-label="Three parallel timelines against one date axis: a shelf-life clock starting at harvest on 28 September, a short hard cut-off clock from stuffing to gate-in on 7 October, and a payment clock running from the bill of lading date to 8 November.">
+        <defs>
+          <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        </defs>
+        <line class="ed" x1="120" y1="40" x2="1050" y2="40"/>
+        <g class="nn">
+          <line class="ed" x1="140" y1="34" x2="140" y2="46"/><text x="118" y="26">28 Sep</text>
+          <line class="ed" x1="196" y1="34" x2="196" y2="46"/><text x="176" y="26">1 Oct</text>
+          <line class="ed" x1="272" y1="34" x2="272" y2="46"/><text x="252" y="26">5 Oct</text>
+          <line class="ed" x1="310" y1="34" x2="310" y2="46"/><text x="292" y="26">7 Oct</text>
+          <line class="ed" x1="348" y1="34" x2="348" y2="46"/><text x="330" y="26">9 Oct</text>
+          <line class="ed" x1="462" y1="34" x2="462" y2="46"/><text x="440" y="26">15 Oct</text>
+          <line class="ed" x1="500" y1="34" x2="500" y2="46"/><text x="478" y="26">17 Oct</text>
+          <line class="ed" x1="898" y1="34" x2="898" y2="46"/><text x="876" y="26">8 Nov</text>
+        </g>
+        <text class="ns" x="140" y="62">harvest</text><text class="ns" x="252" y="62">stuffed</text>
+        <text class="ns" x="330" y="76">ETD</text><text class="ns" x="440" y="62">ETA</text>
+        <text class="ns" x="478" y="76">delivered</text><text class="ns" x="866" y="62">payment due</text>
+
+        <text class="bandt" x="16" y="116">SHELF-LIFE CLOCK</text>
+        <rect class="band" x="140" y="126" width="910" height="26" rx="6"/>
+        <rect class="nb-o" x="140" y="126" width="360" height="26" rx="6"/>
+        <text class="nn" x="152" y="144">20 days consumed by delivery</text>
+        <text class="nn" x="516" y="144">≈100 days of the 120-day budget still in hand — if the chain held</text>
+        <text class="el" x="16" y="172">starts at harvest, not at pickup · only slows, never pauses · an 8-hour excursion at 12 °C costs ~2 days</text>
+
+        <text class="bandt" x="16" y="212">CUT-OFF CLOCK</text>
+        <rect class="band" x="272" y="222" width="38" height="26" rx="6"/>
+        <rect class="nb-c" x="272" y="222" width="38" height="26" rx="6"/>
+        <line class="ed-c" x1="310" y1="216" x2="310" y2="254"/>
+        <text class="el-c" x="320" y="240">HARD STOP — 48 hours, immovable. Miss it and the whole plan slides 7 days.</text>
+        <text class="el" x="16" y="268">the shortest clock governs the entire trade · VGM, SI and gate-in each have their own deadline inside it</text>
+
+        <text class="bandt" x="16" y="308">PAYMENT CLOCK</text>
+        <rect class="band" x="348" y="318" width="702" height="26" rx="6"/>
+        <rect class="nb-a" x="348" y="318" width="550" height="26" rx="6"/>
+        <text class="nn" x="360" y="336">30 days from B/L — your money is out here</text>
+        <text class="nn" x="912" y="336">+5d reconcile</text>
+      </svg>
+      <figcaption>The apple consignment arrives with plenty of shelf life and still ties up working capital for 41 days after departure. Design the dashboard so all three clocks are visible on one row per trade — that is the actual job of a control tower.</figcaption>
+    </figure>
+  </div>
+
+  <div class="blk" style="margin-top:26px">
+    <h4>Shelf-life budget calculator — where the days actually go</h4>
+    <p class="read" style="font-size:15px;margin-bottom:18px;max-width:74ch">Respiration roughly doubles for every 10 °C above the set point, so an hour of field heat costs several hours of cold-store life. Move the sliders and watch where the budget is really spent. Defaults are this apple shipment.</p>
+    <div class="calc">
+      <div>
+        <div class="ctrl">
+          <div class="lb"><label for="c1">Harvest → start of pre-cooling <span style="color:var(--ink3)">(orchard, ~22 °C)</span></label><b><span id="c1v">6</span> h</b></div>
+          <input type="range" id="c1" min="0" max="48" value="6" step="1">
+          <div class="hint">The most expensive hours in the whole chain. Fruit sitting in a crate in the sun ages ~4.4× faster than fruit at +0.5 °C.</div>
+        </div>
+        <div class="ctrl">
+          <div class="lb"><label for="c2">Time in road transit to pack-house <span style="color:var(--ink3)">(~14 °C, non-reefer truck)</span></label><b><span id="c2v">18</span> h</b></div>
+          <input type="range" id="c2" min="0" max="72" value="18" step="1">
+          <div class="hint">Shimla to the NCR pack-house. A reefer truck here drops the effective ageing rate by roughly half.</div>
+        </div>
+        <div class="ctrl">
+          <div class="lb"><label for="c3">Days in cold storage before stuffing <span style="color:var(--ink3)">(+0.5 °C)</span></label><b><span id="c3v">4</span> d</b></div>
+          <input type="range" id="c3" min="0" max="60" value="4" step="1">
+          <div class="hint">Cheap days. At set point you spend the budget 1:1 — this is the only place it is safe to wait.</div>
+        </div>
+        <div class="ctrl">
+          <div class="lb"><label for="c4">Sea transit + port dwell <span style="color:var(--ink3)">(+0.5 °C in reefer)</span></label><b><span id="c4v">10</span> d</b></div>
+          <input type="range" id="c4" min="1" max="45" value="10" step="1">
+          <div class="hint">Mundra → Jebel Ali is 6 days at sea; 10 days covers gate-in dwell, sailing and discharge.</div>
+        </div>
+        <div class="ctrl">
+          <div class="lb"><label for="c5">Temperature excursion — duration</label><b><span id="c5v">0</span> h</b></div>
+          <input type="range" id="c5" min="0" max="48" value="0" step="1">
+        </div>
+        <div class="ctrl">
+          <div class="lb"><label for="c6">Temperature excursion — temperature reached</label><b><span id="c6v">12</span> °C</b></div>
+          <input type="range" id="c6" min="1" max="30" value="12" step="1">
+          <div class="hint">A reefer genset failure on the road leg, or a plug-out at the terminal that nobody logged. Try 12 hours at 18 °C.</div>
+        </div>
+      </div>
+      <div class="verdict" id="verdict"></div>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:22px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))">
+    <div class="card"><div class="eyebrow">Apple-specific rule</div><h4 style="margin-top:8px;font-size:15px">Apples are ethylene producers</h4><p class="read" style="font-size:14.5px;margin-top:7px">Apples emit high levels of ethylene, which ripens and destroys ethylene-sensitive cargo. Never co-load with kiwi, leafy greens, broccoli or cut flowers. Your ERP needs a <b>compatibility check on the stuffing plan</b>, not just a volume check.</p></div>
+    <div class="card"><div class="eyebrow">Apple-specific rule</div><h4 style="margin-top:8px;font-size:15px">Pre-cool before you load, not after</h4><p class="read" style="font-size:14.5px;margin-top:7px">A reefer container is designed to <i>hold</i> temperature, not pull it down. Loading warm fruit means the set point is never truly reached in the core of the pallet. Record pulp temperature at stuffing — not air temperature — and make it a blocking field.</p></div>
+    <div class="card"><div class="eyebrow">Apple-specific rule</div><h4 style="margin-top:8px;font-size:15px">Bruising is invisible for 48 hours</h4><p class="read" style="font-size:14.5px;margin-top:7px">Impact damage at loading shows as brown discolouration days later — often first seen by the buyer. This is why stage 08 photo evidence and stage 10 pallet-scan reconciliation exist: they are the only defence when a claim arrives.</p></div>
+  </div>
+</section>
+
+<!-- ================= ERP ================= -->
+<section class="sec" id="sec-erp" hidden>
+  <div class="sechead">
+    <div class="eyebrow">Build notes</div>
+    <h2>What this process means for the data model</h2>
+    <p class="read">The process above reduces to a fairly small number of entities. Almost everything else in the ERP is a view over them. The trap is modelling <strong>stages as tables</strong>; model <strong>things as tables and stages as states</strong>, or you will end up with sixteen half-duplicated schemas that cannot answer "where is my fruit".</p>
+  </div>
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(272px,1fr))">
+    <div class="card"><div class="eyebrow">Core entity</div><h4 style="margin-top:8px;font-size:16px">Trade</h4>
+      <p class="read" style="font-size:14.5px;margin-top:8px">One per contract. Holds the Transaction ID, buyer, incoterm, payment terms, contracted quantity and price, and the commercial documents. Everything else points at it.</p>
+      <div class="erp" style="margin-top:12px"><h4>States</h4><div class="ln"><span><code>DRAFT</code> <code>CONTRACTED</code> <code>IN_EXECUTION</code> <code>SHIPPED</code> <code>DELIVERED</code> <code>SETTLED</code> <code>LOST</code></span></div></div></div>
+
+    <div class="card"><div class="eyebrow">Core entity</div><h4 style="margin-top:8px;font-size:16px">Lot</h4>
+      <p class="read" style="font-size:14.5px;margin-top:8px">The traceability atom. One per accepted harvest batch from one farm block. Carries farmer, GPS, harvest datetime, grade, quantity, QC record and the shelf-life clock start. A trade can have many lots; a lot can serve more than one trade only if you split it — and a split must create child lots, never edit the parent.</p>
+      <div class="erp" style="margin-top:12px"><h4>States</h4><div class="ln"><span><code>CREATED</code> <code>IN_TRANSIT</code> <code>RECEIVED</code> <code>IN_COLD</code> <code>PACKED</code> <code>ALLOCATED</code> <code>SHIPPED</code> <code>QUARANTINE</code> <code>REJECTED</code></span></div></div></div>
+
+    <div class="card"><div class="eyebrow">Core entity</div><h4 style="margin-top:8px;font-size:16px">Pallet</h4>
+      <p class="read" style="font-size:14.5px;margin-top:8px">The unit that is actually scanned and loaded. Links Lot → Container. Carries carton count, gross/net weight, pulp temperature at pack, and export-QC result. This is the level at which a partial rejection happens, so it must be independently rejectable.</p>
+      <div class="erp" style="margin-top:12px"><h4>States</h4><div class="ln"><span><code>PACKED</code> <code>QC_PASS</code> <code>QC_REJECT</code> <code>STAGED</code> <code>LOADED</code></span></div></div></div>
+
+    <div class="card"><div class="eyebrow">Core entity</div><h4 style="margin-top:8px;font-size:16px">Container / Shipment</h4>
+      <p class="read" style="font-size:14.5px;margin-top:8px">Container number, seal, type, set point, ventilation, PTI result, VGM, booking, vessel, voyage, ETD/ETA, and the cut-off datetimes. The cut-off fields are the ones that drive every urgent notification in the system.</p>
+      <div class="erp" style="margin-top:12px"><h4>States</h4><div class="ln"><span><code>PLANNED</code> <code>BOOKED</code> <code>AT_WAREHOUSE</code> <code>STUFFED</code> <code>SEALED</code> <code>CLEARED</code> <code>GATED_IN</code> <code>ON_VESSEL</code> <code>DISCHARGED</code> <code>DELIVERED</code> <code>ROLLED</code></span></div></div></div>
+
+    <div class="card"><div class="eyebrow">Core entity</div><h4 style="margin-top:8px;font-size:16px">Document</h4>
+      <p class="read" style="font-size:14.5px;margin-top:8px">One polymorphic table, not one table per document type. Columns: type, owning entity (trade / lot / container), mandatory flag, issuer, issue date, expiry date, status, file, verified-by, verified-at. The D-7 / D-3 / D-1 / OVERDUE engine reads only this table.</p>
+      <div class="erp" style="margin-top:12px"><h4>States</h4><div class="ln"><span><code>NOT_APPLICABLE</code> <code>PENDING</code> <code>SUBMITTED</code> <code>VERIFIED</code> <code>REJECTED</code> <code>EXPIRED</code></span></div></div></div>
+
+    <div class="card"><div class="eyebrow">Core entity</div><h4 style="margin-top:8px;font-size:16px">Event / Exception</h4>
+      <p class="read" style="font-size:14.5px;margin-top:8px">Append-only. Every stage transition, every sensor excursion, every SLA breach and every scenario chain step writes one row: entity, stage, scenario type, severity, owner, opened-at, resolved-at, resolution. Your audit trail, your risk score and your post-mortem all come from this one table.</p>
+      <div class="erp" style="margin-top:12px"><h4>Never</h4><div class="ln"><span>Never update or delete a row here. Correction is a new row that references the old one.</span></div></div></div>
+  </div>
+
+  <div class="blk" style="margin-top:22px">
+    <h4>Five rules that will save you a rewrite</h4>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-top:4px">
+      <div><h4 style="font-size:14.5px">1 · Quantity is never a single number</h4><p class="read" style="font-size:14.3px;margin-top:6px">Contracted, harvested, QC-accepted, received, packed, loaded and delivered quantities all differ, legitimately. Store all seven. The gap between any two is a business fact someone needs to explain.</p></div>
+      <div><h4 style="font-size:14.5px">2 · Time is always two fields</h4><p class="read" style="font-size:14.3px;margin-top:6px">Planned and actual, for every milestone. A control tower is just the delta between those two columns, rendered. Without the planned value there is no such thing as "delayed".</p></div>
+      <div><h4 style="font-size:14.5px">3 · Temperature is a stream, not an attribute</h4><p class="read" style="font-size:14.3px;margin-top:6px">A separate time-series store keyed by lot and container, with the set point stored alongside so an excursion is computable rather than judged. Keep it for the full claim window — typically a year.</p></div>
+      <div><h4 style="font-size:14.5px">4 · Every status change needs an actor</h4><p class="read" style="font-size:14.3px;margin-top:6px">Who, when, on what evidence. On a quality claim, "the system says PASS" is worth nothing; "inspector R. Thakur signed off at 09:14 with four photos and a GPS fix" is worth the claim amount.</p></div>
+      <div><h4 style="font-size:14.5px">5 · Costs accrue per stage</h4><p class="read" style="font-size:14.3px;margin-top:6px">Procurement, transport, cold storage, packing, documentation, CHA, port, freight, insurance, finance cost and commission all attach to the trade with a stage tag. Stage 16 margin analysis is then a query, not a spreadsheet.</p></div>
+      <div><h4 style="font-size:14.5px">6 · The notification engine is one component</h4><p class="read" style="font-size:14.3px;margin-top:6px">Four severities (INFO / WARNING / ACTION REQUIRED / CRITICAL), one rule table, one delivery service. Do not scatter alert logic across sixteen modules — you will never be able to answer "why did nobody get told".</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GAPS ================= -->
+<section class="sec" id="sec-gaps" hidden>
+  <div class="sechead">
+    <div class="eyebrow">Read this before you scope</div>
+    <h2>What the sixteen-stage model does not yet cover</h2>
+    <p class="read">The stage model is sound. These are the things that sit outside it and will surface during build — mostly Indian export compliance that is company-level rather than trade-level, and the money that comes back after the trade is nominally closed. Confirm current requirements with your CHA and your bank; the systems and thresholds change.</p>
+  </div>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(288px,1fr))">
+    <div class="gap"><h4><span>01</span> Company-level registrations are master data, not documents</h4><p>IEC, AD Code registered at each port you ship from, APEDA registration for fresh horticulture, GST LUT for zero-rated export without paying IGST, and FSSAI where required. These are not per-trade documents — they are validity-dated master records, and an expired one blocks <i>every</i> trade at once. Model them as a separate register with its own expiry alerts.</p></div>
+    <div class="gap"><h4><span>02</span> The money loop does not end at stage 16</h4><p>Export proceeds have to be realised and evidenced against the shipping bill within the period your bank and FEMA require. Add an <b>e-BRC / realisation</b> step after settlement, and reconcile shipping bill ↔ invoice ↔ inward remittance. An unreconciled shipping bill is a compliance problem long after everyone has forgotten the trade.</p></div>
+    <div class="gap"><h4><span>03</span> Export incentives are margin you are not tracking</h4><p>Duty drawback and RoDTEP-type scrip accrue per shipping bill and land weeks later. If they are not attached to the trade, stage 16 profitability is understated and your pricing model drifts. Treat them as a receivable opened at stage 12 and closed on credit.</p></div>
+    <div class="gap"><h4><span>04</span> Preferential origin changes the buyer's price</h4><p>For UAE, a preferential certificate of origin under the India–UAE trade agreement can materially reduce the buyer's landed duty. That is a commercial lever your Trade Desk should be able to see at stage 01, and a different document to raise at stage 11. The mind map has only a generic "Certificate of Origin".</p></div>
+    <div class="gap"><h4><span>05</span> The cold chain has a blind gap on the road leg</h4><p>Between stuffing (10) and gate-in (13) the reefer runs on a diesel genset on a trailer, and between gate-in and vessel loading it is plugged into terminal power — or not. Plug-out and plug-in times are rarely captured, and that is precisely where unexplained excursions occur. Add them as mandatory timestamps.</p></div>
+    <div class="gap"><h4><span>06</span> Rejected fruit has a second life and a value</h4><p>Stage 03, 07 and 08 rejections currently just reduce quantity. In reality rejected apples go to the domestic market, to juice or processing, or to disposal — each with a different recovery value and a different document. Without a disposition workflow, your loss numbers will be wrong and consistently too pessimistic.</p></div>
+    <div class="gap"><h4><span>07</span> A claim is not the end of the story — recovery is</h4><p>Stage 15 captures the buyer's claim. It does not capture the recovery chain: notice to the carrier within the time bar, survey report, insurance claim, and settlement against the policy. A perishable claim that is not notified in time simply becomes your loss. Model claim and recovery as two linked records.</p></div>
+    <div class="gap"><h4><span>08</span> Nothing yet models "who was supposed to be told"</h4><p>Every scenario chain ends with a notification, but the model has no escalation matrix: owner → manager → COO, with time thresholds per severity. Build the matrix as configuration rather than code, because it will change every quarter as the team grows.</p></div>
+  </div>
+</section>
+
+</main>
+<footer class="wrap">
+  <p>Built from the AMAMA TRADECHAIN Trade Control Tower model — 16 stages, 68 documents, 5 scenario chains. Worked example: Royal Delicious apples, Kotkhai → Jebel Ali. Regulatory names and systems reflect standard Indian export practice and should be confirmed per destination with your customs broker.</p>
+</footer>
+
+<script>
+"use strict";
+/* ---------------- phases ---------------- */
+const PHASES=[
+ {t:"Commercial lock-in",r:"Stages 01–02",c:"var(--accent)",d:"Demand becomes a signed contract, and supply is matched to it. Nothing physical has moved yet — but the Transaction ID, the quality spec and the margin are all fixed here. Almost every downstream dispute traces back to a loose spec written at this phase."},
+ {t:"Farm to gate",r:"Stages 03–05",c:"var(--ok)",d:"Inspect, accept, identify and collect. This is where the cargo enters your custody and the shelf-life clock starts running against your budget. Risk here is biological and weather-driven — it cannot be negotiated away."},
+ {t:"Warehouse & cold chain",r:"Stages 06–08",c:"var(--chg)",d:"Receive, pull the temperature down, hold, sort, pack and pass export QC. This is the only phase where you can actually add value and buy time — and the only one where a single equipment failure can write off the whole consignment."},
+ {t:"Export execution",r:"Stages 09–13",c:"var(--warn)",d:"Book, stuff, document, clear and gate in. Five stages governed by external deadlines you do not control: the shipping line's, the customs department's and the terminal's. Everything here is a race against a cut-off."},
+ {t:"Transit & closure",r:"Stages 14–16",c:"var(--apple)",d:"Sail, arrive, deliver, get paid. Your ability to influence the outcome drops to nearly zero and your capital exposure peaks. The only assets you have left are your documents and your traceability."}
+];
+const PH=[0,0,1,1,1,2,2,2,3,3,3,3,3,4,4,4];
+
+/* ---------------- shared scenario chains ---------------- */
+const GEN_A=["Trigger fires on schedule","Owner performs action","Document generated / verified","Approval logged","System status updated","Advance to next stage"];
+const GEN_B=["System flags delay","Downstream slot / appointment at risk","New ETA calculated","Notification sent to owner","Owner re-plans and confirms"];
+const GEN_C=["Item marked HOLD / REJECTED","Downstream quantity gap recalculated","Replacement or recovery plan searched","Owner + escalation notified","Resolution logged to audit trail"];
+const GEN_D=["Document status set RED","Dependent clearance blocked","Documentation owner notified","Deadline countdown starts","Escalation if unresolved by deadline"];
+const GEN_E=["Impact analysis run","Inventory + logistics impact assessed","Cost & margin impact calculated","Document impact assessed","Approval → revised trade plan issued"];
+const T_A="Trigger fires on schedule", T_B="Expected trigger overdue",
+      T_C="Critical check fails", T_D="Required document missing, incorrect or expired",
+      T_E="Buyer or ops requests a change (qty / destination / spec / date / price)";
+const sc=(t,s)=>({t:t,s:s});
+
+/* ---------------- the sixteen stages ---------------- */
+const S=[
+{n:1,name:"Buyer Demand & Trade Contract",short:"Buyer Demand & Contract",owner:"CEO / Trade Desk",risk:18,band:"LOW",
+ desc:"A buyer RFQ is converted into a signed Trade Contract carrying the master Transaction ID that every downstream record will inherit.",
+ input:"Buyer RFQ + product & quality specification",output:"Signed Trade Contract + Transaction ID",
+ sla:"48 hrs buyer response · 72 hrs contract signature",trigger:"Buyer submits RFQ or PO",
+ sys:"Creates the Transaction ID, opens the Trade record, notifies Procurement of demand",
+ human:"Trade Desk negotiates terms; CEO/COO approves and signs the contract",
+ notif:[["INFO","New RFQ received from buyer"],["ACTION","Contract awaiting signature"]],
+ docs:[
+  ["Purchase Order","M","VERIFIED","Buyer","The buyer's formal order. Fixes quantity, price, delivery window and destination — the basis of everything that follows."],
+  ["Sales Contract","M","VERIFIED","AMAMA + Buyer","The binding agreement. Parent record of the Transaction ID. Blocks: no contract, no procurement demand signal."],
+  ["Product & Quality Spec","M","PENDING","Agreed between parties","Variety, grade, count size, colour, firmness, brix and defect tolerance. This is the yardstick every QC stage measures against — a vague spec here is an unwinnable claim at stage 15."],
+  ["Packaging Spec","M","N/A","Buyer","Carton type and strength, units per carton, liner, labelling, pallet pattern and wrap. Blocks: the packing run at stage 08 cannot start without it."],
+  ["Incoterm & Payment Terms","M","VERIFIED","Contract clause","Who arranges and pays for freight and insurance, and when money moves. Drives stages 09, 14 and 16 entirely."],
+  ["Buyer KYC / Company Registration","M","PENDING","Buyer","Trade licence, tax registration and import code. Blocks: shipment planning is held at source if this is missing."],
+  ["Insurance Responsibility Clause","O","N/A","Contract clause","Under CFR the seller arranges freight but not insurance; under CIF the seller insures. Determines who raises the insurance certificate at stage 14."],
+  ["Force Majeure / Arbitration Clause","M","VERIFIED","Contract clause","Governing law and dispute forum. Rarely read until a claim lands at stage 15, at which point it decides the outcome."]],
+ scen:{A:sc("Trigger fires on schedule",GEN_A),
+  B:sc("Buyer response overdue past 48 hrs",["System flags the RFQ as stalled","Trade Desk follow-up task created","Risk score raised on the pipeline forecast","Notification to Trade Desk owner","Buyer re-engaged, revised response deadline set"]),
+  C:sc("Buyer and AMAMA fail to agree terms",["RFQ marked LOST / ON HOLD","No Transaction ID generated","Procurement demand signal withdrawn","Trade Desk owner notified","Lead archived to CRM with a reason code"]),
+  D:sc("Buyer KYC or import licence missing",["Contract status set PENDING COMPLIANCE","Shipment planning blocked at source","Trade Desk notifies buyer for documents","7-day countdown to resubmission deadline","Escalated to COO if unresolved"]),
+  E:sc(T_E,GEN_E)},
+ apple:"Al Noor Fresh Trading sends an RFQ for one 40ft reefer of Royal Delicious, Grade A, 100–125 count, CFR Jebel Ali, arriving in the second half of October. The Trade Desk quotes against the Himachal harvest window, agrees 30% advance and 70% at 30 days from B/L, and the CEO signs. The system issues AMT-2026-00418. The quality spec is the sentence that matters: 'minimum 60% red blush, firmness ≥ 14 lbf, brix ≥ 12, zero russeting above 10% of surface, max 2% defects'. If any of those numbers is left out, the buyer defines them on arrival.",
+ erp:{e:"Trade",f:"transaction_id · buyer_id · incoterm · payment_terms · qty_contracted · price · currency · delivery_window_start/end · spec_id",
+  note:"The spec should be a structured record with typed tolerances, not a PDF attachment. Stage 03 and stage 08 both need to compare measurements against it programmatically."}},
+
+{n:2,name:"Procurement & Farmer Onboarding",short:"Procurement & Farmers",owner:"Procurement Manager",risk:34,band:"MODERATE",
+ desc:"Demand is matched against the supplier and farmer network; new farmers are onboarded with full KYC and traceability data before any allocation is made.",
+ input:"Trade Contract + supply forecast",output:"Confirmed farmer / supplier allocation for the lot",
+ sla:"5 days to confirm supply against forecast",trigger:"Trade Contract signed, demand pushed to Procurement",
+ sys:"Matches demand to farmer capacity and opens an onboarding checklist for new suppliers",
+ human:"Procurement Manager visits or calls farmers and confirms the harvest window and price",
+ notif:[["INFO","Supply match found"],["WARNING","Forecast shortfall in region"]],
+ docs:[
+  ["Supplier / Farmer KYC","M","PENDING","Farmer + AMAMA","Identity and tax details. Required before any payout can be released at stage 16, and the root of the traceability chain."],
+  ["Farm / Land Details","M","PENDING","Farmer","Survey number, village, GPS boundary, area under crop and variety. This is what a recall traces back to — without a GPS polygon your traceability stops at 'Himachal'."],
+  ["Bank Details","M","VERIFIED","Farmer","Settlement account. Blocks: farmer payout at stage 16."],
+  ["Supplier Agreement","M","VERIFIED","AMAMA + Farmer","Price basis, quality norms, and — critically — who bears the loss on a QC rejection. Settle this before the harvest, never after."],
+  ["Harvest Calendar","M","VERIFIED","Procurement","Expected picking windows by block and altitude. Feeds the supply forecast and the shelf-life planning."],
+  ["Certifications (GlobalGAP etc.)","O","N/A","Third-party certifier","Required by most EU and UK buyers, usually not by UAE. If your buyer mix changes, this becomes mandatory overnight — build the field now."],
+  ["Product & Quality History","O","N/A","AMAMA","Past pass rates and claim history per farm. Should feed the farm's risk score and the sampling intensity at stage 03."]],
+ scen:{A:sc(T_A,GEN_A),
+  B:sc("Farmer confirmation delayed beyond SLA",["System flags the supply-confirmation delay","Harvest window risk increases","Alternate farmer shortlist surfaced","Notification to Procurement owner","Backup farmer engaged in parallel"]),
+  C:sc("Crop yield forecast falls below buyer quantity",["Supply gap calculated against the contract","Additional farmers searched in region","If unmet, buyer quantity renegotiation triggered","Procurement + Trade Desk notified","Gap resolution logged to audit trail"]),
+  D:sc(T_D,GEN_D),E:sc(T_E,GEN_E)},
+ apple:"20 MT is allocated across four growers in Kotkhai and Jubbal — roughly 5 MT each, deliberately spread across two altitude bands so that a hailstorm in one valley does not take out the whole consignment. Two growers are already on the system; two are new and need KYC, land records and bank details captured before the pickers go out. The harvest calendar says the Royal Delicious blocks at 2,100 m pick around 26–30 September.",
+ erp:{e:"Supplier, Farm, Allocation",f:"farmer_id · farm_id · gps_polygon · variety · expected_yield_kg · harvest_window · allocation_qty · agreed_price",
+  note:"Allocation is a separate record from the lot. One allocation can produce several lots, and a lot can under-deliver against its allocation — you need both numbers to explain a shortfall."}},
+
+{n:3,name:"Field QC",short:"Field QC",owner:"QC Inspector",risk:41,band:"ELEVATED",
+ desc:"Pre-harvest or at-harvest inspection captures size, maturity, defects, GPS and photo evidence against the buyer specification, before any lot is created.",
+ input:"Farm + crop + buyer specification",output:"Digital QC record with a PASS / CONDITIONAL / HOLD / REJECT decision",
+ sla:"Inspection logged within 4 hrs of harvest",trigger:"Harvest reaches inspection-ready state",
+ sys:"Generates the QC record, timestamps GPS and photos, calculates the pass rate",
+ human:"Inspector grades a sample against the spec and uploads photo and video evidence",
+ notif:[["ACTION","QC pending inspector sign-off"],["CRITICAL","Lot failed QC"]],
+ docs:[
+  ["Field QC Report","M","PENDING","QC Inspector","Sample size, count-size distribution, firmness, brix, colour and defect percentages against spec. The single most valuable document you own when a claim arrives."],
+  ["Photo / Video Evidence","M","PENDING","QC Inspector","Timestamped, geotagged images of the actual sample. Blocks: no evidence, no defensible QC decision."],
+  ["GPS & Timestamp Log","M","VERIFIED","System","Proves the inspector was physically at that farm at that time. Prevents desk-signed QC, which is the most common quiet failure in field inspection."],
+  ["Pesticide / Residue Test","O","N/A","Accredited laboratory","Maximum residue limit compliance. Mandatory for EU and several other markets, risk-based for UAE. Lead time is days — order it before you need it."],
+  ["Inspector Sign-off","M","N/A","QC Inspector","The named human accountable for the decision. Blocks: lot creation at stage 04."]],
+ scen:{A:sc("Inspector arrives on schedule",["Sample graded against buyer spec","Photos, GPS and timestamp captured","QC record marked PASS","Lot creation unlocked","Advance to Lot Creation"]),
+  B:sc(T_B,GEN_B),
+  C:sc("Maturity or quality below buyer spec",["QC record marked REJECT","Lot creation blocked for this crop batch","Buyer quantity gap recalculated","Replacement supply search triggered","Procurement alert created"]),
+  D:sc(T_D,GEN_D),E:sc(T_E,GEN_E)},
+ apple:"The inspector pulls 100 apples from across the picking, and finds that 82% meet the 100–125 count band, firmness averages 15.2 lbf and brix 12.6 — all inside spec. But 6% show sunburn on the south-facing block, above the 2% defect tolerance. The decision is CONDITIONAL PASS with a note to grade out the sunburnt fruit at packing. That single note is what later explains why 20 MT was contracted and only 19.4 MT shipped.",
+ erp:{e:"QCRecord",f:"lot_candidate_id · farm_id · sample_size · measurements{} · defect_pct · decision · inspector_id · gps · photos[] · timestamp",
+  note:"Store measurements as structured values against the spec's typed tolerances so PASS / FAIL is computed, then optionally overridden by a named human — never typed in free text."}},
+
+{n:4,name:"Lot Creation",short:"Lot Creation",owner:"QC / Warehouse System",risk:15,band:"LOW",
+ desc:"Every accepted quantity is assigned a unique, QR-linked Lot ID connecting farm, farmer, crop, QC record and every downstream movement.",
+ input:"PASS or CONDITIONAL QC record + accepted quantity",output:"Lot ID with QR traceability (e.g. LOT-HP-APL-2026-00112)",
+ sla:"Immediate on QC approval",trigger:"Field QC returns PASS or CONDITIONAL PASS",
+ sys:"Generates the Lot ID and QR code and opens the traceability chain",
+ human:"QC or Warehouse confirms quantity and grade against the lot",
+ notif:[["INFO","Lot created and ready for pickup scheduling"]],
+ docs:[
+  ["Lot Certificate","M","VERIFIED","System","The lot's birth certificate: farm, farmer, variety, harvest date, quantity, grade and QC reference."],
+  ["QR Traceability Record","M","VERIFIED","System","The scannable link. Printed on every carton and pallet label so the buyer — and a regulator — can trace the fruit back without calling you."],
+  ["Grade & Quantity Declaration","M","VERIFIED","QC / Warehouse","The accepted quantity by grade. This is the number procurement is measured against and the number the farmer is paid on."]],
+ scen:{A:sc(T_A,GEN_A),B:sc(T_B,GEN_B),C:sc(T_C,GEN_C),D:sc(T_D,GEN_D),E:sc(T_E,GEN_E)},
+ apple:"Four lots are created, one per grower: LOT-HP-APL-2026-00112 through 00115. The 00112 lot carries 5.1 MT from Kotkhai, harvested 28 September at 07:40, CONDITIONAL PASS, sunburn note attached. The QR printed on its cartons resolves to that record for the life of the fruit. Six weeks later, when the buyer photographs three bruised cartons, the QR on those cartons is what tells you they came from 00114 and not 00112.",
+ erp:{e:"Lot",f:"lot_id · trade_id · farm_id · farmer_id · variety · harvest_datetime · qty_accepted_kg · grade · qc_record_id · shelf_life_start · state",
+  note:"shelf_life_start = harvest datetime, not warehouse receipt. Getting this wrong makes every downstream shelf-life number optimistic, which is the dangerous direction to be wrong in."}},
+
+{n:5,name:"Farm Pickup",short:"Farm Pickup",owner:"Transport Manager",risk:38,band:"MODERATE",
+ desc:"Truck and driver are assigned, the load is weighed and temperature-logged at origin, and the shipment departs for the warehouse.",
+ input:"Lot ID + pickup request",output:"Loaded truck en route with GPS and temperature logging started",
+ sla:"Truck dispatched within 6 hrs of pickup request",trigger:"Lot marked ready for pickup",
+ sys:"Assigns truck and driver, opens the GPS and temperature stream, starts the ETA clock",
+ human:"Driver loads the produce and records start weight and temperature",
+ notif:[["WARNING","Truck not dispatched within SLA window"]],
+ docs:[
+  ["Pickup / Gate Pass","M","VERIFIED","AMAMA / Farm","Authorises the movement and records which lots left which farm on which vehicle."],
+  ["Weighbridge Slip","M","PENDING","Weighbridge operator","Independent gross weight at origin. Your only defence against a quantity dispute with the farmer, and the baseline for the reconciliation at stage 06."],
+  ["Loading QC Checklist","M","N/A","Driver / Field supervisor","Crate condition, stacking height, tarpaulin, and pulp temperature at loading. Blocks: cold-chain accountability — without a start temperature, every later excursion is arguable."],
+  ["Driver / Vehicle Documents","M","VERIFIED","Transporter","Licence, registration, fitness, insurance and — for a reefer leg — the genset. An expired fitness certificate detains your fruit at a state checkpoint."]],
+ scen:{A:sc(T_A,GEN_A),
+  B:sc("Truck delayed at origin",["Warehouse inbound slot missed","Appointment rescheduled","Inventory risk increases at the warehouse","Notification generated to both parties","New ETA calculated, owner assigned"]),
+  C:sc("Truck breakdown or unavailable en route",["Pickup marked FAILED","Backup vehicle search triggered","Cold-chain clock risk reassessed","Transport Manager + Cold Chain notified","Recovery plan logged to audit trail"]),
+  D:sc(T_D,GEN_D),E:sc(T_E,GEN_E)},
+ apple:"The apples are picked from first light and sit in the orchard shed until a truck can get up the road — that is six hours of field heat at roughly 22 °C, and it is the most expensive six hours in the entire trade. The run down to the NCR pack-house is 18 hours. A non-reefer truck here would burn about four days of shelf life; an insulated truck with a genset burns about one. This is the cheapest upgrade available in the whole chain.",
+ erp:{e:"Movement",f:"movement_id · lot_ids[] · vehicle_id · driver_id · origin_gps · dispatch_planned/actual · gross_weight · pulp_temp_start · eta_planned/actual",
+  note:"Start the temperature time-series at dispatch, not at warehouse arrival. The road leg is where most unexplained shelf-life loss happens and where nobody is watching."}},
+
+{n:6,name:"Warehouse Inbound & Zones",short:"Warehouse Inbound",owner:"Warehouse Manager",risk:44,band:"ELEVATED",
+ desc:"Truck arrival, gate entry, weight verification, lot scan and zone allocation across receiving, QC, sorting, cold storage and dispatch zones.",
+ input:"Arriving truck + Lot ID",output:"Inventory record with zone, temperature and status",
+ sla:"Unloaded and scanned within 90 min of arrival",trigger:"Truck reaches the warehouse gate",
+ sys:"Logs gate-in, verifies weight against the manifest, allocates a storage zone",
+ human:"Dock team unloads; warehouse QC re-checks the lot",
+ notif:[["ACTION","Quantity mismatch on inbound"]],
+ docs:[
+  ["Gate Entry Log","M","VERIFIED","Warehouse","Arrival timestamp, vehicle, seal condition and driver. Starts the 90-minute unload clock."],
+  ["Weight Verification Report","M","PENDING","Warehouse","Received weight against the origin weighbridge slip. Any gap over tolerance is either shrinkage, theft or a measurement error — and each has a different owner."],
+  ["Inbound QC Record","M","PENDING","Warehouse QC","A second look after the road leg: transit damage, temperature on arrival, crate condition. Catches damage before it is mixed into your good stock."],
+  ["Zone Allocation Slip","M","N/A","Warehouse system","Which lot went into which zone and bay. Blocks: you cannot find, pick or pre-cool what you cannot locate."]],
+ scen:{A:sc(T_A,GEN_A),
+  B:sc("Truck arrives outside the appointment window",["Dock assignment delayed","Queue risk flagged for other inbound trucks","New dock slot allocated","Notification to warehouse & transport owner","Inbound resumed, ETA log updated"]),
+  C:sc("Warehouse has no capacity in the required zone",["Inbound marked HOLD at gate","Overflow / alternate warehouse searched","Cold-chain clock risk escalates","Warehouse Manager + COO notified","Reallocation logged and inventory updated"]),
+  D:sc(T_D,GEN_D),E:sc(T_E,GEN_E)},
+ apple:"The truck arrives at 04:10 with a pulp temperature of 19 °C. 5,080 kg is recorded against the 5,100 kg that left Kotkhai — a 0.4% loss, inside tolerance and normal for an 18-hour road leg. The lot is scanned into the pre-cooling zone rather than straight into cold storage, which matters: dropping warm fruit directly into a cold room takes days to reach core temperature and condenses moisture on the skin, which is how rot starts.",
+ erp:{e:"InventoryRecord",f:"lot_id · warehouse_id · zone · bay · qty_received · weight_variance · arrival_temp · gate_in_time · unload_complete_time · state",
+  note:"Zone is a state with a temperature regime attached, not a label. The system should refuse to move a lot into a zone whose regime contradicts the product's requirement."}},
+
+{n:7,name:"Pre-cooling & Cold Storage",short:"Pre-cooling & Cold Store",owner:"Cold Chain Manager",risk:52,band:"ELEVATED",
+ desc:"Continuous temperature tracking from pre-cooling through cold storage, with automated excursion detection and a corrective workflow.",
+ input:"Inbound lot at ambient / field temperature",output:"Lot stabilised at target temperature, shelf-life clock recalculated",
+ sla:"Target temperature reached within 2 hrs of inbound",trigger:"Lot enters the pre-cooling zone",
+ sys:"Streams sensor data, calculates the shelf-life countdown, flags excursions automatically",
+ human:"Cold Chain team monitors the dashboard and responds to alerts",
+ notif:[["CRITICAL","Temperature excursion detected for lot"]],
+ docs:[
+  ["Pre-cooling Log","M","VERIFIED","System / Cold Chain","The pull-down curve: start pulp temperature, time to seven-eighths cooling, final core temperature. Proves the fruit was actually cooled, not just stored cold."],
+  ["Cold Storage Temperature Log","M","VERIFIED","System","Continuous set-point-versus-actual record. This is the document an insurer or a carrier asks for first when a claim is raised."],
+  ["Shelf-life Reassessment","O","N/A","Cold Chain / QC","Raised after any excursion: revised remaining shelf life and a recommendation to ship first, downgrade or divert."]],
+ scen:{A:sc(T_A,GEN_A),B:sc(T_B,GEN_B),
+  C:sc("Temperature exceeds the configured threshold",["Sensor event fires automatically","Risk engine recalculates shelf life and shipment risk","Lot moved to quarantine","QC re-inspects the affected lot","Accept / downgrade / reject decision logged"]),
+  D:sc(T_D,GEN_D),E:sc(T_E,GEN_E)},
+ apple:"Forced-air pre-cooling brings the apples from 19 °C to 1 °C in about seven hours, then they hold at +0.5 °C and 90–95% relative humidity. Two things have to be watched that a generic WMS will not watch: humidity, because apples shrivel and lose weight below about 90% RH, and neighbours, because apples emit ethylene heavily and will over-ripen anything sensitive sharing the chamber. On day three a door sensor logs a 40-minute open door and the chamber drifts to 4 °C — a minor excursion, logged, no action, but now permanently on the record if a claim comes.",
+ erp:{e:"TemperatureStream, ExcursionEvent",f:"lot_id · container_id · sensor_id · timestamp · temp_c · humidity_pct · setpoint_c · excursion_id · duration_min · peak_temp · shelf_life_debit_days",
+  note:"Compute the shelf-life debit at the moment of the excursion and store it. Recomputing history later, after someone changes the model, destroys the audit value of the record."}},
+
+{n:8,name:"Packing & Export QC",short:"Packing & Export QC",owner:"QC Manager",risk:36,band:"MODERATE",
+ desc:"Sorted, washed and packed product undergoes final export QC — quantity, grade, packaging, labelling and origin — before container allocation.",
+ input:"Cold-stored lot + packaging spec",output:"Packed, labelled, export-QC-approved pallets",
+ sla:"Export QC completed 24 hrs before stuffing",trigger:"Packing run completed for a lot",
+ sys:"Generates pallet IDs, links them to the Lot ID, opens the export QC checklist",
+ human:"QC Manager signs off the export QC decision",
+ notif:[["ACTION","Export QC pending before stuffing cut-off"]],
+ docs:[
+  ["Export QC Certificate","M","PENDING","QC Manager","The final quality decision before the fruit leaves your control. Blocks: container allocation at stage 09."],
+  ["Packing List (draft)","M","VERIFIED","Warehouse","Cartons, net and gross weight, pallet breakdown. Becomes the final packing list at stage 11 and must then match the invoice and the shipping bill exactly."],
+  ["Labelling / Country of Origin","M","VERIFIED","AMAMA","Carton marking: product, variety, grade, count, net weight, packer code, country of origin and lot QR. A labelling error is a customs hold at the destination, not a cosmetic issue."],
+  ["Pallet Manifest","M","N/A","Warehouse system","Which pallet holds which cartons from which lot. Blocks: the scan reconciliation at stage 10 — and any partial claim later."]],
+ scen:{A:sc(T_A,GEN_A),B:sc(T_B,GEN_B),
+  C:sc("Export QC fails on damage, size or appearance",["Pallet marked REJECT","Container allocation reduced or re-planned","Replacement pallets sourced from buffer stock","QC Manager + Procurement notified","Revised packing plan logged"]),
+  D:sc(T_D,GEN_D),E:sc(T_E,GEN_E)},
+ apple:"The four lots are graded, the sunburnt fruit from 00112 is pulled out, and the rest is packed into 9 kg telescopic cartons, 100 cartons per pallet, 20 pallets. Final export QC samples two cartons per pallet. One pallet fails on count-size drift — too many 135s — and is swapped for a buffer pallet from an earlier lot. Contracted 20.0 MT, shipping 19.4 MT: the gap is traceable, documented and priced, which is the difference between an adjustment and an argument.",
+ erp:{e:"Pallet",f:"pallet_id · lot_id · carton_count · net_kg · gross_kg · pulp_temp_at_pack · qc_result · label_batch · state",
+  note:"Pallets must be independently rejectable and independently swappable. A model where the container holds lots rather than pallets cannot represent a one-pallet substitution, which happens on most shipments."}},
+
+{n:9,name:"Reefer Container Planning",short:"Reefer Planning",owner:"Freight Manager",risk:47,band:"ELEVATED",
+ desc:"Container type, shipping line, set point and sailing are selected, with a primary and a backup sailing compared on ETD, transit time and risk.",
+ input:"Export-QC-approved pallets + shipment requirement",output:"Booked container with PTI, set point and confirmed sailing",
+ sla:"Booking confirmed 5 days before stuffing",trigger:"Export QC approved, pallets ready for allocation",
+ sys:"Compares primary against backup sailing on ETD, ETA, cut-off and risk",
+ human:"Freight Manager confirms the booking with the shipping line",
+ notif:[["WARNING","Reefer availability tight on preferred sailing"]],
+ docs:[
+  ["Booking Confirmation","M","PENDING","Shipping line","Vessel, voyage, ETD, ETA and — the fields that actually matter — the gate-in, VGM and shipping-instruction cut-offs."],
+  ["PTI Report","M","N/A","Shipping line / Depot","Pre-Trip Inspection of the reefer machinery. Blocks: never accept a reefer without a current PTI; a failed unit discovered at stuffing costs you the sailing."],
+  ["Set-point / Ventilation Instructions","M","VERIFIED","AMAMA → Shipping line","Carriage temperature, fresh-air exchange rate and humidity. Issued in writing to the line, because 'we told the driver' is not a defence in a carrier claim."]],
+ scen:{A:sc(T_A,GEN_A),B:sc(T_B,GEN_B),
+  C:sc("Reefer unavailable on the primary sailing",["Booking marked AT RISK","System auto-recommends the backup sailing","Cost and transit-time impact calculated","Freight Manager notified for approval","Rebooking confirmed and logged"]),
+  D:sc(T_D,GEN_D),E:sc(T_E,GEN_E)},
+ apple:"One 40ft high-cube reefer is booked out of Mundra: set point +0.5 °C, fresh-air vent 20 CBM/hr to clear CO₂ and the ethylene the apples generate, humidity 90%. Two sailings are compared — MSC on the 9th with a 6-day transit, and a CMA CGM sailing on the 12th at 8 days. The 9th is chosen and the 12th is held as the documented backup, because at stage 13 that backup is the only thing standing between a missed cut-off and a week of lost shelf life.",
+ erp:{e:"Booking, Container",f:"booking_ref · line · vessel · voyage · etd · eta · cutoff_gatein · cutoff_vgm · cutoff_si · container_type · setpoint_c · vent_cbm · pti_ref · backup_booking_ref",
+  note:"Store the three cut-offs as first-class datetime fields on the booking. Every urgent alert in the second half of the process is derived from them, and they change without notice when a vessel is re-scheduled."}},
+
+{n:10,name:"Container Stuffing",short:"Container Stuffing",owner:"Warehouse / Freight",risk:49,band:"ELEVATED",
+ desc:"The container is inspected, pre-cooled and loaded with full pallet and lot scan reconciliation, temperature check and seal capture.",
+ input:"Booked container + dispatched pallets",output:"Sealed, stuffed container with a final stuffing report",
+ sla:"Stuffing completed within the cut-off window",trigger:"Container arrives at the warehouse for loading",
+ sys:"Reconciles pallet and lot scans against the manifest, captures seal number and VGM",
+ human:"Warehouse team loads the container and verifies temperature at close-out",
+ notif:[["URGENT","Stuffing behind schedule against cut-off"]],
+ docs:[
+  ["Stuffing Report","M","PENDING","Warehouse","What went in, in what order, at what temperature, witnessed by whom. Photographs of the loaded container before the doors close belong here."],
+  ["Seal Number Record","M","VERIFIED","Warehouse / Line","The bottle seal number, photographed. From this moment the contents are fixed; the seal number appears on the B/L and is checked on arrival."],
+  ["VGM Declaration","M","PENDING","Shipper","Verified Gross Mass under the SOLAS convention. Blocks: the line will not load a container without a VGM filed before the cut-off — this is a hard, non-negotiable gate."],
+  ["Container Inspection / PTI Verification","M","VERIFIED","Warehouse / Line","Cleanliness, odour, drain holes, door seals, floor T-bars clear, and confirmation the machinery ran the PTI. Ten minutes here prevents a total loss."]],
+ scen:{A:sc(T_A,GEN_A),
+  B:sc("Container arrival delayed",["Stuffing schedule pushed against the cut-off","Risk of missed gate-in flagged","Priority slot requested from the terminal","Freight Manager notified","Revised stuffing time confirmed"]),
+  C:sc("Container damage or PTI failure found",["Loading halted, container marked REJECTED","Replacement container requested from the line","Cut-off risk recalculated","Freight + Warehouse notified","Replacement container stuffed and logged"]),
+  D:sc(T_D,GEN_D),E:sc(T_E,GEN_E)},
+ apple:"MSKU 784123-6 arrives, is checked for odour and drain-hole blockage, and is run empty at set point for two hours before loading — a reefer holds temperature, it does not pull it down, so loading into a warm box undoes the pre-cooling. All 20 pallets are scanned at the door and reconciled against the manifest. Pulp temperature is taken at three pallet positions, not air temperature: 0.7 °C, 0.9 °C, 1.1 °C. Doors close, seal SL-0099412 photographed, VGM 26,340 kg filed. From here on, everything is paperwork and weather.",
+ erp:{e:"StuffingEvent",f:"container_id · pallet_ids[] · scan_log[] · variance · pulp_temps[] · seal_no · seal_photo · vgm_kg · vgm_filed_at · stuffed_by · door_close_time",
+  note:"Make seal capture the state transition that locks the container record. After SEALED, changes to contents should require a supervisor-authorised reversal event, not an edit."}},
+
+{n:11,name:"Document Control",short:"Document Control",owner:"Documentation Manager",risk:45,band:"ELEVATED",
+ desc:"Central control tower for every trade, lot and container document, with automated D-7 / D-3 / D-1 / OVERDUE alerts.",
+ input:"All stage-level documents",output:"A complete, verified document set ready for customs filing",
+ sla:"All mandatory documents VERIFIED 48 hrs before filing",trigger:"Any document uploaded, expiring or missing",
+ sys:"Tracks status, fires D-7 / D-3 / D-1 / OVERDUE reminders, links documents to Lot and Container IDs",
+ human:"Documentation Manager verifies and approves each document",
+ notif:[["CRITICAL","Phytosanitary certificate missing — export clearance blocked"]],
+ docs:[
+  ["Commercial Invoice","M","VERIFIED","AMAMA","Value, terms and description of goods. Must agree with the packing list and shipping bill to the decimal — mismatches are the most common customs query."],
+  ["Packing List (final)","M","VERIFIED","AMAMA","Final cartons, weights and pallet breakdown as actually stuffed, not as planned at stage 08."],
+  ["Certificate of Origin","M","PENDING","Chamber / DGFT platform","Proves Indian origin. A preferential certificate under a trade agreement can cut the buyer's import duty — commercially significant, and a different form to raise."],
+  ["Phytosanitary Certificate","M","MISSING","Plant Quarantine authority","Certifies the consignment is pest-free and meets the importing country's plant-health rules. Government-issued, inspection-dependent, and must be dated close to shipment — so it cannot be obtained early and parked. This is the usual reason a perishable export misses its sailing."],
+  ["Fumigation Certificate","O","N/A","Approved fumigation agency","Required by some destinations or for wooden pallets. Check per destination — and note that fumigating fresh produce is generally not acceptable, so the pallet specification matters."],
+  ["Insurance Certificate","M","PENDING","Insurer","Cargo cover for the voyage. Under CFR the buyer normally insures; under CIF you do. Either way, record who holds it — at claim time it is the first question."],
+  ["Bill of Lading (draft)","M","N/A","Shipping line","Draft B/L issued against your shipping instructions. Check consignee, notify party, description and seal number before it is finalised; correcting a released B/L is slow and chargeable."]],
+ scen:{A:sc(T_A,GEN_A),B:sc(T_B,GEN_B),C:sc(T_C,GEN_C),
+  D:sc("Phytosanitary certificate missing at D-3",["Document status set RED","Export clearance blocked automatically","Documentation owner notified immediately","Deadline countdown escalates to URGENT","CHA engaged to expedite issuance"]),
+  E:sc(T_E,GEN_E)},
+ apple:"Seven documents have to be right and consistent with each other. The invoice says 19,400 kg net; so must the packing list, the shipping bill and the B/L. The phytosanitary inspection is booked for the 6th, one day before the gate-in cut-off — which is exactly the kind of margin that turns into a crisis when the inspector is diverted. The system starts pinging at D-7 and escalates at D-3 for precisely this document, because it is the only one whose timing you do not control.",
+ erp:{e:"Document (polymorphic)",f:"doc_id · type · entity_type · entity_id · mandatory · issuer · issued_on · expires_on · status · file_ref · verified_by · verified_at · blocks[]",
+  note:"One table, not one per type. The blocks[] field — which downstream gate this document holds up — is what turns a document tracker into a control tower."}},
+
+{n:12,name:"Customs",short:"Customs",owner:"CHA / Documentation Manager",risk:43,band:"ELEVATED",
+ desc:"Shipping bill filing and electronic upload of supporting documents, then assessment — branching into cleared, query, or rejected paths.",
+ input:"Verified document set",output:"Let Export Order (LEO) — cleared for terminal gate-in",
+ sla:"Assessment within 24 hrs of filing",trigger:"Document set marked complete",
+ sys:"Files the shipping bill and uploads supporting documents electronically, tracks assessment status",
+ human:"CHA responds to any customs query",
+ notif:[["ACTION","Customs query raised, response needed"]],
+ docs:[
+  ["Shipping Bill","M","PENDING","CHA on the customs portal","The export declaration. Carries the invoice value, HS classification, incentive claims and the AD code. It is also the document your bank later reconciles the inward payment against."],
+  ["e-SANCHIT Filing","M","PENDING","CHA","Electronic upload of every supporting certificate so the assessing officer can see them. A missing upload here reads to customs as a missing document."],
+  ["Supporting Certificates","M","VERIFIED","Various","Phytosanitary, origin, insurance and inspection certificates as applicable to the destination."],
+  ["Let Export Order (LEO)","M","N/A","Customs","The clearance. Blocks: without a LEO the terminal will not accept the container — this is the gate between paperwork and physical movement."]],
+ scen:{A:sc(T_A,GEN_A),B:sc(T_B,GEN_B),
+  C:sc("Customs examination flags a discrepancy",["Filing marked BLOCKED","Documentation correction prepared","Resubmission filed","CHA + Documentation Manager notified","Cleared or re-escalated based on outcome"]),
+  D:sc(T_D,GEN_D),E:sc(T_E,GEN_E)},
+ apple:"The shipping bill is filed on the 6th under the fresh-apple classification with the drawback and incentive claims attached. Assessment raises one query: the invoice says 19,400 kg net but the VGM implies a different tare. The CHA answers within three hours with the stuffing report and the container's tare plate. LEO is issued the same evening. Had the query landed on a Friday evening instead, the container would have missed the cut-off and rolled a week — which is why the 24-hour assessment SLA is tracked as a risk, not a fact.",
+ erp:{e:"CustomsFiling",f:"shipping_bill_no · filed_at · assessed_at · status · queries[] · leo_no · leo_at · drawback_claim · incentive_claim · ad_code · port_code",
+  note:"Keep the shipping bill number on the trade forever. It is the key that links the export to the bank's realisation record and to any incentive credit that arrives months later."}},
+
+{n:13,name:"Terminal Gate-In",short:"Terminal Gate-In",owner:"CHA / Freight Manager",risk:55,band:"HIGH",
+ desc:"The container clears final terminal acceptance against a live cut-off countdown, with shipping line and customs sign-off.",
+ input:"Cleared container (LEO) + VGM",output:"Container accepted inside the terminal, ready for vessel loading",
+ sla:"Gate-in completed before cut-off",trigger:"LEO issued and container dispatched to the terminal",
+ sys:"Runs a live cut-off countdown (green / amber / red) and confirms terminal acceptance",
+ human:"Freight Manager coordinates the terminal appointment",
+ notif:[["CRITICAL","Cut-off in 60 minutes, gate-in not yet confirmed"]],
+ docs:[
+  ["Terminal Gate Pass","M","PENDING","Terminal","Authorises entry. Issued against the LEO and the booking, and tied to an appointment slot."],
+  ["VGM Confirmation","M","VERIFIED","Terminal / Line","Acknowledgement that the verified gross mass was received and accepted. No VGM, no loading — no exceptions."],
+  ["Shipping Line Acceptance","M","N/A","Shipping line","The line's confirmation that the container is accepted for the nominated vessel. This is the moment the sailing stops being a plan."]],
+ scen:{A:sc(T_A,GEN_A),B:sc(T_B,GEN_B),
+  C:sc("Container misses the terminal cut-off",["Gate-in marked MISSED","Vessel roll risk assessed","Backup sailing evaluated automatically","Freight Manager + Buyer notified","Container re-booked on the next available sailing"]),
+  D:sc(T_D,GEN_D),E:sc(T_E,GEN_E)},
+ apple:"Cut-off is 18:00 on the 7th. The container leaves the pack-house at 05:00 on a genset trailer and reaches Mundra at 15:40 — comfortable, but only because the LEO came through the previous evening. It plugs into terminal power at 16:20. That plug-in time should be a mandatory field: between the trailer genset stopping and terminal power starting there is a gap of minutes to hours in which nothing is cooling the fruit and nothing is recording it. This is the single largest blind spot in most cold chains.",
+ erp:{e:"GateInEvent",f:"container_id · terminal · appointment_slot · cutoff_at · gate_in_at · countdown_state · genset_off_at · terminal_plug_in_at · accepted_by",
+  note:"The countdown state (green / amber / red) should be computed server-side on a schedule, not on page load. Nobody is looking at the dashboard at 02:00 — the alert has to find the person."}},
+
+{n:14,name:"Vessel & Freight Tracking",short:"Vessel Tracking",owner:"Freight Control Tower",risk:58,band:"HIGH",
+ desc:"Live vessel tracking with ETA variance, delay-reason capture and automatic backup-sailing recommendation.",
+ input:"Loaded, departed container",output:"Live ETA and delay risk feed to the Buyer Portal",
+ sla:"ETA variance reviewed daily until arrival",trigger:"Vessel departs the port of loading",
+ sys:"Ingests vessel position data, recalculates ETA variance and delay risk",
+ human:"Freight Control Tower reviews at-risk sailings and actions backups",
+ notif:[["WARNING","Vessel ETA variance +12 hrs, shelf-life risk rising"]],
+ docs:[
+  ["Bill of Lading (final)","M","VERIFIED","Shipping line","The title document. Under your payment terms, the scanned copy triggers the buyer's 70% payment clock — so the day it is released is a financial date, not just a logistics one."],
+  ["Vessel Manifest","M","N/A","Shipping line","Confirms the container is actually on the sailing you think it is on. Worth checking: containers do get short-shipped without notice."],
+  ["Insurance Certificate","M","VERIFIED","Insurer","Must be in force from the moment of loading. A certificate issued after departure is a certificate that may not respond."]],
+ scen:{A:sc(T_A,GEN_A),B:sc(T_B,GEN_B),
+  C:sc("Vessel delayed materially beyond ETA",["Delay hours and reason captured","Remaining shelf life against the buyer deadline recalculated","Alternative sailing or mode evaluated","Buyer + Freight Manager notified","Revised delivery plan approved and logged"]),
+  D:sc(T_D,GEN_D),E:sc(T_E,GEN_E)},
+ apple:"MSC Aurora sails on the 9th, ETA Jebel Ali the 15th. The B/L is released on the 10th and the scan goes to the buyer, starting the 30-day payment clock. Mid-voyage the ETA slips 14 hours on weather. For apples with 100 days of budget left that is noise; for a mango or a berry shipment the same 14 hours would trigger a diversion discussion. Your risk engine has to weigh delay against remaining shelf life per commodity, not treat a delay as a delay.",
+ erp:{e:"VoyageTracking",f:"container_id · vessel · voyage · atd · eta_original · eta_current · variance_hrs · delay_reason · bl_no · bl_released_at · shelf_life_remaining_at_eta",
+  note:"Push ETA changes to the buyer automatically. A buyer who learns about a two-day slip from your system stays a customer; one who learns it from their own warehouse does not."}},
+
+{n:15,name:"Destination Arrival & Buyer Delivery",short:"Arrival & Delivery",owner:"Buyer / Freight Forwarder",risk:39,band:"MODERATE",
+ desc:"Discharge, import clearance, delivery and proof of delivery, with a final quality confirmation feeding the claim or no-claim decision.",
+ input:"Arrived vessel + container",output:"Delivered cargo with POD and quality confirmation",
+ sla:"Delivery within the buyer's window post-discharge",trigger:"Vessel arrives at the destination port",
+ sys:"Tracks discharge, import clearance and delivery status; opens QR traceability for the buyer",
+ human:"Buyer inspects the cargo on arrival and confirms POD",
+ notif:[["ACTION","Buyer quality confirmation pending"]],
+ docs:[
+  ["Import Clearance Documents","M","VERIFIED","Buyer's broker","Destination-side clearance, including the importing country's food-safety registration and import permit where required. Held by the buyer, but your problem if it stalls — demurrage on a reefer runs fast."],
+  ["Proof of Delivery (POD)","M","PENDING","Buyer","Signed receipt of the cargo. Blocks: the payment clock and the final closure of the trade."],
+  ["Final Quality Confirmation","M","N/A","Buyer","The buyer's arrival inspection against the original spec. Either it closes the trade clean, or it becomes the basis of a claim — which is why the stage 01 spec and stage 03 evidence matter so much here."]],
+ scen:{A:sc(T_A,GEN_A),B:sc(T_B,GEN_B),
+  C:sc("Cargo arrives with quality deterioration",["Buyer raises a claim","Claim evidence (photos, QC) collected","Root cause traced via the traceability chain","Finance + QC + Buyer notified","Claim resolved: credit, replacement or rejection"]),
+  D:sc(T_D,GEN_D),E:sc(T_E,GEN_E)},
+ apple:"The container is discharged on the 15th, cleared on the 16th and delivered to Al Noor's cold store on the 17th, 20 days after harvest with roughly 100 days of budget left. The buyer scans a carton QR, sees the farm, the harvest date, the QC report and the full temperature curve, and signs POD without a survey. That scan is the whole point of stages 03 and 04: it converts a quality argument into a shared record, and it is the reason this buyer reorders without asking for a discount.",
+ erp:{e:"Delivery, Claim",f:"container_id · discharged_at · cleared_at · delivered_at · pod_ref · buyer_quality_result · claim_id · claim_amount · claim_root_stage · resolution",
+  note:"Link the claim to the stage that caused it, not just to the trade. Ten claims tagged 'stage 07 excursion' is an equipment business case; ten claims tagged 'trade' is a shrug."}},
+
+{n:16,name:"Payment & Settlement",short:"Payment & Settlement",owner:"Finance",risk:33,band:"MODERATE",
+ desc:"Buyer payment reconciliation against trade revenue and costs, farmer settlement, and final trade profitability.",
+ input:"Delivered and confirmed cargo",output:"Reconciled payment, farmer payout, final trade margin",
+ sla:"Reconciliation within 5 days of the payment due date",trigger:"Buyer payment due date reached, or payment received",
+ sys:"Reconciles expected against received payment and calculates the realised margin",
+ human:"Finance confirms bank receipt and releases the farmer payout",
+ notif:[["CRITICAL","Buyer payment overdue"]],
+ docs:[
+  ["Payment Advice / SWIFT","M","PENDING","Buyer's bank","Evidence of the inward remittance, matched to the invoice and the shipping bill. Also the input to your export realisation record."],
+  ["Farmer Settlement Record","M","VERIFIED","AMAMA","Final payout per farmer against accepted quantity and grade, net of advances and rejections. Publish it to the farmer — settlement opacity is how supplier networks quietly fall apart."],
+  ["Trade Profitability Statement","M","N/A","Finance","Revenue against every accrued cost, by stage. The document that tells you whether the trade you just celebrated actually made money."]],
+ scen:{A:sc(T_A,GEN_A),
+  B:sc("Buyer payment not received by the due date",["Payment status set OVERDUE","Working-capital risk flagged to Finance","Reminder sent to buyer","Finance owner notified","Payment received and reconciled, or escalated to collections"]),
+  C:sc("Realised margin falls below the minimum threshold",["Margin risk flagged CRITICAL","Cost breakdown reviewed against plan","Root cause traced to a specific stage (freight / claim / shrinkage)","CEO + Finance notified","Corrective pricing action logged for future trades"]),
+  D:sc(T_D,GEN_D),E:sc(T_E,GEN_E)},
+ apple:"The 30% advance landed before stuffing; the 70% balance is due 30 days from the B/L date — the 8th of November, 41 days after harvest and 30 days after your money went out the door. Finance reconciles the remittance against the invoice and shipping bill, releases the four farmer payouts net of the 0.6 MT graded out at packing, and closes the trade. Realised margin comes in slightly under plan because of the substituted pallet and the extra pre-cooling run — both traceable to a stage, both fixable next season.",
+ erp:{e:"Settlement, CostLedger",f:"trade_id · invoice_no · amount_due · amount_received · received_at · fx_rate · farmer_payouts[] · costs_by_stage[] · realised_margin · variance_vs_plan",
+  note:"Close the loop past this stage: record the bank's export realisation evidence against the shipping bill, and open a receivable for any duty drawback or export incentive — both arrive weeks later and both belong to this trade's margin."}}
+];
+
+/* ---------------- scenario metadata ---------------- */
+const SCEN=[
+ {k:"A",label:"Normal",sub:"On track",c:"var(--ok)",cs:"var(--ok-soft)",cls:"p-ok",
+  blurb:"The happy path. Same six steps at every stage — which is exactly why it can be one generic state machine rather than sixteen bespoke ones."},
+ {k:"B",label:"Delay",sub:"Attention",c:"var(--warn)",cs:"var(--warn-soft)",cls:"p-warn",
+  blurb:"Something is late but recoverable. The cost of a delay is not the delay itself — it is the downstream slot, appointment or cut-off it puts at risk. Every delay chain therefore recalculates an ETA and reassigns an owner."},
+ {k:"C",label:"Failure",sub:"Critical",c:"var(--crit)",cs:"var(--crit-soft)",cls:"p-crit",
+  blurb:"Something has genuinely gone wrong and quantity, quality or the sailing is lost. Note the shape: mark the item, recalculate the gap, search for a replacement, notify, log. Recovery before blame — the audit trail comes last, not first."},
+ {k:"D",label:"Document issue",sub:"Action required",c:"var(--chg)",cs:"var(--chg-soft)",cls:"p-chg",
+  blurb:"A document is missing, wrong or expired. This is the only scenario that can stop the process dead at almost any stage, and it is the most preventable. It is also the cheapest to fix with software."},
+ {k:"E",label:"Commercial change",sub:"In progress",c:"var(--accent)",cs:"var(--accent-soft)",cls:"p-acc",
+  blurb:"The buyer or your own team changes quantity, destination, spec, date or price mid-flight. The chain is identical everywhere — four impact assessments and an approval — but the cost of the same change rises sharply the later it arrives. A spec change at stage 02 is a phone call; at stage 11 it is a new set of documents and a missed sailing."}
+];
+const LEVEL={INFO:"p-acc",WARNING:"p-warn",ACTION:"p-warn",CRITICAL:"p-crit",URGENT:"p-crit"};
+const STATUS={VERIFIED:"p-ok",PENDING:"p-warn","N/A":"p-na",MISSING:"p-crit"};
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+</script>
+<script>
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const phColor=n=>PHASES[PH[n-1]].c;
+
+/* ---------- phase cards ---------- */
+$("#phaseList").innerHTML=PHASES.map((p,i)=>
+ `<div class="phasecard" style="--pc:${p.c}"><div class="rng">${esc(p.r)}</div>
+  <h4>${esc(p.t)}</h4><p>${esc(p.d)}</p></div>`).join("");
+
+/* ---------- flow map ---------- */
+(function(){
+ const COL=[40,310,580,850], ROW=[70,220,370,520], W=210, H=76;
+ const pos={};
+ const order=[[1,2,3,4],[8,7,6,5],[9,10,11,12],[16,15,14,13]];
+ order.forEach((row,ri)=>row.forEach((n,ci)=>pos[n]={x:COL[ci],y:ROW[ri],cx:COL[ci]+W/2,cy:ROW[ri]+H/2}));
+ let o=`<defs>
+  <marker id="fa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+  <marker id="fac" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#A82A20"/></marker></defs>`;
+ // sequential edges
+ const seq=(a,b)=>{const A=pos[a],B=pos[b];
+  if(A.y===B.y){ const l2r=B.x>A.x;
+   const x1=l2r?A.x+W:A.x, x2=l2r?B.x-8:B.x+W+8;
+   return `<line class="ed" x1="${x1}" y1="${A.cy}" x2="${x2}" y2="${A.cy}" marker-end="url(#fa)"/>`;}
+  const x=A.cx; return `<line class="ed" x1="${x}" y1="${A.y+H}" x2="${x}" y2="${B.y-8}" marker-end="url(#fa)"/>`;};
+ for(let i=1;i<16;i++) o+=seq(i,i+1);
+ // backward loops
+ const loops=[
+  {f:3,t:2,d:`M${pos[3].cx},${pos[3].y} C${pos[3].cx},26 ${pos[2].cx},26 ${pos[2].cx},${pos[2].y-8}`,lx:(pos[3].cx+pos[2].cx)/2,ly:20,tx:"REJECT · re-source"},
+  {f:8,t:7,d:`M${pos[8].cx},${pos[8].y+H} C${pos[8].cx},344 ${pos[7].cx},344 ${pos[7].cx},${pos[7].y+H+8}`,lx:(pos[8].cx+pos[7].cx)/2,ly:360,tx:"QC REJECT · pull buffer pallets"},
+  {f:12,t:11,d:`M${pos[12].cx},${pos[12].y} C${pos[12].cx},328 ${pos[11].cx},328 ${pos[11].cx},${pos[11].y-8}`,lx:(pos[12].cx+pos[11].cx)/2,ly:322,tx:"CUSTOMS QUERY · correct & refile"},
+  {f:13,t:9,d:`M${pos[13].x+50},${pos[13].y} L${pos[13].x+50},480 L${pos[9].cx},480 L${pos[9].cx},${pos[9].y+H+8}`,lx:430,ly:473,tx:"MISSED CUT-OFF · rebook sailing · 7 days lost"}
+ ];
+ loops.forEach(L=>{o+=`<path class="ed-c" d="${L.d}" marker-end="url(#fac)"/>
+  <text class="el-c" x="${L.lx}" y="${L.ly}" text-anchor="middle">${L.tx}</text>`;});
+ // nodes
+ S.forEach(s=>{const p=pos[s.n];
+  o+=`<g class="mapnode" data-goto="${s.n}" role="button" tabindex="0" aria-label="Stage ${s.n}: ${esc(s.name)}">
+   <rect class="nb" x="${p.x}" y="${p.y}" width="${W}" height="${H}" rx="10"/>
+   <rect x="${p.x}" y="${p.y}" width="${W}" height="3.5" rx="2" fill="${phColor(s.n)}"/>
+   <text class="nn" x="${p.x+14}" y="${p.y+26}">${String(s.n).padStart(2,"0")}</text>
+   <text class="nt" x="${p.x+14}" y="${p.y+48}">${esc(s.short)}</text>
+   <text class="ns" x="${p.x+14}" y="${p.y+66}">${esc(s.owner)}</text></g>`;});
+ // legend
+ o+=`<text class="bandt" x="40" y="632">PHASES</text>`;
+ PHASES.forEach((p,i)=>{const x=40+i*212;
+  o+=`<rect x="${x}" y="648" width="26" height="4" rx="2" fill="${p.c}"/>
+   <text class="ns" x="${x+34}" y="654">${esc(p.t)}</text>
+   <text class="nn" x="${x+34}" y="672">${esc(p.r)}</text>`;});
+ $("#flowmap").innerHTML=o;
+})();
+
+/* ---------- stage rail ---------- */
+let cur=1;
+(function(){
+ let o="",last=-1;
+ S.forEach(s=>{const ph=PH[s.n-1];
+  if(ph!==last){o+=`<div class="railgrp">${esc(PHASES[ph].t)}</div>`;last=ph;}
+  o+=`<button class="stagebtn" role="tab" data-stage="${s.n}" aria-current="false">
+   <span class="num">${String(s.n).padStart(2,"0")}</span><span class="nm">${esc(s.short)}</span></button>`;});
+ $("#rail").innerHTML=o;
+})();
+
+/* ---------- stage detail ---------- */
+function chainHTML(sd,meta){
+ return `<ol class="chain" style="--sc:${meta.c};--sc-soft:${meta.cs}">
+  <li class="trigline"><div class="st">${esc(sd.t)}</div></li>
+  ${sd.s.map(x=>`<li><div class="st">${esc(x)}</div></li>`).join("")}</ol>`;
+}
+function renderStage(n){
+ cur=n; const s=S[n-1];
+ $$("#rail .stagebtn").forEach(b=>b.setAttribute("aria-current",b.dataset.stage==String(n)));
+ const rb=s.band==="LOW"?"p-ok":s.band==="MODERATE"?"p-warn":"p-crit";
+ const docRows=s.docs.map(d=>`<tr>
+   <td class="nm">${esc(d[0])}</td>
+   <td><span class="pill ${d[1]==="M"?"p-acc":"p-na"}">${d[1]==="M"?"Mandatory":"Optional"}</span></td>
+   <td><span class="pill ${STATUS[d[2]]||"p-na"}">${esc(d[2])}</span></td>
+   <td>${esc(d[3])}</td>
+   <td class="why">${esc(d[4])}</td></tr>`).join("");
+ $("#detail").innerHTML=`
+ <div class="dhead">
+  <div class="top">
+   <div class="dnum">${String(n).padStart(2,"0")}</div>
+   <div style="flex:1;min-width:200px"><h3>${esc(s.name)}</h3>
+    <div class="dmeta">
+     <span class="pill" style="background:${phColor(n)};color:var(--surf)">${esc(PHASES[PH[n-1]].t)}</span>
+     <span class="pill p-na">Owner · ${esc(s.owner)}</span>
+     <span class="pill ${rb}">Risk ${s.risk} · ${esc(s.band)}</span>
+    </div></div>
+   <div class="navbtns">
+    <button class="nb-btn" id="prevS" ${n===1?"disabled":""}>← Prev</button>
+    <button class="nb-btn" id="nextS" ${n===16?"disabled":""}>Next →</button></div>
+  </div>
+  <p class="read" style="margin-top:14px;max-width:72ch">${esc(s.desc)}</p>
+  <div class="io">
+   <div><div class="lab">Input</div><div class="val">${esc(s.input)}</div></div>
+   <div class="ar" aria-hidden="true">→</div>
+   <div><div class="lab">Output</div><div class="val">${esc(s.output)}</div></div>
+  </div>
+ </div>
+
+ <div class="blk"><h4>How the stage runs</h4>
+  <div class="actgrid">
+   <div class="act trg"><div class="t">Trigger</div><div class="b">${esc(s.trigger)}</div></div>
+   <div class="act sys"><div class="t">System does</div><div class="b">${esc(s.sys)}</div></div>
+   <div class="act hum"><div class="t">A human does</div><div class="b">${esc(s.human)}</div></div>
+   <div class="act sla"><div class="t">SLA</div><div class="b">${esc(s.sla)}</div></div>
+  </div>
+  <div style="margin-top:16px"><div class="t" style="font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)">Notifications raised here</div>
+  ${s.notif.map(x=>`<div class="notif"><span class="pill ${LEVEL[x[0]]}">${x[0]}</span><span>${esc(x[1])}</span></div>`).join("")}</div>
+ </div>
+
+ <div class="apple"><h4>The apple shipment at this stage</h4><p>${esc(s.apple)}</p></div>
+
+ <div class="blk"><h4>Documents at this stage — ${s.docs.length} total</h4>
+  <div class="scrollx"><table class="dt">
+   <thead><tr><th>Document</th><th>Req.</th><th>Typical status</th><th>Issued by</th><th>What it does</th></tr></thead>
+   <tbody>${docRows}</tbody></table></div>
+ </div>
+
+ <div class="blk"><h4>The five ways this stage can end</h4>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(252px,1fr))">
+  ${SCEN.map(m=>`<div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+     <span class="pill ${m.cls}">${m.k} · ${esc(m.label)}</span></div>
+    ${chainHTML(s.scen[m.k],m)}</div>`).join("")}
+  </div>
+ </div>
+
+ <div class="erp"><h4>Build note — ${esc(s.erp.e)}</h4>
+  <div class="ln"><b>Fields</b><code>${esc(s.erp.f)}</code></div>
+  <div class="ln"><b>Watch out</b><span style="flex:1;min-width:220px;color:var(--ink2)">${esc(s.erp.note)}</span></div>
+ </div>`;
+ $("#prevS").onclick=()=>{renderStage(cur-1);scrollTop();};
+ $("#nextS").onclick=()=>{renderStage(cur+1);scrollTop();};
+ try{localStorage.setItem("amama-stage",String(n));}catch(e){}
+}
+function scrollTop(){window.scrollTo({top:0,behavior:"smooth"});}
+
+$("#rail").addEventListener("click",e=>{const b=e.target.closest("[data-stage]");
+ if(b){renderStage(+b.dataset.stage);}});
+
+/* ---------- section switching ---------- */
+function showSec(id){
+ $$(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.sec===id));
+ $$("main .sec").forEach(s=>{s.hidden=(s.id!=="sec-"+id);});
+ window.scrollTo({top:0,behavior:"instant"});
+}
+$$(".tab").forEach(t=>t.onclick=()=>showSec(t.dataset.sec));
+document.addEventListener("click",e=>{const g=e.target.closest("[data-goto]");
+ if(g){renderStage(+g.dataset.goto);showSec("stages");}});
+document.addEventListener("keydown",e=>{
+ if(e.key==="Enter"||e.key===" "){const g=e.target.closest&&e.target.closest("[data-goto]");
+  if(g){e.preventDefault();renderStage(+g.dataset.goto);showSec("stages");}}});
+
+/* ---------- document register ---------- */
+const ALLDOCS=[];
+S.forEach(s=>s.docs.forEach(d=>ALLDOCS.push({name:d[0],req:d[1]==="M"?"Mandatory":"Optional",
+ st:d[2],by:d[3],why:d[4],stage:s.n,sname:s.short})));
+$("#docStage").innerHTML+=S.map(s=>`<option value="${s.n}">${String(s.n).padStart(2,"0")} · ${esc(s.short)}</option>`).join("");
+function drawDocs(){
+ const q=$("#docSearch").value.trim().toLowerCase(), st=$("#docStage").value, rq=$("#docReq").value;
+ const rows=ALLDOCS.filter(d=>(!st||d.stage==st)&&(!rq||d.req===rq)&&
+  (!q||(d.name+" "+d.by+" "+d.why+" "+d.sname).toLowerCase().includes(q)));
+ $("#docTable").querySelector("tbody").innerHTML = rows.length? rows.map(d=>`<tr>
+   <td class="nm">${esc(d.name)}</td>
+   <td><button class="stg" data-goto="${d.stage}">${String(d.stage).padStart(2,"0")} ${esc(d.sname)}</button></td>
+   <td><span class="pill ${d.req==="Mandatory"?"p-acc":"p-na"}">${d.req==="Mandatory"?"Mand." : "Opt."}</span></td>
+   <td>${esc(d.by)}</td><td class="why">${esc(d.why)}</td></tr>`).join("")
+  : `<tr><td colspan="5" style="padding:22px 0;color:var(--ink3)">No documents match that filter.</td></tr>`;
+ const m=rows.filter(d=>d.req==="Mandatory").length;
+ $("#docCount").textContent=`${rows.length} shown · ${m} mandatory · ${rows.length-m} optional`;
+}
+["#docSearch","#docStage","#docReq"].forEach(s=>{$(s).addEventListener("input",drawDocs);});
+drawDocs();
+
+/* ---------- scenario explorer ---------- */
+let curScen="C";
+$("#scenTabs").innerHTML=SCEN.map(m=>`<button class="scentab" role="tab" data-sc="${m.k}"
+ style="--sc:${m.c};--sc-soft:${m.cs}" aria-selected="${m.k===curScen}">
+ <span class="dot"></span>${m.k} · ${esc(m.label)}</button>`).join("");
+function drawScen(){
+ const m=SCEN.find(x=>x.k===curScen);
+ $$("#scenTabs .scentab").forEach(b=>b.setAttribute("aria-selected",b.dataset.sc===curScen));
+ $("#scenBody").innerHTML=`
+  <div class="card" style="border-left:3px solid ${m.c}">
+   <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+    <span class="pill ${m.cls}">Scenario ${m.k}</span>
+    <h3 style="font-size:19px">${esc(m.label)} — ${esc(m.sub)}</h3></div>
+   <p class="read" style="margin-top:10px;max-width:74ch">${esc(m.blurb)}</p></div>
+  <div class="grid" style="margin-top:16px;grid-template-columns:repeat(auto-fit,minmax(286px,1fr))">
+  ${S.map(s=>`<div class="card">
+    <div style="display:flex;gap:8px;align-items:baseline">
+     <span class="mono" style="font-size:12px;color:${phColor(s.n)};font-weight:600">${String(s.n).padStart(2,"0")}</span>
+     <button class="stg" data-goto="${s.n}" style="font-family:var(--f-ui);font-size:14.5px;font-weight:600;color:var(--ink);text-decoration:none;cursor:pointer;background:none;border:0;padding:0;text-align:left">${esc(s.short)}</button></div>
+    <div style="margin-top:12px">${chainHTML(s.scen[m.k],m)}</div></div>`).join("")}
+  </div>`;
+}
+$("#scenTabs").addEventListener("click",e=>{const b=e.target.closest("[data-sc]");
+ if(b){curScen=b.dataset.sc;drawScen();}});
+drawScen();
+
+/* ---------- shelf-life calculator ---------- */
+const BUDGET=120, SET=0.5;
+const rate=t=>Math.pow(2,(t-SET)/10);           // Q10 = 2
+const ids=["c1","c2","c3","c4","c5","c6"];
+function calc(){
+ const v=id=>+$("#"+id).value;
+ ids.forEach(id=>{$("#"+id+"v").textContent=v(id);});
+ const d=[
+  {l:"Orchard hold (22 °C)",     days:v("c1")/24*rate(22),  c:"var(--crit)"},
+  {l:"Road leg (14 °C)",         days:v("c2")/24*rate(14),  c:"var(--warn)"},
+  {l:"Cold store (0.5 °C)",      days:v("c3")*rate(SET),    c:"var(--ok)"},
+  {l:"Sea + dwell (0.5 °C)",     days:v("c4")*rate(SET),    c:"var(--accent)"},
+  {l:"Excursion ("+v("c6")+" °C)",days:v("c5")/24*rate(v("c6")), c:"var(--chg)"}
+ ];
+ const used=d.reduce((a,b)=>a+b.days,0), left=BUDGET-used;
+ const elapsed=v("c1")/24+v("c2")/24+v("c3")+v("c4")+v("c5")/24;
+ const ok=left>=60, warn=left>=35;
+ const col=ok?"var(--ok)":warn?"var(--warn)":"var(--crit)";
+ const verdict=ok?"Comfortable — ships with margin"
+  :warn?"Tight — ship this lot first, tell the buyer"
+  :"Not shippable at spec — downgrade, divert or sell domestically";
+ $("#verdict").innerHTML=`
+  <div class="eyebrow">Shelf life remaining on delivery</div>
+  <div class="vnum" style="color:${col}">${left.toFixed(0)}<span style="font-size:17px;color:var(--ink3);font-weight:500"> days</span></div>
+  <div style="font-size:13.4px;color:${col};font-weight:600;margin-top:6px">${verdict}</div>
+  <div class="vbar">${d.map(x=>`<i style="width:${Math.min(100,x.days/BUDGET*100)}%;background:${x.c}"></i>`).join("")}</div>
+  <div style="font-size:11px;color:var(--ink3);font-family:var(--f-mono)">${used.toFixed(1)} of ${BUDGET} days spent · ${elapsed.toFixed(1)} calendar days elapsed</div>
+  <div style="margin-top:12px">
+   ${d.map(x=>`<div class="vrow"><span style="display:flex;gap:7px;align-items:center">
+    <i style="width:8px;height:8px;border-radius:2px;background:${x.c};display:inline-block"></i>${x.l}</span>
+    <b style="color:${x.c}">${x.days.toFixed(1)} d</b></div>`).join("")}
+   <div class="vrow" style="border-top:1px solid var(--line);margin-top:4px;padding-top:9px">
+    <span style="font-weight:600">Buyer minimum on arrival</span><b>60 d</b></div>
+  </div>
+  <p style="font-size:11.8px;color:var(--ink3);margin-top:12px;line-height:1.45">
+   Budget: 120 days for Royal Delicious held at +0.5 °C. Ageing is modelled at Q₁₀ = 2 —
+   every 10 °C above set point roughly doubles the rate of respiration, and therefore of decay.</p>`;
+}
+ids.forEach(id=>$("#"+id).addEventListener("input",calc));
+calc();
+
+/* ---------- boot ---------- */
+let start=1;
+try{const v=localStorage.getItem("amama-stage"); if(v&&+v>=1&&+v<=16) start=+v;}catch(e){}
+renderStage(start);
+showSec("overview");
+</script>

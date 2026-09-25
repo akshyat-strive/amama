@@ -37,6 +37,7 @@ import {
   type ShipmentEventType,
   type ShipmentStatus,
 } from "@/features/marketplace/deal-store"
+import { CarrierLogo } from "@/features/marketplace/carrier-logo"
 import { formatInr } from "@/features/marketplace/currency"
 import { LogisticsStageRail } from "@/features/marketplace/logistics-stage-rail"
 import { LOGISTICS_STAGE_ORDER, detectExcursions, documentBlockers, soonestCutoff } from "@/features/marketplace/logistics"
@@ -266,7 +267,6 @@ function ShipmentStat({ label, value }: { label: string; value: string }) {
 function ShipmentTracker({ shipment, actions }: { shipment: Shipment; actions?: React.ReactNode }) {
   const [detailsOpen, setDetailsOpen] = React.useState(true)
   const status = statusStyles[shipment.status]
-  const ModeIcon = modeIcons[shipment.mode]
   const events = [...shipment.events].reverse()
   const latestEvent = events[0]
   const isDelayed = shipment.status === "delayed"
@@ -318,7 +318,7 @@ function ShipmentTracker({ shipment, actions }: { shipment: Shipment; actions?: 
             </h3>
             <span className="text-muted-foreground/40">•</span>
             <span className="inline-flex items-center gap-1.5 truncate text-[12px] text-muted-foreground">
-              <ModeIcon aria-hidden className="size-3.5 shrink-0 text-foreground/80" />
+              <CarrierLogo carrier={shipment.carrier} mode={shipment.mode} className="size-3.5 shrink-0 text-foreground/80" />
               <span className="truncate">{shipment.carrier}</span>
             </span>
           </div>
@@ -400,7 +400,7 @@ function ShipmentTracker({ shipment, actions }: { shipment: Shipment; actions?: 
           </div>
         </div>
         <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-card px-2.5 py-1.5 text-[11px] font-semibold text-foreground shadow-sm">
-          <ModeIcon aria-hidden className="size-3.5" />
+          <CarrierLogo carrier={shipment.carrier} mode={shipment.mode} />
           {shipment.carrier}
         </span>
       </div>
@@ -605,7 +605,6 @@ function ShipmentEventHistory({ events }: { events: ShipmentEvent[] }) {
  *  per row just to be clickable. */
 function ShipmentRow({ shipment, onSelect }: { shipment: Shipment; onSelect: () => void }) {
   const status = statusStyles[shipment.status]
-  const ModeIcon = modeIcons[shipment.mode]
   const isDelayed = shipment.status === "delayed"
   const latestEvent = [...shipment.events].reverse()[0]
   const progress = latestEvent ? PROGRESS_BY_EVENT[latestEvent.type] : 0
@@ -628,7 +627,7 @@ function ShipmentRow({ shipment, onSelect }: { shipment: Shipment; onSelect: () 
           </span>
         </div>
         <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-          <ModeIcon aria-hidden className="size-3.5 shrink-0 text-foreground/80" />
+          <CarrierLogo carrier={shipment.carrier} mode={shipment.mode} className="size-3.5 shrink-0 text-foreground/80" />
           <span className="capitalize font-medium text-foreground/80">{shipment.mode}</span>
           <span>•</span>
           <span className="truncate">{shipment.carrier}</span>

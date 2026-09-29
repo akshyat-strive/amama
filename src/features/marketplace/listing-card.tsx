@@ -1,35 +1,21 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
-import {
-  AlertTriangleIcon,
-  BadgeCheckIcon,
-  ClockIcon,
-  HeartIcon,
-  MessageCircleIcon,
-  SettingsIcon,
-} from "lucide-react"
+import { ArrowUpRightIcon, ClockIcon, EyeOffIcon, MapPinIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { cropImageUrl } from "@/features/onboarding/steps"
 import { productLabel } from "@/features/marketplace/catalog"
+import { CropImage } from "@/features/marketplace/crop-image"
 import { formatInr } from "@/features/marketplace/currency"
-import { GradeBadge } from "@/features/marketplace/grade-badge"
+import { gradeShortLabel } from "@/features/marketplace/grade-badge"
 import { toggleWishlist, useWishlist } from "@/features/marketplace/wishlist-store"
 import type { Listing } from "@/features/marketplace/listing-store"
 
 /**
- * One catalog tile — shared between the seller's own catalog and the
- * buyer's marketplace, since the product itself doesn't change between
- * those two views. Bento-style: one padded outer card, the photo an inset
- * tile inside it rather than bleeding to the card's own edges.
- *
- * Two sizes in one component rather than a separate mobile variant: a
- * two-up grid of these at desktop-card proportions would eat the whole
- * screen on a phone, so everything below `sm` runs smaller and drops the
- * lines that aren't essential to deciding whether to tap in (description,
- * seller name) — the same trim an Amazon or Instamart grid tile makes.
+ * One listing, shared by the seller's catalog and the buyer's marketplace.
+ * Only what decides a click: photo, product, grade, price, quantity and
+ * where it grows. Everything else — the description, who moderated it, the
+ * seller — lives on the listing's own page. The whole card is the link.
  */
 function ListingCard({
   listing,
@@ -43,150 +29,87 @@ function ListingCard({
   personId?: string
 }) {
   const cropLabel = productLabel(listing.cropId)
-  const verified = listing.moderationStatus === "verified"
   const wishlist = useWishlist(personId ?? "")
   const wishlisted = !!personId && wishlist.includes(listing.id)
+  const status = ownerView ? listing.moderationStatus : "verified"
 
   return (
-    <div className="group relative rounded-2xl border border-border bg-card p-2 transition-colors sm:rounded-[28px] sm:p-3">
-      <Link href={href} className="contents">
-        <div className="relative aspect-4/3 w-full overflow-hidden rounded-xl sm:rounded-2xl">
-          <Image
-            src={cropImageUrl(listing.photo, 480)}
-            alt={cropLabel}
-            fill
-            sizes="(min-width: 1280px) 380px, (min-width: 640px) 45vw, 45vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+    <div className="group relative rounded-[22px] border border-border bg-card p-1.5 transition-[box-shadow,border-color] duration-200 hover:border-foreground/15 hover:shadow-[0_10px_30px_-14px_rgba(0,0,0,0.25)]">
+      <Link href={href} className="block outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/40 rounded-[18px]">
+        <div className="relative aspect-4/3 w-full overflow-hidden rounded-[16px] bg-muted">
+          <CropImage
+            photo={listing.photo}
+            alt={`${cropLabel} — ${listing.variety}`}
+            sizes="(min-width: 1280px) 360px, (min-width: 640px) 45vw, 50vw"
+            className="transition-[opacity,transform] duration-500 group-hover:scale-[1.04]"
           />
-
-          {verified ? (
-            <span
-              title="Verified by amama"
-              aria-label="Verified by amama"
-              className="absolute top-1.5 left-1.5 grid size-6 -rotate-6 place-items-center rounded-full bg-white shadow-md ring-2 ring-amama-deep/70 sm:top-2.5 sm:left-2.5 sm:size-8"
-            >
-              <BadgeCheckIcon className="size-3.5 fill-amama-deep text-white sm:size-5" />
+          <span className="absolute top-2 left-2 rounded-full bg-card/90 px-2 py-0.5 text-[11px] font-bold text-foreground shadow-sm backdrop-blur">
+            {gradeShortLabel(listing.grade)}
+          </span>
+          {status === "unverified" ? (
+            <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-card/90 px-2 py-0.5 text-[11px] font-semibold text-status-warning shadow-sm backdrop-blur">
+              <ClockIcon aria-hidden className="size-3" />
+              In review
+            </span>
+          ) : status === "flagged" ? (
+            <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-card/90 px-2 py-0.5 text-[11px] font-semibold text-destructive shadow-sm backdrop-blur">
+              <EyeOffIcon aria-hidden className="size-3" />
+              Hidden
             </span>
           ) : null}
         </div>
 
-        <div className="flex flex-col pt-2 sm:pt-3">
-          <div className="flex items-start justify-between gap-1.5 sm:gap-2">
+        <div className="px-1.5 pt-2.5 pb-1">
+          <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="truncate text-[13px] font-bold text-foreground sm:text-[16px]">{cropLabel}</p>
-              <p className="mt-0.5 hidden truncate text-[13px] text-muted-foreground sm:block">
-                {listing.variety}
-              </p>
+              <p className="truncate text-[14px] font-semibold text-foreground sm:text-[15px]">{cropLabel}</p>
+              <p className="truncate text-[12px] text-muted-foreground">{listing.variety}</p>
             </div>
-            <GradeBadge grade={listing.grade} className="shrink-0 pt-0.5" />
+            <ArrowUpRightIcon
+              aria-hidden
+              className="mt-0.5 size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+            />
           </div>
 
-          <div className="mt-1.5 flex items-center justify-between gap-1.5 sm:mt-2 sm:gap-2">
-            <p className="text-[13px] font-extrabold tracking-tight text-foreground tabular-nums sm:text-[18px]">
+          <div className="mt-2 flex items-end justify-between gap-2">
+            <p className="text-[15px] font-bold tracking-tight text-foreground tabular-nums sm:text-[17px]">
               {formatInr(listing.pricePerTonneUsd)}
-              <span className="ms-1 hidden text-[12px] font-medium text-muted-foreground sm:inline">
-                / tonne
-              </span>
+              <span className="ms-0.5 text-[11.5px] font-medium text-muted-foreground">/t</span>
             </p>
-            <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-bold text-foreground/70 sm:px-2.5 sm:py-1 sm:text-[11px]">
+            <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground/75 tabular-nums">
               {listing.quantityMt} MT
             </span>
           </div>
 
-          {listing.description ? (
-            <p className="mt-2 hidden line-clamp-2 text-[13px] leading-relaxed text-muted-foreground sm:block">
-              {listing.description}
-            </p>
-          ) : null}
-
-          <div className="mt-2 hidden items-center gap-1.5 sm:mt-3 sm:flex">
-            <span
-              aria-hidden
-              className="grid size-5 shrink-0 place-items-center rounded-full bg-muted text-[10px] font-bold text-foreground/70"
-            >
-              {listing.sellerName.charAt(0)}
-            </span>
-            <p className="truncate text-[12px] font-medium text-foreground/70">
-              {listing.sellerName}
-            </p>
-          </div>
-
-          {ownerView ? <ModerationNote listing={listing} /> : null}
-
-          <div className="mt-2 flex items-center justify-center gap-1 rounded-full bg-amama-deep py-1.5 text-[11px] font-semibold text-white transition-colors group-hover:bg-amama-deep-hover sm:mt-3 sm:gap-1.5 sm:py-2 sm:text-[13px]">
-            <MessageCircleIcon className={cn("size-3 sm:size-3.5", ownerView && "hidden")} />
-            <SettingsIcon className={cn("size-3 sm:size-3.5", !ownerView && "hidden")} />
-            <span className="sm:hidden">{ownerView ? "Manage" : "Contact"}</span>
-            <span className="hidden sm:inline">{ownerView ? "Manage listing" : "View & contact"}</span>
-          </div>
+          <p className="mt-1.5 flex items-center gap-1 truncate text-[11.5px] text-muted-foreground">
+            <MapPinIcon aria-hidden className="size-3 shrink-0" />
+            <span className="truncate">{[listing.region, listing.country].filter(Boolean).join(", ")}</span>
+          </p>
         </div>
       </Link>
 
       {personId ? (
         <button
           type="button"
-          onClick={(event) => {
-            event.preventDefault()
-            toggleWishlist(personId, listing.id)
-          }}
+          onClick={() => toggleWishlist(personId, listing.id)}
           aria-label={wishlisted ? "Remove from wishlist" : "Save to wishlist"}
           aria-pressed={wishlisted}
-          className="absolute top-2 right-2 grid size-6 place-items-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition-transform hover:scale-110 active:scale-95 sm:top-[22px] sm:right-[22px] sm:size-8"
+          className="absolute top-3.5 right-3.5 grid size-8 place-items-center rounded-full bg-card/90 shadow-sm backdrop-blur transition-transform hover:scale-110 active:scale-95"
         >
-          <HeartIcon
-            className={cn(
-              "size-3.5 transition-colors sm:size-4",
-              wishlisted ? "fill-rose-500 text-rose-500" : "text-foreground/60"
-            )}
-          />
+          <svg viewBox="0 0 24 24" aria-hidden className="size-4">
+            <path
+              d="M12 20.5s-7.5-4.6-9.2-9.3C1.6 7.8 3.9 4.5 7.3 4.5c2 0 3.5 1.1 4.7 2.8 1.2-1.7 2.7-2.8 4.7-2.8 3.4 0 5.7 3.3 4.5 6.7-1.7 4.7-9.2 9.3-9.2 9.3Z"
+              strokeWidth={1.8}
+              strokeLinejoin="round"
+              className={cn(
+                "transition-[fill,stroke] duration-200",
+                wishlisted ? "fill-rose-500 stroke-rose-500" : "fill-transparent stroke-foreground/60"
+              )}
+            />
+          </svg>
         </button>
       ) : null}
     </div>
-  )
-}
-
-/** Only ever rendered in `ownerView` — a buyer never sees "pending" or
- *  "flagged" language anywhere, per the platform's own rule that an
- *  unverified listing should look exactly like a normal one. A seller
- *  needs to see all three, especially the reason and the name behind a
- *  flag. */
-function ModerationNote({ listing }: { listing: Listing }) {
-  if (listing.moderationStatus === "flagged") {
-    return (
-      <div className="mt-2 flex flex-col gap-1 rounded-xl bg-destructive/10 px-2 py-1.5 text-[10px] text-destructive sm:mt-3 sm:px-3 sm:py-2.5 sm:text-[12px]">
-        <p className="flex items-center gap-1.5 font-semibold">
-          <AlertTriangleIcon className="size-3 shrink-0 sm:size-3.5" />
-          <span className="truncate">Hidden from marketplace</span>
-        </p>
-        {listing.moderationNote ? (
-          <p className="hidden leading-relaxed sm:block">{listing.moderationNote}</p>
-        ) : null}
-        {listing.moderatedBy ? (
-          <p className="hidden text-destructive/70 sm:block">
-            — {listing.moderatedBy}
-            {listing.moderatedAt
-              ? `, ${new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(listing.moderatedAt))}`
-              : null}
-          </p>
-        ) : null}
-      </div>
-    )
-  }
-
-  if (listing.moderationStatus === "unverified") {
-    return (
-      <p className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground sm:mt-3 sm:text-[12px]">
-        <ClockIcon className="size-3 shrink-0 sm:size-3.5" />
-        <span className="truncate">Pending KAM review</span>
-      </p>
-    )
-  }
-
-  return (
-    <p className="mt-2 flex items-center gap-1.5 text-[10px] text-amama-deep sm:mt-3 sm:text-[12px]">
-      <BadgeCheckIcon className="size-3 shrink-0 sm:size-3.5" />
-      <span className="truncate">Verified by {listing.moderatedBy ?? "your KAM"}</span>
-    </p>
   )
 }
 

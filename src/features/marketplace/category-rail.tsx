@@ -1,26 +1,73 @@
 "use client"
 
-import Image from "next/image"
-import type { LucideIcon } from "lucide-react"
+import * as React from "react"
 
 import { cn } from "@/lib/utils"
-import { cropImageUrl } from "@/features/onboarding/steps"
+import { CropImage } from "@/features/marketplace/crop-image"
 
 export type CategoryRailItem = {
   id: string
   label: string
-  photo?: string | null
-  icon: LucideIcon
+  /** Up to three photos, fanned like cards held in a hand. */
+  photos: string[]
+  count: number
+}
+
+/** Where each card sits in the hand — outer cards tilt out and drop a
+ *  little lower, so the three read as an arc rather than a row. */
+const FAN: Record<number, { rest: string[]; open: string[] }> = {
+  1: { rest: ["rotate(-3deg)"], open: ["rotate(0deg) translateY(-4px)"] },
+  2: {
+    rest: ["translateX(-13px) rotate(-9deg) translateY(3px)", "translateX(13px) rotate(9deg) translateY(3px)"],
+    open: ["translateX(-19px) rotate(-14deg) translateY(1px)", "translateX(19px) rotate(14deg) translateY(1px)"],
+  },
+  3: {
+    rest: [
+      "translateX(-22px) rotate(-14deg) translateY(7px)",
+      "translateY(-2px)",
+      "translateX(22px) rotate(14deg) translateY(7px)",
+    ],
+    open: [
+      "translateX(-31px) rotate(-20deg) translateY(6px)",
+      "translateY(-7px)",
+      "translateX(31px) rotate(20deg) translateY(6px)",
+    ],
+  },
+}
+
+function Fan({ photos, open, size }: { photos: string[]; open: boolean; size: "lg" | "sm" }) {
+  const cards = photos.slice(0, 3)
+  const layout = FAN[Math.max(1, cards.length)]
+  const hand = (
+    <span className="relative block h-[86px] w-[120px]">
+      {cards.map((photo, index) => (
+        <span
+          key={`${photo}-${index}`}
+          className="absolute bottom-0 left-1/2 -ms-[29px] size-[58px] overflow-hidden rounded-[14px] border-2 border-card bg-muted shadow-[0_6px_14px_-6px_rgba(0,0,0,0.35)] transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] motion-reduce:transition-none"
+          style={{
+            transform: (open ? layout.open : layout.rest)[index],
+            transformOrigin: "50% 100%",
+            zIndex: index === 1 ? 2 : 1,
+          }}
+        >
+          <CropImage photo={photo} width={160} alt="" sizes="64px" />
+        </span>
+      ))}
+    </span>
+  )
+  if (size === "lg") return hand
+  return (
+    <span aria-hidden className="relative block h-7 w-10 shrink-0">
+      <span className="absolute bottom-0 left-1/2 origin-bottom -translate-x-1/2 scale-[0.34]">{hand}</span>
+    </span>
+  )
 }
 
 /**
- * The marketplace's top browse layer, as a horizontally-scrolling strip of
- * round category avatars — the same "category strip" shape as any big
- * marketplace homepage. Deliberately buttons, not links: picking a category
- * here filters the product grid on the *same* page rather than navigating
- * away, so a buyer can flip between "Fruits" and "Spices" without losing
- * their place. No visible scrollbar; a rail this short reads as swipeable
- * on its own.
+ * The marketplace's category strip: every category as a small hand of
+ * cards — two or three real listing photos fanned out — that spreads
+ * further on hover and when chosen. Buttons, not links: picking one
+ * filters the grid on this same page.
  */
 function CategoryRail({
   items,
@@ -31,49 +78,32 @@ function CategoryRail({
   selectedId: string
   onSelect: (id: string) => void
 }) {
+  const [hovered, setHovered] = React.useState<string | null>(null)
   return (
-    <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pt-1 pb-2 [scrollbar-width:none] [-ms-overflow-style:none] sm:gap-6 [&::-webkit-scrollbar]:hidden">
+    <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pt-2 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {items.map((item) => {
-        const Icon = item.icon
         const selected = item.id === selectedId
         return (
           <button
             key={item.id}
             type="button"
             onClick={() => onSelect(item.id)}
+            onPointerEnter={() => setHovered(item.id)}
+            onPointerLeave={() => setHovered(null)}
             aria-pressed={selected}
-            className="group flex w-16 shrink-0 flex-col items-center gap-1.5 text-center sm:w-20"
+            className={cn(
+              "flex w-[136px] shrink-0 flex-col items-center gap-2 rounded-[22px] px-2 pt-3 pb-2.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/40",
+              selected ? "bg-amama-subtle" : "hover:bg-muted/70"
+            )}
           >
-            <span
-              className={cn(
-                "relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-amama-subtle ring-1 transition-all duration-200 sm:size-20",
-                selected
-                  ? "ring-2 ring-amama-deep ring-offset-2 ring-offset-background"
-                  : "ring-border group-hover:ring-amama-deep/40"
-              )}
-            >
-              {item.photo ? (
-                <Image
-                  src={cropImageUrl(item.photo, 200)}
-                  alt=""
-                  fill
-                  sizes="80px"
-                  className="object-cover"
-                />
-              ) : (
-                <Icon
-                  className={cn("size-7 sm:size-8", selected ? "text-amama-deep" : "text-amama-deep/70")}
-                  strokeWidth={1.75}
-                />
-              )}
-            </span>
-            <span
-              className={cn(
-                "line-clamp-2 text-[11px] leading-tight font-semibold sm:text-[12px]",
-                selected ? "text-amama-deep" : "text-foreground"
-              )}
-            >
-              {item.label}
+            <Fan photos={item.photos} open={selected || hovered === item.id} size="lg" />
+            <span className="flex flex-col items-center">
+              <span className={cn("text-[13px] leading-tight font-semibold", selected ? "text-amama-deep" : "text-foreground")}>
+                {item.label}
+              </span>
+              <span className="text-[11px] text-muted-foreground tabular-nums">
+                {item.count} {item.count === 1 ? "listing" : "listings"}
+              </span>
             </span>
           </button>
         )
@@ -82,4 +112,39 @@ function CategoryRail({
   )
 }
 
-export { CategoryRail }
+/** The same categories as a slim chip slider — what stays pinned under
+ *  the topbar once the full rail has scrolled away. */
+function CategoryChips({
+  items,
+  selectedId,
+  onSelect,
+}: {
+  items: CategoryRailItem[]
+  selectedId: string
+  onSelect: (id: string) => void
+}) {
+  return (
+    <div className="flex gap-1.5 overflow-x-auto rounded-full border border-border bg-card/95 p-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.3)] backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {items.map((item) => {
+        const selected = item.id === selectedId
+        return (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onSelect(item.id)}
+            aria-pressed={selected}
+            className={cn(
+              "flex h-9 shrink-0 items-center gap-2 rounded-full ps-1.5 pe-3.5 text-[12.5px] font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/40",
+              selected ? "bg-foreground text-background" : "text-foreground/80 hover:bg-muted"
+            )}
+          >
+            <Fan photos={item.photos} open={selected} size="sm" />
+            {item.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+export { CategoryChips, CategoryRail }

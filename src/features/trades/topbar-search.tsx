@@ -1,11 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
-import { AnchorIcon, PackageIcon, SearchIcon, WaypointsIcon, type LucideIcon } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { AnchorIcon, PackageIcon, SearchIcon, StoreIcon, WaypointsIcon, type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import * as W from "@/features/tradechain/demo-world"
+import { productLabel } from "@/features/marketplace/catalog"
+import { useListings, type Listing } from "@/features/marketplace/listing-store"
 import { tradesFor, type TradePerspective } from "@/features/trades/trade-access"
 
 type Hit = { key: string; icon: LucideIcon; title: string; meta: string; href: string }
@@ -42,6 +44,23 @@ function searchTrades(trades: W.Trade[], basePath: string, query: string): Hit[]
   return hits.slice(0, 8)
 }
 
+function searchListings(listings: Listing[], query: string, hrefFor: (listing: Listing) => string): Hit[] {
+  const needle = query.trim().toLowerCase()
+  if (!needle) return []
+  return listings
+    .filter((listing) =>
+      [productLabel(listing.cropId), listing.variety, listing.sellerName, listing.region].join(" ").toLowerCase().includes(needle)
+    )
+    .slice(0, 4)
+    .map((listing) => ({
+      key: `listing-${listing.id}`,
+      icon: StoreIcon,
+      title: `${productLabel(listing.cropId)} · ${listing.variety}`,
+      meta: `Listing · ${listing.sellerName} · ${listing.region}`,
+      href: hrefFor(listing),
+    }))
+}
+
 /**
  * One search box for the whole trade book — trades by id, product or
  * port, lots by id, and vessels, containers or bills of lading — scoped to
@@ -55,8 +74,27 @@ function TopbarSearch({ perspective, email, basePath }: { perspective: TradePers
   const [cursor, setCursor] = React.useState(0)
   const listId = React.useId()
 
+  const pathname = usePathname()
+  const allListings = useListings()
   const trades = React.useMemo(() => tradesFor(perspective, email), [perspective, email])
-  const hits = React.useMemo(() => searchTrades(trades, basePath, query), [trades, basePath, query])
+  const hits = React.useMemo(() => {
+    const market =
+      perspective === "buyer"
+        ? searchListings(
+            allListings.filter((listing) => listing.moderationStatus !== "flagged" && !listing.deletedAt),
+            query,
+            (listing) => `/buyer/dashboard/sourcing/listing/${listing.id}`
+          )
+        : perspective === "seller"
+          ? searchListings(
+              allListings.filter((listing) => listing.sellerId === email.trim().toLowerCase() && !listing.deletedAt),
+              query,
+              (listing) => `/seller/dashboard/listings/${listing.id}`
+            )
+          : []
+    return [...market, ...searchTrades(trades, basePath, query)].slice(0, 8)
+  }, [perspective, allListings, email, trades, basePath, query])
+  const fallbackPath = perspective === "buyer" && pathname.startsWith("/buyer/dashboard/sourcing") ? "/buyer/dashboard/sourcing" : basePath
 
   React.useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -72,7 +110,7 @@ function TopbarSearch({ perspective, email, basePath }: { perspective: TradePers
   const go = (href: string) => {
     setOpen(false)
     setQuery("")
-    inputRef.current?.blur()
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
     router.push(href)
   }
 
@@ -99,7 +137,7 @@ function TopbarSearch({ perspective, email, basePath }: { perspective: TradePers
           } else if (event.key === "Enter") {
             event.preventDefault()
             if (hits[cursor]) go(hits[cursor].href)
-            else if (query.trim()) go(`${basePath}?q=${encodeURIComponent(query.trim())}`)
+            else if (query.trim()) go(`${fallbackPath}?q=${encodeURIComponent(query.trim())}`)
           } else if (event.key === "Escape") {
             setOpen(false)
             inputRef.current?.blur()
@@ -110,7 +148,7 @@ function TopbarSearch({ perspective, email, basePath }: { perspective: TradePers
         aria-controls={listId}
         aria-autocomplete="list"
         aria-activedescendant={hits[cursor] ? `${listId}-${cursor}` : undefined}
-        placeholder="Search orders, lots, vessels…"
+        placeholder={perspective === "internal" ? "Search trades, lots, vessels…" : "Search products, orders, lots, vessels…"}
         className="h-11 w-full rounded-full border border-border bg-card/90 ps-10 pe-14 text-[13px] shadow-sm backdrop-blur outline-none placeholder:text-muted-foreground focus:border-foreground/25"
       />
       <kbd className="pointer-events-none absolute end-3.5 top-1/2 -translate-y-1/2 rounded-md border border-border bg-muted px-1.5 py-0.5 font-sans text-[10.5px] text-muted-foreground">
@@ -124,7 +162,7 @@ function TopbarSearch({ perspective, email, basePath }: { perspective: TradePers
           className="absolute inset-x-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-2xl border border-border bg-popover p-1 shadow-xl"
         >
           {hits.length === 0 ? (
-            <li className="px-3 py-3 text-[13px] text-muted-foreground">No trades, lots or vessels match</li>
+            <li className="px-3 py-3 text-[13px] text-muted-foreground">Nothing matches — press Enter to search all</li>
           ) : (
             hits.map((hit, index) => (
               <li

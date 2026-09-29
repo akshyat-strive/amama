@@ -3,6 +3,7 @@
 import * as React from "react"
 import { MessageSquareIcon } from "lucide-react"
 
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import type { Conversation } from "@/features/marketplace/conversation-store"
 import { formatInr } from "@/features/marketplace/currency"
@@ -33,6 +34,7 @@ function DealStatusFooter({
   role,
   myName,
   counterpartName,
+  className,
 }: {
   deal: Deal | null
   conversation: Conversation | null
@@ -40,6 +42,7 @@ function DealStatusFooter({
   role: "buyer" | "seller"
   myName: string
   counterpartName: string
+  className?: string
 }) {
   const [proposing, setProposing] = React.useState(false)
 
@@ -50,7 +53,7 @@ function DealStatusFooter({
 
   if (!deal || deal.status === "declined") {
     return (
-      <div className="flex shrink-0 items-center justify-between gap-3 pt-3">
+      <div className={cn("flex shrink-0 items-center justify-between gap-3 pt-3", className)}>
         <p className="text-[12px] text-muted-foreground">
           {deal?.status === "declined" ? "That deal fell through." : "Ready to close this one?"}
         </p>
@@ -75,7 +78,7 @@ function DealStatusFooter({
     const yourMove = awaitingResponseFrom(deal) === role
 
     return (
-      <div className="flex shrink-0 items-center gap-2.5 rounded-2xl bg-status-warning/10 px-4 py-3">
+      <div className={cn("flex shrink-0 items-center gap-2.5 rounded-2xl bg-status-warning/10 px-4 py-3", className)}>
         <MessageSquareIcon className="size-4 shrink-0 text-status-warning" />
         <p className="text-[13px] font-medium text-status-warning">
           {yourMove
@@ -89,7 +92,7 @@ function DealStatusFooter({
   // `active` — the pipeline itself is admin-only (KAM/Master Admin), this
   // is just a status line so both sides can see where things stand.
   return (
-    <div className="flex shrink-0 items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3">
+    <div className={cn("flex shrink-0 items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3", className)}>
       <div className="min-w-0">
         <p className="text-[13px] font-semibold text-foreground">Deal agreed</p>
         <p className="text-[12px] text-muted-foreground">

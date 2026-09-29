@@ -1,85 +1,92 @@
 "use client"
 
-import Image from "next/image"
-import { Trash2Icon } from "lucide-react"
+import { MapPinIcon, Trash2Icon } from "lucide-react"
 
 import { productLabel } from "@/features/marketplace/catalog"
-import { cropImageUrl } from "@/features/onboarding/steps"
+import { CropImage } from "@/features/marketplace/crop-image"
 import { formatInr } from "@/features/marketplace/currency"
-import { GradeBadge } from "@/features/marketplace/grade-badge"
+import { GradeInfoTrigger, gradeShortLabel } from "@/features/marketplace/grade-badge"
 import { ProximityMap } from "@/features/marketplace/proximity-map"
 import type { Listing } from "@/features/marketplace/listing-store"
+import { countries } from "@/features/onboarding/countries"
 
 /**
- * The product's own page content — everything that used to be crammed
- * onto the marketplace card (location, seller, full description) now
- * lives here instead, since the card's job is just to get someone to
- * this page. Shared between the buyer's read-only view and the seller's
- * own (which adds edit/remove).
- *
- * Ordered by what a buyer actually needs to decide, not by what's easiest
- * to shoot a photo of: what it is, how much, and for how much comes first;
- * the photo is confirmation, not the pitch, so it comes after. Seller
- * identity is context, not a decision input — it's the last line, not a
- * card competing for attention with the product itself.
- *
- * Edit/remove used to live here as a button row, but a seller's own actions
- * on their listing aren't part of what the listing *is* — they're the
- * page's own footer now (see `SellerProductView`), not this panel's.
+ * A listing's own page content, shared by the buyer's view and the
+ * seller's. The photo leads, then what it is and what it costs, then the
+ * three facts a trade is decided on as one strip, then the story and where
+ * it grows. The seller line is only for someone who isn't the seller.
  */
-function ProductInfoPanel({ listing }: { listing: Listing }) {
+function ProductInfoPanel({ listing, showSeller = true }: { listing: Listing; showSeller?: boolean }) {
   const cropLabel = productLabel(listing.cropId)
+  const countryName = countries.find((entry) => entry.code === listing.country)?.name ?? listing.country
+  const place = [listing.region, countryName].filter(Boolean).join(", ")
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[22px] font-bold tracking-tight text-foreground">{cropLabel}</p>
-          <p className="mt-0.5 text-[14px] text-muted-foreground">{listing.variety}</p>
-          <p className="mt-1.5 text-[13px] font-semibold text-foreground">
-            {listing.quantityMt} MT available
-          </p>
-        </div>
-        <GradeBadge grade={listing.grade} className="shrink-0 pt-1 text-[20px]" />
+      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[18px] bg-muted">
+        <CropImage photo={listing.photo} width={760} alt={`${cropLabel} — ${listing.variety}`} sizes="(min-width: 1024px) 380px, 92vw" priority />
       </div>
 
       {listing.deletedAt ? (
-        <div className="flex items-center gap-2 rounded-2xl bg-destructive/10 px-4 py-3 text-[13px] font-medium text-destructive">
-          <Trash2Icon className="size-4 shrink-0" />
-          Removed from your catalog — buyers can no longer find this listing.
+        <div className="flex items-center gap-2 rounded-xl bg-destructive/10 px-3 py-2.5 text-[12.5px] font-medium text-destructive">
+          <Trash2Icon aria-hidden className="size-4 shrink-0" />
+          Removed — buyers can no longer find this listing.
         </div>
       ) : null}
 
-      <p className="text-[24px] font-extrabold tracking-tight text-foreground tabular-nums">
-        {formatInr(listing.pricePerTonneUsd)}
-        <span className="ms-1.5 text-[13px] font-medium text-muted-foreground">/ tonne</span>
-      </p>
-
-      {listing.description ? (
-        <p className="text-[14px] leading-relaxed text-muted-foreground">{listing.description}</p>
-      ) : null}
-
-      {/* A single photo today, laid out the same way a multi-photo carousel
-       *  would be (full-bleed, aspect-locked) so swapping in an actual
-       *  carousel later — once a listing can carry more than one image —
-       *  is a drop-in, not a redesign. */}
-      <div className="relative aspect-4/3 w-full overflow-hidden rounded-3xl bg-muted">
-        <Image
-          src={cropImageUrl(listing.photo, 720)}
-          alt={cropLabel}
-          fill
-          sizes="(min-width: 1024px) 480px, 90vw"
-          className="object-cover"
-          priority
-        />
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-[20px] leading-tight font-bold tracking-tight text-foreground">{cropLabel}</h2>
+          <p className="mt-0.5 truncate text-[13px] text-muted-foreground">{listing.variety}</p>
+        </div>
+        <p className="shrink-0 text-end text-[20px] leading-tight font-bold tracking-tight text-foreground tabular-nums">
+          {formatInr(listing.pricePerTonneUsd)}
+          <span className="block text-[11.5px] font-medium tracking-normal text-muted-foreground">per tonne</span>
+        </p>
       </div>
 
-      <ProximityMap country={listing.country} region={listing.region} className="h-32 w-full rounded-2xl" />
+      <dl className="grid grid-cols-3 divide-x divide-border rounded-2xl border border-border">
+        <div className="px-3 py-2.5">
+          <dt className="text-[11px] text-muted-foreground">Available</dt>
+          <dd className="text-[14px] font-semibold text-foreground tabular-nums">{listing.quantityMt} MT</dd>
+        </div>
+        <div className="px-3 py-2.5">
+          <dt className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            Grade
+            <GradeInfoTrigger grade={listing.grade} />
+          </dt>
+          <dd className="text-[14px] font-semibold text-foreground">{gradeShortLabel(listing.grade)}</dd>
+        </div>
+        <div className="min-w-0 px-3 py-2.5">
+          <dt className="text-[11px] text-muted-foreground">Origin</dt>
+          <dd className="truncate text-[14px] font-semibold text-foreground" title={place}>
+            {listing.region.split(",")[0] || countryName}
+          </dd>
+        </div>
+      </dl>
+
+      {listing.description ? <p className="text-[13.5px] leading-relaxed text-foreground/80">{listing.description}</p> : null}
 
       <div>
-        <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Seller</p>
-        <p className="mt-0.5 text-[14px] font-semibold text-foreground">{listing.sellerName}</p>
+        <ProximityMap country={listing.country} region={listing.region} pinX={listing.pinX} pinY={listing.pinY} showLabel={false} className="h-28 w-full rounded-2xl" />
+        <p className="mt-1.5 flex items-center gap-1 text-[12px] text-muted-foreground">
+          <MapPinIcon aria-hidden className="size-3.5 shrink-0" />
+          <span className="truncate">{place}</span>
+          <span className="ms-auto shrink-0">Approximate area</span>
+        </p>
       </div>
+
+      {showSeller ? (
+        <div className="flex items-center gap-2.5 border-t border-border pt-3.5">
+          <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-[12px] font-semibold text-foreground/70">
+            {listing.sellerName.charAt(0)}
+          </span>
+          <div className="min-w-0">
+            <p className="text-[11px] text-muted-foreground">Sold by</p>
+            <p className="truncate text-[13.5px] font-semibold text-foreground">{listing.sellerName}</p>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

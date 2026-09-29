@@ -1,17 +1,16 @@
 "use client"
 
 import * as React from "react"
-import Image from "next/image"
 import { ArrowRightIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { productLabel } from "@/features/marketplace/catalog"
-import { cropImageUrl } from "@/features/onboarding/steps"
 import { formatInr } from "@/features/marketplace/currency"
 import { GradeBadge } from "@/features/marketplace/grade-badge"
 import type { ListingDiff } from "@/features/marketplace/conversation-store"
 import type { Listing } from "@/features/marketplace/listing-store"
+import { CropImage } from "@/features/marketplace/crop-image"
 
 /** Fields worth calling out in the comparison — everything a buyer would
  *  actually be negotiating against. */
@@ -50,7 +49,7 @@ function SnapshotCard({
         {label}
       </p>
       <div className="relative aspect-4/3 w-full overflow-hidden">
-        <Image src={cropImageUrl(listing.photo, 320)} alt={cropLabel} fill className="object-cover" />
+        <CropImage photo={listing.photo} width={320} alt={cropLabel} sizes="320px" />
       </div>
       <div className="flex flex-col gap-1.5 p-4">
         <p className="text-[15px] font-bold text-foreground">{cropLabel}</p>

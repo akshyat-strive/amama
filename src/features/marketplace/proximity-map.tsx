@@ -32,8 +32,37 @@ function latToTileY(lat: number, zoom: number) {
  *  but different regions don't render the identical tile — still nowhere
  *  near precise enough to be an address, just enough to not look like a
  *  single hard-coded pin per country. */
+/** Rough state centres, so an Indian listing lands in its own state rather
+ *  than the middle of the country — still state-level, never a place. */
+const STATE_CENTROIDS: Record<string, [number, number]> = {
+  "Andhra Pradesh": [15.9, 79.7],
+  Assam: [26.2, 92.9],
+  Gujarat: [22.3, 71.2],
+  Haryana: [29.1, 76.1],
+  "Himachal Pradesh": [31.8, 77.2],
+  "Jammu & Kashmir": [33.8, 75.0],
+  Karnataka: [15.3, 75.7],
+  Kerala: [10.3, 76.5],
+  "Madhya Pradesh": [23.5, 78.5],
+  Maharashtra: [19.6, 75.5],
+  Punjab: [31.1, 75.3],
+  Rajasthan: [26.9, 73.8],
+  "Tamil Nadu": [11.1, 78.4],
+  Telangana: [17.9, 79.0],
+  "Uttar Pradesh": [26.8, 80.9],
+  "West Bengal": [22.9, 87.9],
+}
+
+function baseCentroid(country: string, region: string): [number, number] {
+  if (country === "IN") {
+    const state = Object.keys(STATE_CENTROIDS).find((name) => region.includes(name))
+    if (state) return STATE_CENTROIDS[state]
+  }
+  return countryCentroids[country] ?? [20, 0]
+}
+
 function approximateTile(country: string, region: string) {
-  const [baseLat, baseLon] = countryCentroids[country] ?? [20, 0]
+  const [baseLat, baseLon] = baseCentroid(country, region)
   const seed = hashString(region || country)
   const jitterLat = (((seed % 300) - 150) / 100) * 1
   const jitterLon = ((((seed >> 8) % 300) - 150) / 100) * 1
@@ -55,6 +84,7 @@ function ProximityMap({
   pinX = 50,
   pinY = 50,
   onPick,
+  showLabel = true,
   className,
 }: {
   country: string
@@ -69,6 +99,8 @@ function ProximityMap({
    *  same 0–100 percentages — this is what turns the read-only map into
    *  the seller's placement picker. */
   onPick?: (x: number, y: number) => void
+  /** Off when the caller prints the location beneath the map itself. */
+  showLabel?: boolean
   className?: string
 }) {
   const countryEntry = countries.find((entry) => entry.code === country)
@@ -114,14 +146,16 @@ function ProximityMap({
           <span className="relative inline-flex size-3 rounded-full border-2 border-white bg-amama-deep shadow" />
         </span>
       </div>
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 via-black/10 to-transparent px-2.5 pt-5 pb-1.5">
-        <p className="flex items-center gap-1 text-[11px] font-medium text-white">
-          <MapPinIcon className="size-3 shrink-0" />
-          <span className="truncate">
-            {countryEntry ? countryCodeToFlag(countryEntry.code) : null} {label || "Location on file"}
-          </span>
-        </p>
-      </div>
+      {showLabel ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 via-black/10 to-transparent px-2.5 pt-5 pb-1.5">
+          <p className="flex items-center gap-1 text-[11px] font-medium text-white">
+            <MapPinIcon className="size-3 shrink-0" />
+            <span className="truncate">
+              {countryEntry ? countryCodeToFlag(countryEntry.code) : null} {label || "Location on file"}
+            </span>
+          </p>
+        </div>
+      ) : null}
     </div>
   )
 }

@@ -94,4 +94,9 @@ function GradeBadge({ grade, className }: { grade: string; className?: string })
   )
 }
 
-export { GradeBadge, GradeInfoTrigger }
+/** "Grade A+" → "A+", for places that only have room for the letter. */
+function gradeShortLabel(grade: string): string {
+  return (gradeTiers[grade] ?? fallbackTier).shortLabel
+}
+
+export { GradeBadge, GradeInfoTrigger, gradeShortLabel }

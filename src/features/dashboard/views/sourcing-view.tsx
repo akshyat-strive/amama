@@ -2,266 +2,283 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { HeartIcon, InfoIcon, LayoutGridIcon, SearchIcon, StoreIcon } from "lucide-react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { AnimatePresence, motion } from "motion/react"
+import { StoreIcon, XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { InfoTip } from "@/features/dashboard/info-tip"
 import { CATALOG_CATEGORIES, productLabel, slugify } from "@/features/marketplace/catalog"
-import { CategoryRail } from "@/features/marketplace/category-rail"
+import { CategoryChips, CategoryRail, type CategoryRailItem } from "@/features/marketplace/category-rail"
 import { CatalogTile } from "@/features/marketplace/catalog-tile"
 import { formatInr } from "@/features/marketplace/currency"
 import { ListingCard } from "@/features/marketplace/listing-card"
 import { buyerIdentity } from "@/features/marketplace/identity"
-import { useListings } from "@/features/marketplace/listing-store"
+import { useListings, type Listing } from "@/features/marketplace/listing-store"
 import { useWishlist } from "@/features/marketplace/wishlist-store"
+import { WishlistSwitch } from "@/features/marketplace/wishlist-switch"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 
+const ALL = "all"
+const STICK_AT = 68
+
+type Sort = "name" | "price"
+const SORT_ITEMS: Record<Sort, string> = { name: "Name A–Z", price: "Lowest price" }
+
+/** Up to three distinct listing photos — the "cards in hand" a category
+ *  rail item fans out. */
+function photosOf(listings: Listing[]): string[] {
+  return [...new Set(listings.map((listing) => listing.photo).filter(Boolean))].slice(0, 3)
+}
+
 /**
- * The marketplace's top browse layer — categories, not sellers. A buyer
- * lands here, picks "Fruits", then "Apple", then "Kashmiri Apple", and only
- * *there* sees the sellers offering it — the drill-down the rest of this
- * file's sibling views (`category-products-view.tsx`,
- * `product-variants-view.tsx`, `variant-sellers-view.tsx`) carry on with.
- *
- * The category rail sits at the top of this same page rather than routing
- * away — picking "Fruits" just filters the product grid directly below it,
- * the same "category strip + grid" shape most marketplace homepages use.
- * "All Categories" is always the first, default-selected item.
- *
- * Search and Wishlist are the deliberate exceptions: both are "I already
- * know what I want" shortcuts, so either one switches this page over to a
- * flat `ListingCard` grid (the marketplace's old shape) instead of forcing
- * a buyer who typed "kashmiri" back through the category/product taps.
+ * The marketplace: categories as fanned photo cards up top, which collapse
+ * into a slim chip slider pinned under the topbar once scrolled past, and
+ * a product grid that animates as the filter changes. Search is the
+ * topbar's — pressing Enter there on this page lands back here with `?q=`,
+ * which switches the grid to matching listings.
  */
-const ALL_CATEGORIES_ID = "all"
-function SourcingView() {
+function SourcingWorkspace() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const query = searchParams.get("q")?.trim() ?? ""
   const { draft } = useOnboarding()
   const buyer = buyerIdentity(draft.buyer)
+  const mySourcing = draft.buyer.sourcing
 
   const allListings = useListings()
-  // A flagged listing is pulled from the marketplace entirely — the seller
-  // still sees it (with the reason) on their own catalog page, but a buyer
-  // never sees it exist at all, flagged or otherwise. A deleted one is
-  // gone from both.
   const listings = React.useMemo(
     () => allListings.filter((listing) => listing.moderationStatus !== "flagged" && !listing.deletedAt),
     [allListings]
   )
 
   const [wishlistOnly, setWishlistOnly] = React.useState(false)
-  const [query, setQuery] = React.useState("")
-  const [showAllCategories, setShowAllCategories] = React.useState(false)
-  const [selectedCategoryId, setSelectedCategoryId] = React.useState<string>(ALL_CATEGORIES_ID)
+  const [scope, setScope] = React.useState<"mine" | "all">("mine")
+  const [selectedId, setSelectedId] = React.useState<string>(ALL)
+  const [sort, setSort] = React.useState<Sort>("name")
   const wishlist = useWishlist(buyer.id)
-  const mySourcing = draft.buyer.sourcing
 
-  const flatMode = wishlistOnly || query.trim().length > 0
-
+  const flatMode = wishlistOnly || query.length > 0
   const flatResults = React.useMemo(() => {
     if (!flatMode) return []
     let result = listings
     if (wishlistOnly) result = result.filter((listing) => wishlist.includes(listing.id))
-    const term = query.trim().toLowerCase()
-    if (term) {
-      result = result.filter((listing) => {
-        const haystack = [productLabel(listing.cropId), listing.variety, listing.sellerName].join(" ").toLowerCase()
-        return haystack.includes(term)
-      })
+    if (query) {
+      const needle = query.toLowerCase()
+      result = result.filter((listing) =>
+        [productLabel(listing.cropId), listing.variety, listing.sellerName, listing.region].join(" ").toLowerCase().includes(needle)
+      )
     }
     return result
   }, [flatMode, listings, wishlistOnly, wishlist, query])
 
-  // One tile per non-empty category — a category nobody has listed anything
-  // under yet doesn't get a tile that leads to an empty page.
-  const categoryTiles = React.useMemo(() => {
-    return CATALOG_CATEGORIES.map((category) => {
-      const inCategory = listings.filter((listing) => listing.categoryId === category.id)
-      if (inCategory.length === 0) return null
-      const relevantToMe = inCategory.some((listing) => mySourcing.includes(listing.cropId))
-      return { category, relevantToMe }
-    }).filter((entry) => entry !== null)
-  }, [listings, mySourcing])
+  const categories = React.useMemo(
+    () =>
+      CATALOG_CATEGORIES.map((category) => {
+        const inCategory = listings.filter((listing) => listing.categoryId === category.id)
+        if (inCategory.length === 0) return null
+        return { category, listings: inCategory, forMe: inCategory.some((listing) => mySourcing.includes(listing.cropId)) }
+      }).filter((entry) => entry !== null),
+    [listings, mySourcing]
+  )
 
-  const visibleCategoryTiles =
-    showAllCategories || mySourcing.length === 0
-      ? categoryTiles
-      : categoryTiles.filter((entry) => entry.relevantToMe).length > 0
-        ? categoryTiles.filter((entry) => entry.relevantToMe)
-        : categoryTiles
+  const canScope = mySourcing.length > 0 && categories.some((entry) => entry.forMe)
+  const visible = canScope && scope === "mine" ? categories.filter((entry) => entry.forMe) : categories
+  const activeId = selectedId === ALL || visible.some((entry) => entry.category.id === selectedId) ? selectedId : ALL
 
-  // A category that dropped out of the rail (the buyer switched "Show all"
-  // off after picking it) still shouldn't leave the grid stuck on a hidden
-  // filter — fall back to "All Categories" rather than an empty page.
-  const activeCategoryId =
-    selectedCategoryId === ALL_CATEGORIES_ID ||
-    visibleCategoryTiles.some((entry) => entry.category.id === selectedCategoryId)
-      ? selectedCategoryId
-      : ALL_CATEGORIES_ID
+  const railItems: CategoryRailItem[] = React.useMemo(() => {
+    const scoped = visible.flatMap((entry) => entry.listings)
+    return [
+      { id: ALL, label: "All", photos: visible.slice(0, 3).map((entry) => entry.listings[0].photo), count: scoped.length },
+      ...visible.map((entry) => ({ id: entry.category.id, label: entry.category.label, photos: photosOf(entry.listings), count: entry.listings.length })),
+    ]
+  }, [visible])
 
-  // Level 2 of the drill-down, inlined onto this same page: every product
-  // among whichever categories the rail is currently showing — one category
-  // if selected, every visible one for "All Categories" — grouped by
-  // `cropId` the same way `CategoryProductsView` groups a single category.
   const products = React.useMemo(() => {
-    const visibleIds = new Set<string>(visibleCategoryTiles.map((entry) => entry.category.id))
-    const scoped = listings.filter((listing) =>
-      activeCategoryId === ALL_CATEGORIES_ID
-        ? visibleIds.has(listing.categoryId)
-        : listing.categoryId === activeCategoryId
+    const ids = new Set<string>(visible.map((entry) => entry.category.id))
+    const scoped = listings.filter((listing) => (activeId === ALL ? ids.has(listing.categoryId) : listing.categoryId === activeId))
+    const byProduct = new Map<string, Listing[]>()
+    for (const listing of scoped) byProduct.set(listing.cropId, [...(byProduct.get(listing.cropId) ?? []), listing])
+    const rows = [...byProduct.entries()].map(([cropId, group]) => ({
+      cropId,
+      categoryId: group[0].categoryId,
+      label: productLabel(cropId),
+      photo: group[0].photo,
+      variantCount: new Set(group.map((listing) => slugify(listing.variety))).size,
+      sellerCount: new Set(group.map((listing) => listing.sellerId)).size,
+      minPrice: Math.min(...group.map((listing) => listing.pricePerTonneUsd)),
+    }))
+    return rows.sort((a, b) => (sort === "price" ? a.minPrice - b.minPrice : a.label.localeCompare(b.label)))
+  }, [listings, activeId, visible, sort])
+
+  /* The full rail scrolls away; its compact twin pins under the topbar. */
+  const railRef = React.useRef<HTMLDivElement>(null)
+  const resultsRef = React.useRef<HTMLDivElement>(null)
+  const [pinned, setPinned] = React.useState(false)
+  React.useEffect(() => {
+    const node = railRef.current
+    if (!node) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setPinned(!entry.isIntersecting && entry.boundingClientRect.top < STICK_AT),
+      { rootMargin: `-${STICK_AT}px 0px 0px 0px`, threshold: 0 }
     )
-    const byProduct = new Map<string, typeof listings>()
-    for (const listing of scoped) {
-      const group = byProduct.get(listing.cropId)
-      if (group) group.push(listing)
-      else byProduct.set(listing.cropId, [listing])
-    }
-    return Array.from(byProduct.entries())
-      .map(([cropId, group]) => ({
-        cropId,
-        categoryId: group[0].categoryId,
-        label: productLabel(cropId),
-        photo: group[0].photo,
-        variantCount: new Set(group.map((listing) => slugify(listing.variety))).size,
-        minPrice: Math.min(...group.map((listing) => listing.pricePerTonneUsd)),
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label))
-  }, [listings, activeCategoryId, visibleCategoryTiles])
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [flatMode])
+
+  const clearQuery = () => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("q")
+    const next = params.toString()
+    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false })
+  }
+
+  const selectCategory = (id: string) => {
+    setSelectedId(id)
+    if (pinned) resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
 
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-[28px] font-bold tracking-tight">Marketplace</h1>
-
         <div className="flex items-center gap-2">
-          <InputGroup className="h-9 w-44 sm:w-56">
-            <InputGroupAddon>
-              <SearchIcon className="size-3.5" />
-            </InputGroupAddon>
-            <InputGroupInput
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search sellers, products…"
-              className="text-[13px]"
-            />
-          </InputGroup>
-
-          <button
-            type="button"
-            onClick={() => setWishlistOnly((value) => !value)}
-            aria-pressed={wishlistOnly}
-            className={cn(
-              "flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium transition-colors",
-              wishlistOnly
-                ? "border-transparent bg-amama-deep text-white"
-                : "border-border text-foreground hover:bg-muted"
-            )}
-          >
-            <HeartIcon className={cn("size-3.5", wishlistOnly && "fill-white")} />
-            Wishlist
-          </button>
-
-          {!flatMode ? (
-            <div className="flex items-center gap-1.5">
-              {mySourcing.length > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => setShowAllCategories((value) => !value)}
-                  aria-pressed={showAllCategories}
-                  className={cn(
-                    "flex h-9 items-center rounded-full border px-3.5 text-[13px] font-medium transition-colors",
-                    showAllCategories
-                      ? "border-transparent bg-amama-deep text-white"
-                      : "border-border text-foreground hover:bg-muted"
-                  )}
-                >
-                  Show all
-                </button>
-              ) : null}
-
-              <Popover>
-                <PopoverTrigger
-                  openOnHover
-                  aria-label='What does "Show all" mean?'
-                  className="grid size-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:text-foreground"
-                >
-                  <InfoIcon className="size-4" />
-                </PopoverTrigger>
-                <PopoverContent side="bottom" align="end" className="w-64">
-                  <p className="text-[13px] leading-relaxed text-foreground">
-                    {mySourcing.length > 0
-                      ? '"Show all" lists every category on amama — turn it off to see only the ones matching what you told us you\'re buying.'
-                      : "Every category is shown by default. Tell us what you're buying and we'll bring those to the front."}
-                  </p>
-                  <Link
-                    href="/buyer/onboarding/sourcing?from=marketplace"
-                    className="mt-3 flex h-8 w-full items-center justify-center rounded-full bg-amama-deep text-[12px] font-semibold text-white transition-colors hover:bg-amama-deep-hover"
+          {canScope && !flatMode ? (
+            <div className="flex items-center gap-1">
+              <div role="radiogroup" aria-label="Categories shown" className="flex rounded-full border border-border bg-card p-0.5">
+                {(["mine", "all"] as const).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={scope === value}
+                    onClick={() => setScope(value)}
+                    className={cn(
+                      "h-8 rounded-full px-3.5 text-[12.5px] font-medium transition-colors",
+                      scope === value ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                    )}
                   >
-                    {mySourcing.length > 0 ? "Edit buying interests" : "Set your buying interests"}
-                  </Link>
-                </PopoverContent>
-              </Popover>
+                    {value === "mine" ? "For you" : "All"}
+                  </button>
+                ))}
+              </div>
+              <InfoTip title="For you">
+                Categories matching what you told us you buy.{" "}
+                <Link href="/buyer/onboarding/sourcing?from=marketplace" className="font-medium text-amama-deep hover:underline">
+                  Edit buying interests
+                </Link>
+              </InfoTip>
             </div>
           ) : null}
+          <WishlistSwitch checked={wishlistOnly} onCheckedChange={setWishlistOnly} />
         </div>
       </div>
 
       {flatMode ? (
-        flatResults.length === 0 ? (
-          <EmptyState
-            message={
-              query.trim() ? `No sellers match "${query.trim()}".` : "Nothing saved to your wishlist yet."
-            }
-          />
-        ) : (
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-            {flatResults.map((listing) => (
-              <ListingCard
-                key={listing.id}
-                listing={listing}
-                href={`/buyer/dashboard/sourcing/listing/${listing.id}`}
-                personId={buyer.id}
-              />
-            ))}
+        <>
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            {query ? (
+              <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-muted ps-3 pe-1 text-[12.5px] font-medium text-foreground">
+                Results for &ldquo;{query}&rdquo;
+                <button type="button" onClick={clearQuery} aria-label="Clear search" className="grid size-6 place-items-center rounded-full hover:bg-card">
+                  <XIcon className="size-3.5" />
+                </button>
+              </span>
+            ) : null}
+            {wishlistOnly ? <span className="text-[12.5px] text-muted-foreground">Wishlist</span> : null}
+            <span className="ms-auto text-[12px] text-muted-foreground tabular-nums">
+              {flatResults.length} {flatResults.length === 1 ? "listing" : "listings"}
+            </span>
           </div>
-        )
-      ) : visibleCategoryTiles.length === 0 ? (
+          {flatResults.length === 0 ? (
+            <EmptyState message={query ? `Nothing matches "${query}".` : "Nothing saved to your wishlist yet."} />
+          ) : (
+            <motion.div layout className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+              <AnimatePresence mode="popLayout">
+                {flatResults.map((listing, index) => (
+                  <motion.div
+                    key={listing.id}
+                    layout
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0, transition: { delay: Math.min(index, 8) * 0.03 } }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                  >
+                    <ListingCard listing={listing} href={`/buyer/dashboard/sourcing/listing/${listing.id}`} personId={buyer.id} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          )}
+        </>
+      ) : categories.length === 0 ? (
         <EmptyState message="No sellers have listed anything yet." />
       ) : (
-        <div className="mt-6">
-          <div className="mt-3">
-            <CategoryRail
-              items={[
-                { id: ALL_CATEGORIES_ID, label: "All Categories", icon: LayoutGridIcon, photo: null },
-                ...visibleCategoryTiles.map(({ category }) => ({
-                  id: category.id,
-                  label: category.label,
-                  photo: category.photo,
-                  icon: category.icon,
-                })),
-              ]}
-              selectedId={activeCategoryId}
-              onSelect={setSelectedCategoryId}
-            />
+        <>
+          <div ref={railRef} className="mt-3">
+            <CategoryRail items={railItems} selectedId={activeId} onSelect={selectCategory} />
+          </div>
+
+          <div className="sticky z-20 h-0" style={{ top: STICK_AT }}>
+            <div
+              className={cn(
+                "absolute inset-x-0 top-0 transition-[opacity,transform] duration-200",
+                pinned ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0"
+              )}
+            >
+              <div aria-hidden className="pointer-events-none absolute -inset-x-4 -bottom-4 bg-gradient-to-b from-card via-card/90 to-transparent" style={{ top: -STICK_AT }} />
+              <div className="relative">
+                <CategoryChips items={railItems} selectedId={activeId} onSelect={selectCategory} />
+              </div>
+            </div>
+          </div>
+
+          <div ref={resultsRef} className="mt-4 flex scroll-mt-32 items-center justify-between gap-2">
+            <p className="text-[13px] text-muted-foreground">
+              <span className="font-semibold text-foreground tabular-nums">{products.length}</span> {products.length === 1 ? "product" : "products"}
+              {activeId !== ALL ? ` in ${railItems.find((item) => item.id === activeId)?.label}` : ""}
+            </p>
+            <Select items={SORT_ITEMS} value={sort} onValueChange={(next) => next && setSort(next as Sort)}>
+              <SelectTrigger size="sm" aria-label="Sort products" className="bg-card">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {(Object.keys(SORT_ITEMS) as Sort[]).map((key) => (
+                  <SelectItem key={key} value={key}>
+                    {SORT_ITEMS[key]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {products.length === 0 ? (
             <EmptyState message="No sellers have listed anything in this category yet." />
           ) : (
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              {products.map((product) => (
-                <CatalogTile
-                  key={`${product.categoryId}-${product.cropId}`}
-                  href={`/buyer/dashboard/sourcing/${product.categoryId}/${product.cropId}`}
-                  photo={product.photo}
-                  title={product.label}
-                  subtitle={`${product.variantCount} ${product.variantCount === 1 ? "variant" : "variants"}`}
-                  meta={`from ${formatInr(product.minPrice)}`}
-                />
-              ))}
-            </div>
+            <motion.div layout className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+              <AnimatePresence mode="popLayout">
+                {products.map((product, index) => (
+                  <motion.div
+                    key={`${product.categoryId}-${product.cropId}`}
+                    layout
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0, transition: { delay: Math.min(index, 8) * 0.035 } }}
+                    exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+                  >
+                    <CatalogTile
+                      href={`/buyer/dashboard/sourcing/${product.categoryId}/${product.cropId}`}
+                      photo={product.photo}
+                      title={product.label}
+                      subtitle={`${product.variantCount} ${product.variantCount === 1 ? "variant" : "variants"} · ${product.sellerCount} ${product.sellerCount === 1 ? "seller" : "sellers"}`}
+                      meta={`from ${formatInr(product.minPrice)}/t`}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
           )}
-        </div>
+        </>
       )}
     </div>
   )
@@ -269,13 +286,22 @@ function SourcingView() {
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="mt-8 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border py-16 text-center">
+    <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border py-16 text-center">
       <span className="grid size-12 place-items-center rounded-full bg-amama-subtle text-amama-deep">
         <StoreIcon className="size-5" strokeWidth={2.25} />
       </span>
-      <h2 className="text-[17px] font-bold">Nothing here yet</h2>
       <p className="max-w-xs text-[14px] leading-relaxed text-muted-foreground">{message}</p>
     </div>
+  )
+}
+
+/** `useSearchParams` reads `?q=`, so the page carries its own Suspense
+ *  boundary. */
+function SourcingView() {
+  return (
+    <React.Suspense fallback={<div className="h-64 animate-pulse rounded-3xl bg-muted" />}>
+      <SourcingWorkspace />
+    </React.Suspense>
   )
 }
 

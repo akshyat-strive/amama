@@ -344,7 +344,7 @@ const SEED_LISTINGS: Omit<Listing, "categoryId">[] = [
     region: "Wayanad, Kerala",
     description:
       "Garbled Malabar black pepper, 550 g/l bulk density. Sun-dried, hand-cleaned, fumigation certificate available on request.",
-    photo: "photo-1508616022737-e97a67b9b26e",
+    photo: "photo-1525289722380-f5bf1653d504",
     pinX: 50,
     pinY: 50,
     createdAt: "2026-08-30T09:00:00.000Z",

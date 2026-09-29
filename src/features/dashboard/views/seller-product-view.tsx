@@ -10,12 +10,21 @@ import {
   MessageCircleIcon,
   PackageSearchIcon,
   PenLineIcon,
+  Trash2Icon,
   UsersIcon,
   XIcon,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { productLabel } from "@/features/marketplace/catalog"
 import { sellerIdentity } from "@/features/marketplace/identity"
 import { ConversationThread } from "@/features/marketplace/conversation-thread"
@@ -95,6 +104,7 @@ function SellerProductView({ listingId }: { listingId: string }) {
   // started from the composer.
   const canPropose = !!selected && (!selectedDeal || selectedDeal.status === "declined")
   const [proposing, setProposing] = React.useState(false)
+  const [confirmingRemove, setConfirmingRemove] = React.useState(false)
 
   if (!listing) {
     return (
@@ -169,59 +179,81 @@ function SellerProductView({ listingId }: { listingId: string }) {
 
   return (
     <div className={cn("flex flex-col gap-4 pb-20 lg:flex-row lg:overflow-hidden lg:pb-0", FULL_HEIGHT)}>
-      {/* Same grey "chrome" frame as the buyer's page: header and footer sit
-          directly on the frame as plain rows, and the white card in between
-          is the only thing that actually looks boxed. */}
-      <div className="flex flex-col rounded-3xl bg-muted lg:w-[380px] lg:shrink-0 lg:overflow-hidden">
-        <div className="flex shrink-0 items-center justify-between gap-2 p-3">
+      <aside className="flex flex-col overflow-hidden rounded-[24px] border border-border bg-card lg:w-[380px] lg:shrink-0">
+        <header className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-4 py-3">
           <Link
             href="/seller/dashboard/listings"
             className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground"
           >
             <ArrowLeftIcon className="size-3.5" />
-            Your catalog
+            Listings
           </Link>
           <span
             className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium",
+              "flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
               moderationPill[listing.moderationStatus].className
             )}
           >
             <span className="size-1.5 rounded-full bg-current" />
             {moderationPill[listing.moderationStatus].label}
           </span>
-        </div>
-        <div className="rounded-[18px] bg-card shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] lg:flex-1 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden">
-          <div className="p-4">
-            <ProductInfoPanel listing={listing} />
-          </div>
+        </header>
+
+        <div className="p-4 [scrollbar-width:none] lg:flex-1 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden">
+          <ProductInfoPanel listing={listing} showSeller={false} />
         </div>
 
         {selected ? (
-          <DealStatusFooter
-            deal={selectedDeal}
-            conversation={selected}
-            listing={listing}
-            role="seller"
-            myName={seller.name}
-            counterpartName={selected.buyerName}
-          />
+          <div className="shrink-0 border-t border-border p-3">
+            <DealStatusFooter
+              deal={selectedDeal}
+              conversation={selected}
+              listing={listing}
+              role="seller"
+              myName={seller.name}
+              counterpartName={selected.buyerName}
+              className="pt-0"
+            />
+          </div>
         ) : !listing.deletedAt ? (
-          <div className="flex shrink-0 items-center justify-between gap-3 pt-3">
-            <button
-              type="button"
-              onClick={handleRemove}
-              className="text-[13px] font-medium text-destructive hover:underline"
+          <div className="flex shrink-0 items-center gap-2 border-t border-border p-3">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmingRemove(true)}
+              className="h-10 rounded-full px-4 text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
+              <Trash2Icon className="size-4" />
               Remove
-            </button>
-            <Link href={`/seller/dashboard/listings/${listing.id}/edit`} className={cn(buttonVariants({ size: "sm" }))}>
-              <PenLineIcon className="size-3.5" />
+            </Button>
+            <Link
+              href={`/seller/dashboard/listings/${listing.id}/edit`}
+              className={cn(buttonVariants(), "h-10 flex-1 rounded-full")}
+            >
+              <PenLineIcon className="size-4" />
               Edit listing
             </Link>
           </div>
         ) : null}
-      </div>
+      </aside>
+
+      <Dialog open={confirmingRemove} onOpenChange={setConfirmingRemove}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Remove this listing?</DialogTitle>
+            <DialogDescription>
+              Buyers won&apos;t find {cropLabel} in the marketplace any more. Existing conversations stay where they are.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmingRemove(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleRemove}>
+              Remove
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Desktop: inline, side by side. */}
       <div

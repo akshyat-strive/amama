@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { HeartIcon, PlusIcon, SproutIcon } from "lucide-react"
+import { PlusIcon, SproutIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
@@ -10,6 +10,7 @@ import { ListingCard } from "@/features/marketplace/listing-card"
 import { sellerIdentity } from "@/features/marketplace/identity"
 import { useListings } from "@/features/marketplace/listing-store"
 import { useWishlist } from "@/features/marketplace/wishlist-store"
+import { WishlistSwitch } from "@/features/marketplace/wishlist-switch"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 
 function ListingsView() {
@@ -30,26 +31,10 @@ function ListingsView() {
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-[28px] font-bold tracking-tight">My listings</h1>
         <div className="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setWishlistOnly((value) => !value)}
-            aria-pressed={wishlistOnly}
-            className={cn(
-              "flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium transition-colors",
-              wishlistOnly
-                ? "border-transparent bg-amama-deep text-white"
-                : "border-border text-foreground hover:bg-muted"
-            )}
-          >
-            <HeartIcon className={cn("size-3.5", wishlistOnly && "fill-white")} />
-            Wishlist
-          </button>
-          <Link
-            href="/seller/dashboard/listings/new"
-            className={cn(buttonVariants({ size: "sm" }))}
-          >
+          <WishlistSwitch checked={wishlistOnly} onCheckedChange={setWishlistOnly} />
+          <Link href="/seller/dashboard/listings/new" className={cn(buttonVariants({ size: "sm" }), "h-9 px-4")}>
             <PlusIcon />
-            Add listing
+            Add
           </Link>
         </div>
       </div>
@@ -71,12 +56,12 @@ function ListingsView() {
               className={cn(buttonVariants({ size: "default" }), "mt-2")}
             >
               <PlusIcon />
-              Add a listing
+              Add
             </Link>
           )}
         </div>
       ) : (
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
           {visible.map((listing) => (
             <ListingCard
               key={listing.id}

@@ -1,19 +1,19 @@
 "use client"
 
 import * as React from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { MessageCircleIcon, UsersIcon } from "lucide-react"
 
 import { productLabel } from "@/features/marketplace/catalog"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
-import { cropImageUrl, crops } from "@/features/onboarding/steps"
 import { BUYER_LEADS } from "@/features/marketplace/buyer-leads"
 import { useBuyerProfiles } from "@/features/marketplace/buyer-directory"
 import { useConversations } from "@/features/marketplace/conversation-store"
 import { sellerIdentity } from "@/features/marketplace/identity"
 import { useListings } from "@/features/marketplace/listing-store"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
+import { CropImage } from "@/features/marketplace/crop-image"
+import { crops } from "@/features/onboarding/steps"
 
 /** A cold lead — from the fixed roster (`buyer-leads.ts`) or a real
  *  buyer's own published profile (`buyer-directory.ts`), the two are
@@ -135,12 +135,11 @@ function BuyerMatchCard({ match }: { match: Match }) {
     <div className="group relative rounded-2xl border border-border bg-card p-2 transition-colors sm:rounded-[28px] sm:p-3">
       <Link href={match.href} className="contents">
         <div className="relative aspect-4/3 w-full overflow-hidden rounded-xl sm:rounded-2xl">
-          <Image
-            src={cropImageUrl(photo, 480)}
+          <CropImage
+            photo={photo}
             alt={cropLabel}
-            fill
             sizes="(min-width: 1280px) 380px, (min-width: 640px) 45vw, 45vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="transition-[opacity,transform] duration-300 group-hover:scale-105"
           />
         </div>
 

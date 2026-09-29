@@ -1,136 +1,141 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangleIcon, BadgeCheckIcon, ClockIcon, RotateCcw } from "lucide-react"
+import { ClockIcon, Trash2Icon } from "lucide-react"
 
-import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { AdminEmptyState } from "@/features/admin/admin-ui"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
-import { productLabel } from "@/features/marketplace/catalog"
-import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
-import { formatInr } from "@/features/marketplace/currency"
-import { notifyFromKam } from "@/features/marketplace/kam-thread-store"
 import {
-  moderateListing,
-  useListings,
-  type Listing,
-  type ModerationStatus,
-} from "@/features/marketplace/listing-store"
+  ApproveButton,
+  RequestAgainButton,
+  RequestNote,
+  ReviewGroup,
+  RowNote,
+  StatusPill,
+  type Tone,
+} from "@/features/admin/review-ui"
+import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
+import { productLabel } from "@/features/marketplace/catalog"
+import { CropImage } from "@/features/marketplace/crop-image"
+import { formatInr } from "@/features/marketplace/currency"
+import { gradeShortLabel } from "@/features/marketplace/grade-badge"
+import { notifyFromKam } from "@/features/marketplace/kam-thread-store"
+import { moderateListing, useListings, type Listing, type ModerationStatus } from "@/features/marketplace/listing-store"
+import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
 
-const moderationStyles: Record<ModerationStatus, { label: string; className: string }> = {
-  unverified: { label: "Unverified", className: "bg-muted text-muted-foreground" },
-  verified: { label: "Verified", className: "bg-amama-subtle text-amama-deep" },
-  flagged: { label: "Flagged", className: "bg-destructive/10 text-destructive" },
+const moderationStyles: Record<ModerationStatus, { label: string; tone: Tone }> = {
+  unverified: { label: "Needs review", tone: "warning" },
+  verified: { label: "Verified", tone: "success" },
+  flagged: { label: "Requested again", tone: "danger" },
 }
 
-function ListingModerationCard({ listing, reviewerName }: { listing: Listing; reviewerName: string }) {
-  const [mode, setMode] = React.useState<"idle" | "flagging">("idle")
-  const [note, setNote] = React.useState("")
+type Filter = ModerationStatus | "all"
+
+const FILTERS: { value: Filter; label: string }[] = [
+  { value: "unverified", label: "Needs review" },
+  { value: "flagged", label: "Requested again" },
+  { value: "verified", label: "Verified" },
+  { value: "all", label: "All" },
+]
+
+function formatDate(iso: string) {
+  return new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(iso))
+}
+
+function ListingRow({ listing, reviewerName }: { listing: Listing; reviewerName: string }) {
+  const [requesting, setRequesting] = React.useState(false)
   const status = moderationStyles[listing.moderationStatus]
   const country = countries.find((entry) => entry.code === listing.country)
+  const crop = productLabel(listing.cropId)
 
-  const flag = () => {
-    const trimmed = note.trim()
-    moderateListing(listing.id, "flagged", reviewerName, trimmed || null)
-    if (trimmed) {
+  const requestAgain = (note: string) => {
+    moderateListing(listing.id, "flagged", reviewerName, note || null)
+    if (note) {
       notifyFromKam(
         listing.sellerId,
         "seller",
-        `I've had to pull your ${productLabel(listing.cropId)} listing (${listing.variety}) from the marketplace: ${trimmed}`
+        `I've had to pull your ${crop} listing (${listing.variety}) from the marketplace: ${note}`
       )
     }
-    setMode("idle")
-    setNote("")
+    setRequesting(false)
   }
 
   return (
-    <article className="overflow-hidden rounded-[20px] border border-border bg-muted">
-      <header className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
-        <div className="min-w-0">
-          <h2 className="truncate text-[16px] font-bold tracking-tight">
-            {productLabel(listing.cropId)} — {listing.variety}
-          </h2>
-          <p className="mt-0.5 truncate text-[13px] text-muted-foreground">
-            {listing.sellerName} · {listing.grade} · {listing.quantityMt} MT ·{" "}
-            {formatInr(listing.pricePerTonneUsd)}/t
-          </p>
-          <p className="mt-1 text-[12px] text-muted-foreground">
-            {country ? `${countryCodeToFlag(country.code)} ${country.name}` : listing.country}
-            {listing.region ? ` · ${listing.region}` : ""}
-          </p>
-        </div>
-        <Badge className={cn("shrink-0", status.className)}>{status.label}</Badge>
-      </header>
+    <>
+      <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2.5 px-4 py-3">
+        <span className="relative size-12 shrink-0 overflow-hidden rounded-xl bg-muted">
+          <CropImage photo={listing.photo} width={120} alt={`${crop} — ${listing.variety}`} sizes="48px" />
+        </span>
 
-      <div className="flex flex-col gap-3 border-t border-border bg-card p-5">
-        {listing.moderationStatus === "flagged" ? (
-          <div className="rounded-[14px] bg-destructive/10 px-3 py-2.5 text-[13px] text-destructive">
-            {listing.moderationNote ? <p>{listing.moderationNote}</p> : <p>No reason recorded.</p>}
-            {listing.moderatedAt ? (
-              <p className="mt-1 text-destructive/70">
-                by {listing.moderatedBy} ·{" "}
-                {new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(
-                  new Date(listing.moderatedAt)
-                )}
-              </p>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <p className="truncate text-[14px] font-semibold text-foreground">
+              {crop}
+              <span className="font-normal text-muted-foreground"> · {listing.variety}</span>
+            </p>
+            {listing.deletedAt ? (
+              <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-destructive">
+                <Trash2Icon aria-hidden className="size-3" />
+                Removed
+              </span>
             ) : null}
           </div>
-        ) : null}
+          <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
+            <span className="font-medium text-foreground/80">{listing.sellerName}</span>
+            {" · "}
+            {country ? `${countryCodeToFlag(country.code)} ${listing.region || country.name}` : listing.region}
+          </p>
+        </div>
 
-        {mode === "flagging" ? (
-          <div className="flex flex-col gap-2">
-            <label htmlFor={`flag-${listing.id}`} className="text-[13px] font-medium">
-              Reason (optional — also sent to the seller as a message)
-            </label>
-            <Textarea
-              id={`flag-${listing.id}`}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              placeholder="Photos don't match the description — please resubmit."
-              rows={3}
-            />
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={flag}>
-                <AlertTriangleIcon />
-                Flag listing
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setMode("idle")}>
-                Cancel
-              </Button>
-            </div>
+        <dl className="hidden shrink-0 grid-cols-3 gap-5 text-[12px] md:grid">
+          <div>
+            <dt className="text-[11px] text-muted-foreground">Grade</dt>
+            <dd className="font-semibold text-foreground">{gradeShortLabel(listing.grade)}</dd>
           </div>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              disabled={listing.moderationStatus === "verified"}
-              onClick={() => moderateListing(listing.id, "verified", reviewerName)}
-            >
-              <BadgeCheckIcon />
-              Mark verified
-            </Button>
-            {listing.moderationStatus === "flagged" ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => moderateListing(listing.id, "unverified", reviewerName)}
-              >
-                <RotateCcw />
-                Clear flag
-              </Button>
-            ) : (
-              <Button size="sm" variant="outline" onClick={() => setMode("flagging")}>
-                <AlertTriangleIcon />
-                Flag for review
-              </Button>
-            )}
+          <div>
+            <dt className="text-[11px] text-muted-foreground">Volume</dt>
+            <dd className="font-semibold text-foreground tabular-nums">{listing.quantityMt} MT</dd>
           </div>
-        )}
+          <div>
+            <dt className="text-[11px] text-muted-foreground">Price</dt>
+            <dd className="font-semibold text-foreground tabular-nums">{formatInr(listing.pricePerTonneUsd)}/t</dd>
+          </div>
+        </dl>
+
+        <div className="flex shrink-0 items-center gap-2 max-sm:w-full max-sm:justify-end">
+          <StatusPill tone={status.tone}>{status.label}</StatusPill>
+          <ApproveButton
+            label="Mark verified"
+            done={listing.moderationStatus === "verified"}
+            onClick={() => moderateListing(listing.id, "verified", reviewerName)}
+          />
+          <RequestAgainButton active={requesting} onClick={() => setRequesting((value) => !value)} />
+        </div>
       </div>
-    </article>
+
+      {requesting ? (
+        <RequestNote
+          id={`flag-${listing.id}`}
+          prompt="What should the seller fix? (optional — sent to them as a message)"
+          placeholder="Photos don't match the description — please resubmit."
+          submitLabel="Pull & request again"
+          required={false}
+          onCancel={() => setRequesting(false)}
+          onSubmit={requestAgain}
+        />
+      ) : listing.moderationStatus === "flagged" ? (
+        <RowNote>
+          {listing.moderationNote ?? "No reason recorded."}
+          {listing.moderatedAt ? (
+            <span className="text-destructive/70">
+              {" "}
+              — {listing.moderatedBy} · {formatDate(listing.moderatedAt)}
+            </span>
+          ) : null}
+        </RowNote>
+      ) : null}
+    </>
   )
 }
 
@@ -138,19 +143,52 @@ function ListingsModerationView() {
   const listings = useListings()
   const admin = useCurrentAdmin()
   const reviewerName = admin?.user.name ?? "Admin"
+  const [filter, setFilter] = React.useState<Filter>("unverified")
+
+  const sorted = React.useMemo(
+    () => [...listings].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [listings]
+  )
+  const countFor = (value: Filter) =>
+    value === "all" ? sorted.length : sorted.filter((listing) => listing.moderationStatus === value).length
+  const visible = filter === "all" ? sorted : sorted.filter((listing) => listing.moderationStatus === filter)
 
   return (
-    <div>
+    <div className={PAGE_TABS_SPACE}>
       <h1 className="text-[28px] font-bold tracking-tight">Listings</h1>
 
-      {listings.length === 0 ? (
-        <AdminEmptyState icon={ClockIcon} title="No listings yet" />
+      <PageTabs
+        label="Listing review"
+        className="mt-5"
+        value={filter}
+        onChange={setFilter}
+        tabs={FILTERS.map(({ value, label }) => ({ value, label, count: countFor(value) }))}
+      />
+
+      {visible.length === 0 ? (
+        <AdminEmptyState
+          icon={ClockIcon}
+          title={filter === "unverified" ? "Nothing waiting on review" : "No listings here"}
+          description={
+            filter === "unverified" ? "New listings land here until someone verifies them or requests changes." : undefined
+          }
+        />
       ) : (
-        <div className="mt-6 flex flex-col gap-4">
-          {listings.map((listing) => (
-            <ListingModerationCard key={listing.id} listing={listing} reviewerName={reviewerName} />
-          ))}
-        </div>
+        <TooltipProvider delay={300}>
+          <ReviewGroup
+            className="mt-4"
+            header={
+              <p className="text-[12.5px] text-muted-foreground">
+                <span className="font-semibold text-foreground">{visible.length}</span>{" "}
+                {visible.length === 1 ? "listing" : "listings"} · newest first
+              </p>
+            }
+          >
+            {visible.map((listing) => (
+              <ListingRow key={listing.id} listing={listing} reviewerName={reviewerName} />
+            ))}
+          </ReviewGroup>
+        </TooltipProvider>
       )}
     </div>
   )

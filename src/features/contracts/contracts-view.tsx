@@ -15,6 +15,7 @@ import {
   MessageSquareIcon,
   PenLineIcon,
   ReceiptIcon,
+  RotateCcwIcon,
   FileTextIcon,
 } from "lucide-react"
 
@@ -39,6 +40,14 @@ import {
 import { Sheet, SheetContent, SheetCloseButton } from "@/components/ui/sheet"
 import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
+import {
+  ApproveButton,
+  RequestAgainButton,
+  RequestNote,
+  ReviewGroup,
+  StatusPill,
+} from "@/features/admin/review-ui"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { useUsers } from "@/features/admin/user-store"
 import { ContractAuthoring } from "@/features/contracts/contract-authoring"
 import {
@@ -54,6 +63,7 @@ import {
   contractsForParty,
   createContract,
   issuePurchaseOrder,
+  raiseAmendment,
   requestProgress,
   requestsForParty,
   signContract,
@@ -191,17 +201,24 @@ function ContractsWorkspace({
               : "Once you and your counterparty agree a deal, request a term sheet and it'll show up here."}
           </p>
         ) : (
-          <ul className="mt-4 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
-            {requests.map((deal) => (
-              <li key={deal.id}>
-                {viewer === "kam" ? (
-                  <KamRequestRow deal={deal} contracts={contracts} me={identity} />
-                ) : (
-                  <TraderRequestRow deal={deal} viewer={viewer as "buyer" | "seller"} identity={identity} />
-                )}
-              </li>
-            ))}
-          </ul>
+          <ReviewGroup
+            className="mt-4"
+            header={
+              <ListHeader
+                count={requests.length}
+                noun={viewer === "kam" ? "deal waiting on a term sheet" : "agreed deal"}
+                nounPlural={viewer === "kam" ? "deals waiting on a term sheet" : "agreed deals"}
+              />
+            }
+          >
+            {requests.map((deal) =>
+              viewer === "kam" ? (
+                <KamRequestRow key={deal.id} deal={deal} contracts={contracts} me={identity} />
+              ) : (
+                <TraderRequestRow key={deal.id} deal={deal} viewer={viewer as "buyer" | "seller"} identity={identity} />
+              )
+            )}
+          </ReviewGroup>
         )
       ) : prepared.length === 0 ? (
         <p className="mt-6 rounded-2xl border border-dashed border-border px-5 py-10 text-center text-[13px] text-muted-foreground">
@@ -210,13 +227,11 @@ function ContractsWorkspace({
             : "Once your account manager opens a contract, it shows up here."}
         </p>
       ) : (
-        <ul className="mt-4 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+        <ReviewGroup className="mt-4" header={<ListHeader count={prepared.length} noun="contract" nounPlural="contracts" />}>
           {prepared.map((contract) => (
-            <li key={contract.id}>
-              <ContractRow contract={contract} viewer={viewer} onSelect={() => openContract(contract.id)} />
-            </li>
+            <ContractRow key={contract.id} contract={contract} viewer={viewer} onSelect={() => openContract(contract.id)} />
           ))}
-        </ul>
+        </ReviewGroup>
       )}
 
       <Sheet open={selected !== null} onOpenChange={(open) => !open && closeSheet()}>
@@ -226,6 +241,14 @@ function ContractsWorkspace({
         </SheetContent>
       </Sheet>
     </div>
+  )
+}
+
+function ListHeader({ count, noun, nounPlural }: { count: number; noun: string; nounPlural: string }) {
+  return (
+    <p className="text-[12.5px] text-muted-foreground">
+      <span className="font-semibold text-foreground tabular-nums">{count}</span> {count === 1 ? noun : nounPlural}
+    </p>
   )
 }
 
@@ -251,7 +274,7 @@ function ContractRow({
     <button
       type="button"
       onClick={onSelect}
-      className="group grid w-full grid-cols-1 items-center gap-3 bg-white px-4 py-4 text-start transition-colors hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:grid-cols-[1.3fr_0.85fr_0.85fr_1fr]"
+      className="group grid w-full grid-cols-1 items-center gap-3 px-4 py-3.5 text-start transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none sm:grid-cols-[1.3fr_0.85fr_0.85fr_1fr]"
     >
       {/* Col 1: Identity & Stage */}
       <div className="min-w-0 space-y-1">
@@ -322,7 +345,7 @@ function TraderRequestRow({
   const counterparty = viewer === "buyer" ? deal.sellerName : deal.buyerName
 
   return (
-    <div className="grid w-full grid-cols-1 items-center gap-3 bg-white px-4 py-4 sm:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_0.7fr]">
+    <div className="grid w-full grid-cols-1 items-center gap-3 px-4 py-3.5 sm:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_0.7fr]">
       <div className="min-w-0 space-y-1">
         <p className="truncate text-[13px] font-semibold text-foreground">{deal.listingTitle}</p>
         <p className="text-[12px] text-muted-foreground">{deal.agreedQuantityMt} MT</p>
@@ -349,13 +372,16 @@ function TraderRequestRow({
 
       <div className="flex w-full items-center justify-end">
         {deal.contractRequestedAt ? (
-          <span className="shrink-0 rounded-full bg-status-warning/10 px-3 py-1 text-[11px] font-semibold text-status-warning">
-            Requested
-          </span>
+          <StatusPill tone="warning">Requested</StatusPill>
         ) : (
-          <Button size="sm" onClick={() => requestContract(deal.id, viewer, identity.name)}>
-            Request
-          </Button>
+          <button
+            type="button"
+            onClick={() => requestContract(deal.id, viewer, identity.name)}
+            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-amama-deep px-3.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-amama-deep/90"
+          >
+            <FileTextIcon aria-hidden className="size-3.5" />
+            Request term sheet
+          </button>
         )}
       </div>
     </div>
@@ -382,7 +408,7 @@ function KamRequestRow({
   const workload = (userId: string) => contracts.filter((contract) => contract.kamId === userId).length
 
   return (
-    <div className="grid w-full grid-cols-1 items-center gap-3 bg-white px-4 py-4 sm:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_1.1fr]">
+    <div className="grid w-full grid-cols-1 items-center gap-3 px-4 py-3.5 sm:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_1.1fr]">
       <div className="min-w-0 space-y-1">
         <p className="truncate text-[13px] font-semibold text-foreground">{deal.listingTitle}</p>
         <p className="text-[12px] text-muted-foreground">{deal.agreedQuantityMt} MT</p>
@@ -412,9 +438,14 @@ function KamRequestRow({
 
       <div className="flex w-full flex-wrap items-center justify-end gap-2">
         {admin.can("deals.work") ? (
-          <Button size="sm" variant="outline" onClick={() => createContract(deal, me)}>
-            Start the term sheet
-          </Button>
+          <button
+            type="button"
+            onClick={() => createContract(deal, me)}
+            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-amama-deep px-3.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-amama-deep/90"
+          >
+            <PenLineIcon aria-hidden className="size-3.5" />
+            Start term sheet
+          </button>
         ) : null}
         {admin.can("deals.assign") ? (
           <Select
@@ -423,7 +454,7 @@ function KamRequestRow({
               if (user) createContract(deal, user)
             }}
           >
-            <SelectTrigger size="sm">
+            <SelectTrigger size="sm" className="rounded-full">
               <SelectValue placeholder="Assign to…" />
             </SelectTrigger>
             <SelectContent>
@@ -641,23 +672,24 @@ function ContractDetail({
       ) : null}
 
       {myRequests.length > 0 ? (
-        <section className="rounded-2xl border border-border bg-card p-5">
-          <h3 className="flex items-center gap-2 text-[15px] font-semibold">
-            <ClipboardListIcon className="size-4 text-muted-foreground" />
-            {isTrader ? "What you've been asked for" : "Details requested from both sides"}
-          </h3>
-          <ul className="mt-3 flex flex-col gap-2">
-            {myRequests.map((request) => (
-              <RequestRow
-                key={request.id}
-                contract={contract}
-                request={request}
-                viewer={viewer}
-                viewerName={identity.name}
-              />
-            ))}
-          </ul>
-        </section>
+        <ReviewGroup
+          header={
+            <h3 className="flex items-center gap-2 text-[14px] font-semibold text-foreground">
+              <ClipboardListIcon className="size-4 text-muted-foreground" />
+              {isTrader ? "What you've been asked for" : "Details requested from both sides"}
+            </h3>
+          }
+        >
+          {myRequests.map((request) => (
+            <RequestRow
+              key={request.id}
+              contract={contract}
+              request={request}
+              viewer={viewer}
+              viewerName={identity.name}
+            />
+          ))}
+        </ReviewGroup>
       ) : null}
 
       {/* Draft, its approvals or signatures, and any changes raised
@@ -1036,49 +1068,39 @@ function RequestRow({
 
   return (
     <>
-      <li className="group flex items-center justify-between gap-4 border-b border-slate-100 py-2.5 text-start last:border-b-0 hover:bg-slate-50/60">
-        {/* Left: Request Title & Metadata */}
-        <div className="min-w-0 flex-1 space-y-0.5">
-          <p className="truncate text-[13px] font-semibold text-slate-900">
-            {request.title}
-          </p>
-          <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-slate-500">
-            {viewer === "kam" && (
+      <div className="flex items-center justify-between gap-4 px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13px] font-semibold text-foreground">{request.title}</p>
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[12px] text-muted-foreground">
+            {viewer === "kam" ? (
               <>
-                <span className="font-medium text-slate-700">
+                <span className="font-medium text-foreground/80">
                   {request.party === "buyer" ? contract.buyerName : contract.sellerName}
                 </span>
-                <span>•</span>
+                <span aria-hidden>·</span>
               </>
-            )}
-            <span className="tabular-nums font-medium text-slate-700">
-              {progress.done}/{progress.total}
+            ) : null}
+            <span className="tabular-nums">
+              {progress.done}/{progress.total} fields
             </span>
-            <span>fields</span>
-            <span>•</span>
-            <span className={cn(
-              "font-medium capitalize",
-              isSubmitted ? "text-emerald-600" : "text-amber-600"
-            )}>
-              {request.status.replace("_", " ")}
-            </span>
-          </div>
+          </p>
         </div>
-
-        {/* Right: Minimal inline trigger */}
+        <StatusPill tone={isSubmitted ? "success" : "warning"} className="capitalize">
+          {request.status.replace("_", " ")}
+        </StatusPill>
         <button
           type="button"
           onClick={() => setOpen(true)}
           className={cn(
-            "inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-sm font-semibold transition-colors",
-            isSubmitted
-              ? "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-              : "bg-slate-900 text-white hover:bg-slate-800"
+            "inline-flex h-8 shrink-0 items-center rounded-full px-3.5 text-[12.5px] font-semibold transition-colors",
+            isRecipient && !isSubmitted
+              ? "bg-foreground text-background hover:bg-foreground/85"
+              : "border border-border bg-card text-foreground hover:bg-muted"
           )}
         >
-          <span>{isRecipient && !isSubmitted ? "Fill in" : "View"}</span>
+          {isRecipient && !isSubmitted ? "Fill in" : "View"}
         </button>
-      </li>
+      </div>
 
       <TermSheetDialog
         open={open}
@@ -1101,68 +1123,86 @@ function DraftSection({
   viewer: ChatParty
   viewerName: string
 }) {
+  const [requesting, setRequesting] = React.useState(false)
   const isTrader = viewer === "buyer" || viewer === "seller"
   const signing = contract.stage === "signatures" || contract.stage === "final"
   const state = signing ? contract.signatures : contract.approvals
   const mine = isTrader ? state[viewer] : null
+  const openAmendments = contract.amendments.filter((amendment) => !amendment.resolved).length
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="flex items-center gap-2 text-[15px] font-semibold">
-          <PenLineIcon className="size-4 text-muted-foreground" />
-          Draft v{contract.draftVersion}
-        </h3>
-        {isTrader && !mine?.agreed ? (
-          <Button
-            size="sm"
-            onClick={() =>
-              signing
-                ? signContract(contract.id, viewer, viewerName)
-                : approveDraft(contract.id, viewer, viewerName)
-            }
-          >
-            <CheckIcon className="size-4" />
-            {signing ? "Sign contract" : "I agree to this draft"}
-          </Button>
+    <TooltipProvider delay={300}>
+      <ReviewGroup
+        header={
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h3 className="flex items-center gap-2 text-[14px] font-semibold text-foreground">
+              <PenLineIcon className="size-4 text-muted-foreground" />
+              Draft v{contract.draftVersion}
+            </h3>
+            <StatusPill tone={openAmendments > 0 ? "warning" : signing ? "info" : "neutral"}>
+              {openAmendments > 0 ? `${openAmendments} change${openAmendments === 1 ? "" : "s"} requested` : signing ? "Signing" : "For approval"}
+            </StatusPill>
+            {isTrader ? (
+              <div className="ms-auto flex items-center gap-2">
+                <ApproveButton
+                  label={signing ? "Sign contract" : "Agree to this draft"}
+                  done={!!mine?.agreed}
+                  onClick={() =>
+                    signing ? signContract(contract.id, viewer, viewerName) : approveDraft(contract.id, viewer, viewerName)
+                  }
+                />
+                <RequestAgainButton
+                  active={requesting}
+                  disabled={contract.stage === "final"}
+                  onClick={() => setRequesting((value) => !value)}
+                />
+              </div>
+            ) : null}
+          </div>
+        }
+      >
+        {requesting && isTrader ? (
+          <RequestNote
+            id={`amend-${contract.id}`}
+            prompt="What should change in this draft?"
+            placeholder="Clause 4 should say 30 days after B/L, not 15."
+            submitLabel="Request changes"
+            onCancel={() => setRequesting(false)}
+            onSubmit={(note) => {
+              raiseAmendment(contract.id, viewer, viewerName, note)
+              setRequesting(false)
+            }}
+          />
         ) : null}
-      </div>
 
-      <div className="mt-3 flex flex-col gap-1.5">
-        <ApprovalLine name={contract.buyerName} label="Buyer" approval={state.buyer} />
-        <ApprovalLine name={contract.sellerName} label="Seller" approval={state.seller} />
-      </div>
+        <ApprovalLine name={contract.buyerName} label="Buyer" approval={state.buyer} signing={signing} />
+        <ApprovalLine name={contract.sellerName} label="Seller" approval={state.seller} signing={signing} />
 
-      <pre className="mt-3 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-[14px] bg-muted p-4 font-sans text-[13px] leading-relaxed text-foreground">
-        {contract.draftBody}
-      </pre>
-
-      {/* Changes requested against this draft — kept with the draft they're
-          about rather than as a card of their own a reader has to first
-          connect back to it. */}
-      {contract.amendments.length > 0 ? (
-        <div className="mt-4 border-t border-border pt-4">
-          <p className="text-[12px] font-semibold tracking-wide text-muted-foreground uppercase">
-            Changes requested
-          </p>
-          <ul className="mt-2 flex flex-col gap-2">
-            {contract.amendments.map((amendment) => (
-              <li
-                key={amendment.id}
-                className={cn(
-                  "rounded-[14px] px-3 py-2.5 text-[13px]",
-                  amendment.resolved ? "bg-muted text-muted-foreground" : "bg-status-warning/10 text-foreground"
-                )}
-              >
-                <span className="font-semibold">{amendment.raisedByName}</span> · {formatDate(amendment.at)}
-                {amendment.resolved ? " · resolved" : ""}
-                <p className="mt-0.5">{amendment.text}</p>
-              </li>
-            ))}
-          </ul>
+        <div className="px-4 py-3">
+          <pre className="max-h-64 overflow-y-auto rounded-[14px] bg-muted/60 p-4 font-sans text-[13px] leading-relaxed whitespace-pre-wrap text-foreground">
+            {contract.draftBody}
+          </pre>
         </div>
-      ) : null}
-    </section>
+
+        {/* Changes requested against this draft — kept with the draft they're
+            about rather than as a card of their own. */}
+        {contract.amendments.map((amendment) => (
+          <div
+            key={amendment.id}
+            className={cn("flex items-start gap-2.5 px-4 py-2.5 text-[13px]", amendment.resolved ? "text-muted-foreground" : "bg-status-warning/[0.06]")}
+          >
+            <RotateCcwIcon aria-hidden className={cn("mt-0.5 size-3.5 shrink-0", amendment.resolved ? "" : "text-status-warning")} />
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] text-muted-foreground">
+                <span className="font-semibold text-foreground">{amendment.raisedByName}</span> · {formatDate(amendment.at)}
+                {amendment.resolved ? " · resolved" : ""}
+              </p>
+              <p className={cn("mt-0.5", !amendment.resolved && "text-foreground")}>{amendment.text}</p>
+            </div>
+          </div>
+        ))}
+      </ReviewGroup>
+    </TooltipProvider>
   )
 }
 
@@ -1170,26 +1210,28 @@ function ApprovalLine({
   name,
   label,
   approval,
+  signing,
 }: {
   name: string
   label: string
   approval: { agreed: boolean; at: string | null }
+  signing: boolean
 }) {
   return (
-    <div className="flex items-center gap-2 text-[13px]">
+    <div className="flex items-center gap-3 px-4 py-2.5 text-[13px]">
       <span
         className={cn(
-          "grid size-5 shrink-0 place-items-center rounded-full",
-          approval.agreed ? "bg-amama-deep text-white" : "bg-border text-muted-foreground"
+          "grid size-6 shrink-0 place-items-center rounded-full",
+          approval.agreed ? "bg-amama-deep text-white" : "border border-dashed border-foreground/25 text-muted-foreground"
         )}
       >
-        {approval.agreed ? <CheckIcon className="size-3" /> : <span className="size-1.5 rounded-full bg-current" />}
+        {approval.agreed ? <CheckIcon className="size-3.5" strokeWidth={2.75} /> : <ClockIcon className="size-3" />}
       </span>
-      <span className="min-w-0 flex-1 truncate text-foreground">
-        {name} <span className="text-muted-foreground">· {label}</span>
+      <span className="min-w-0 flex-1 truncate font-medium text-foreground">
+        {name} <span className="font-normal text-muted-foreground">· {label}</span>
       </span>
-      <span className="shrink-0 text-[12px] text-muted-foreground">
-        {approval.agreed && approval.at ? formatDate(approval.at) : "Waiting"}
+      <span className={cn("shrink-0 text-[12px]", approval.agreed ? "text-amama-deep" : "text-muted-foreground")}>
+        {approval.agreed && approval.at ? `${signing ? "Signed" : "Agreed"} ${formatDate(approval.at)}` : "Waiting"}
       </span>
     </div>
   )

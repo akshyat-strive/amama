@@ -14,17 +14,16 @@ import {
   AdminStatCardSkeleton,
 } from "@/features/admin/admin-ui"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
-import { statusStyles, describeApplicant } from "@/features/admin/review-queue-view"
+import { statusStyles } from "@/features/admin/review-queue-view"
 import { useUsers, useUsersLoaded } from "@/features/admin/user-store"
 import { formatInr } from "@/features/marketplace/currency"
 import { useDeals, type Deal } from "@/features/marketplace/deal-store"
 import { useListings } from "@/features/marketplace/listing-store"
-import type { OnboardingRole } from "@/features/onboarding/types"
+import { kycTicketId } from "@/features/verification/ticket"
 import {
   useAllVerificationQueues,
   useAllVerificationQueuesLoaded,
   useVerificationQueue,
-  useVerificationQueueLoaded,
 } from "@/features/verification/admin-verification"
 
 /** How many rows a Home preview card shows before it just points at the
@@ -160,32 +159,32 @@ function TeamPreviewCard() {
   )
 }
 
-/** One role's own registered application, if there is one — just who it
- *  is and their status, no document list or approve/decline actions;
- *  those live on that role's own `/internal/review-queue/{role}` page. Split
- *  by role rather than one combined card, since a buyer application and
- *  a seller one are never really the same queue. */
-function RoleQueuePreviewCard({ role }: { role: OnboardingRole }) {
-  const submissions = useVerificationQueue(role)
-  const loaded = useVerificationQueueLoaded(role)
-  const roleLabel = role === "buyer" ? "Buyer" : "Seller"
-  const preview = submissions.slice(0, PREVIEW_ROWS)
-  const remaining = submissions.length - preview.length
+/** The newest KYC tickets that still need a decision, buyers and sellers
+ *  together — the decisions themselves happen on Tickets. */
+function TicketsPreviewCard() {
+  const buyers = useVerificationQueue("buyer")
+  const sellers = useVerificationQueue("seller")
+  const loaded = useAllVerificationQueuesLoaded()
+  const open = [...buyers, ...sellers]
+    .filter((submission) => submission.reviewStatus === "pending" || submission.reviewStatus === "changes-requested")
+    .sort((a, b) => (b.submittedAt ?? "").localeCompare(a.submittedAt ?? ""))
+  const preview = open.slice(0, PREVIEW_ROWS)
+  const remaining = open.length - preview.length
 
   return (
     <AdminPanel
-      title={`${roleLabel} queue`}
-      subtitle={`${roleLabel} applications, and where each stands.`}
-      action={<ViewAllLink href={`/internal/review-queue/${role}`} label="View queue" />}
+      title="KYC tickets"
+      subtitle="Open buyer and seller applications."
+      action={<ViewAllLink href="/internal/tickets" label="View tickets" />}
     >
       {!loaded ? (
         <AdminListSkeleton />
-      ) : submissions.length === 0 ? (
-        <p className="px-5 py-4 text-[13px] text-muted-foreground">No one registered yet.</p>
+      ) : open.length === 0 ? (
+        <p className="px-5 py-4 text-[13px] text-muted-foreground">No open tickets.</p>
       ) : (
         <ul className="divide-y divide-border">
           {preview.map((submission) => (
-            <li key={submission.userId} className="flex items-center gap-3 px-5 py-3.5">
+            <li key={`${submission.role}-${submission.userId}`} className="flex items-center gap-3 px-5 py-3.5">
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-[12px] font-bold text-foreground/70">
                 {(submission.fullName || "?").charAt(0)}
               </span>
@@ -193,7 +192,9 @@ function RoleQueuePreviewCard({ role }: { role: OnboardingRole }) {
                 <p className="truncate text-[13px] font-semibold text-foreground">
                   {submission.fullName || "Unnamed applicant"}
                 </p>
-                <p className="truncate text-[12px] text-muted-foreground">{describeApplicant(submission)}</p>
+                <p className="truncate text-[12px] text-muted-foreground">
+                  {kycTicketId(submission.role, submission.email)} · {submission.role === "buyer" ? "Buyer KYC" : "Seller KYC"}
+                </p>
               </div>
               <Badge className={cn("shrink-0", statusStyles[submission.reviewStatus].className)}>
                 {statusStyles[submission.reviewStatus].label}
@@ -337,8 +338,7 @@ function AdminHomeView() {
         {canSeeOverview || canReview || canSeeDeals ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {canSeeOverview ? <TeamPreviewCard /> : null}
-            {canReview ? <RoleQueuePreviewCard role="buyer" /> : null}
-            {canReview ? <RoleQueuePreviewCard role="seller" /> : null}
+            {canReview ? <TicketsPreviewCard /> : null}
             {canSeeDeals ? <AssignTeamMemberPreviewCard /> : null}
             {canSeeDeals ? <ActiveDealsPreviewCard /> : null}
           </div>

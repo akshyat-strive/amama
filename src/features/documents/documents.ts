@@ -25,9 +25,58 @@ export const documentCatalog = [
   { id: "fssai", icon: "ShieldCheck" },
   { id: "importCustomsCode", icon: "PackageSearch" },
   { id: "bankDetails", icon: "Landmark" },
+  // Licences a seller exports under.
+  { id: "exportLicence", icon: "ScrollText" },
+  { id: "apedaRcmc", icon: "ScrollText" },
+  // One certificate per certification the seller claims at onboarding.
+  { id: "certOrganic", icon: "BadgeCheck" },
+  { id: "certFairtrade", icon: "BadgeCheck" },
+  { id: "certGlobalgap", icon: "BadgeCheck" },
+  { id: "certRainforest", icon: "BadgeCheck" },
+  { id: "certHaccp", icon: "BadgeCheck" },
+  { id: "certIso22000", icon: "BadgeCheck" },
+  { id: "certHalal", icon: "BadgeCheck" },
 ] as const
 
 export type DocumentId = (typeof documentCatalog)[number]["id"]
+
+/**
+ * English text for documents added after the translated catalog. The
+ * other languages fall back to this until they are translated.
+ */
+const EXTRA_TEXT: Partial<Record<DocumentId, { label: string; hint: string }>> = {
+  exportLicence: { label: "Export licence", hint: "Your export registration, where your country issues one" },
+  apedaRcmc: { label: "APEDA registration (RCMC)", hint: "Registration-cum-membership certificate" },
+  certOrganic: { label: "Organic certificate", hint: "From an accredited certifier, in date" },
+  certFairtrade: { label: "Fairtrade certificate", hint: "Current Fairtrade certification" },
+  certGlobalgap: { label: "GLOBALG.A.P. certificate", hint: "Current certificate and GGN" },
+  certRainforest: { label: "Rainforest Alliance certificate", hint: "Current farm certificate" },
+  certHaccp: { label: "HACCP certificate", hint: "Food safety certification for your packhouse" },
+  certIso22000: { label: "ISO 22000 certificate", hint: "Food safety management system" },
+  certHalal: { label: "Halal certificate", hint: "From a recognised Halal authority" },
+}
+
+/** Label and hint for any document id — the translated catalog first,
+ *  the English extras for anything not in it yet. */
+export function documentText(
+  id: string,
+  t: (path: string) => string
+): { label: string; hint: string } {
+  const extra = EXTRA_TEXT[id as DocumentId]
+  if (extra) return extra
+  return { label: t(`onboarding.options.documents.${id}.label`), hint: t(`onboarding.options.documents.${id}.hint`) }
+}
+
+/** Which certificate proves which certification picked at onboarding. */
+const CERTIFICATE_FOR: Record<string, DocumentId> = {
+  organic: "certOrganic",
+  fairtrade: "certFairtrade",
+  globalgap: "certGlobalgap",
+  rainforest: "certRainforest",
+  haccp: "certHaccp",
+  iso22000: "certIso22000",
+  halal: "certHalal",
+}
 
 /**
  * What a given document will accept, kept here with the rest of the matrix
@@ -87,6 +136,8 @@ export type DocumentContext = {
   role: OnboardingRole
   entityType: EntityType
   sellerSubType?: SellerSubType
+  /** Certification ids the seller claimed — each needs its certificate. */
+  certifications?: string[]
 }
 
 /** Every field is optional and means "matches any" when omitted — a rule
@@ -133,6 +184,7 @@ const universalRules: Rule[] = [
     when: { role: "seller", sellerSubType: "trader" },
     add: ["iecCode", "taxRegistration"],
   },
+  { when: { role: "seller" }, addOptional: ["exportLicence"] },
 ]
 
 /**
@@ -153,7 +205,7 @@ const countryRules: Array<{ country: string; rules: Rule[] }> = [
         remove: ["governmentId"],
       },
       { when: { entityType: "organization" }, add: ["pan", "gstin"] },
-      { when: { role: "seller" }, addOptional: ["fssai"] },
+      { when: { role: "seller" }, addOptional: ["fssai", "apedaRcmc"], remove: ["exportLicence"] },
       { when: { role: "buyer" }, addOptional: ["importCustomsCode"] },
     ],
   },
@@ -198,6 +250,14 @@ export function getRequiredDocuments(ctx: DocumentContext): ResolvedDocument[] {
   applyRules(universalRules)
   const countrySpecific = countryRules.find((entry) => entry.country === ctx.country)
   if (countrySpecific) applyRules(countrySpecific.rules)
+
+  // A claimed certification is only as good as its certificate.
+  if (ctx.role === "seller") {
+    for (const certification of ctx.certifications ?? []) {
+      const id = CERTIFICATE_FOR[certification]
+      if (id) resolved.set(id, true)
+    }
+  }
 
   return Array.from(resolved, ([id, required]) => ({ id, required }))
 }

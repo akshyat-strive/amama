@@ -2,16 +2,62 @@
 
 import * as React from "react"
 
+import { DEMO_BUYER_PREFERENCES } from "@/features/auth/demo-accounts"
 import {
   emptyBuyer,
   emptyDraft,
   emptySeller,
   type BuyerDraft,
+  type BuyerPreferences,
   type OnboardingDraft,
   type SellerDraft,
 } from "@/features/onboarding/types"
 
 const STORAGE_KEY = "amama.onboarding.draft"
+
+/*
+ * Buying preferences (grades, order size per product) have no column on the
+ * server profile yet, so they are kept per email in this browser and
+ * merged back in whenever that buyer's draft is loaded — signing out and in
+ * again does not lose them.
+ */
+const PREFERENCES_KEY = (email: string) => `amama.buyer.preferences.${email.trim().toLowerCase()}`
+
+const hasPreferences = (preferences: BuyerPreferences) =>
+  preferences.products.length > 0 || preferences.grades.length > 0 || preferences.orderSize !== ""
+
+/** Drafts saved before preferences were reshaped carried a per-product
+ *  map; anything not in the current shape starts empty. */
+function normalisePreferences(value: unknown): BuyerPreferences {
+  const raw = (value ?? {}) as Partial<BuyerPreferences>
+  return {
+    products: Array.isArray(raw.products) ? raw.products : [],
+    grades: Array.isArray(raw.grades) ? raw.grades : [],
+    orderSize: typeof raw.orderSize === "string" ? raw.orderSize : "",
+  }
+}
+
+function savePreferences(buyer: BuyerDraft) {
+  if (!buyer.email || !hasPreferences(buyer.preferences)) return
+  try {
+    window.localStorage.setItem(PREFERENCES_KEY(buyer.email), JSON.stringify(buyer.preferences))
+  } catch {
+    // Best-effort.
+  }
+}
+
+function withSavedPreferences(buyer: BuyerDraft): BuyerDraft {
+  const current = normalisePreferences(buyer.preferences)
+  if (!buyer.email || hasPreferences(current)) return { ...buyer, preferences: current }
+  try {
+    const raw = window.localStorage.getItem(PREFERENCES_KEY(buyer.email))
+    if (raw) return { ...buyer, preferences: normalisePreferences(JSON.parse(raw)) }
+  } catch {
+    // Fall through to the demo defaults.
+  }
+  const demo = DEMO_BUYER_PREFERENCES[buyer.email.trim().toLowerCase()]
+  return { ...buyer, preferences: demo ?? current }
+}
 
 /**
  * A patch, or a function of the current value. The functional form matters for
@@ -62,7 +108,7 @@ function restoreOnce() {
       snapshot = {
         ...emptyDraft,
         ...stored,
-        buyer: { ...emptyBuyer, ...stored.buyer },
+        buyer: { ...emptyBuyer, ...stored.buyer, preferences: normalisePreferences(stored.buyer?.preferences) },
         seller: { ...emptySeller, ...stored.seller },
       }
     }
@@ -91,6 +137,7 @@ function getServerSnapshot() {
 
 function write(next: OnboardingDraft) {
   snapshot = next
+  savePreferences(next.buyer)
   try {
     window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next))
   } catch {
@@ -118,7 +165,7 @@ function useOnboarding() {
       /** Drops in a whole finished draft at once — what a demo "quick
        *  login" button uses to skip the wizard entirely, rather than
        *  replaying every step's `updateBuyer`/`updateSeller` call. */
-      loadDraft: (next: OnboardingDraft) => write(next),
+      loadDraft: (next: OnboardingDraft) => write({ ...next, buyer: withSavedPreferences({ ...emptyBuyer, ...next.buyer }) }),
       reset: () => {
         try {
           window.sessionStorage.removeItem(STORAGE_KEY)

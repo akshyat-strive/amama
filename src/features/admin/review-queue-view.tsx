@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { DownloadIcon, EyeIcon, FileText, Inbox } from "lucide-react"
+import { DownloadIcon, EyeIcon, FileText } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
@@ -13,9 +13,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { TooltipProvider } from "@/components/ui/tooltip"
-import { AdminEmptyState } from "@/features/admin/admin-ui"
-import { useCurrentAdmin } from "@/features/admin/current-admin"
 import {
   ApproveButton,
   Initials,
@@ -26,7 +23,7 @@ import {
   StatusPill,
   type Tone,
 } from "@/features/admin/review-ui"
-import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
+import { documentText } from "@/features/documents/documents"
 import en from "@/features/i18n/translations/en"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
 import type { OnboardingRole } from "@/features/onboarding/types"
@@ -36,7 +33,6 @@ import {
   documentPreviewUrl,
   requestApplicationChanges,
   setDocumentStatus,
-  useVerificationQueue,
   type AdminSubmission,
 } from "@/features/verification/admin-verification"
 
@@ -99,8 +95,10 @@ function DocumentPreview({ documentId, name }: { documentId: string; name: strin
 function DocumentRow({ role, document }: { role: OnboardingRole; document: AdminSubmission["documents"][number] }) {
   const [requesting, setRequesting] = React.useState(false)
   const status = documentStyles[document.reviewStatus]
-  const label =
-    en.onboarding.options.documents[document.id as keyof typeof en.onboarding.options.documents]?.label ?? document.id
+  const label = documentText(document.id, (path) => {
+    const value = path.split(".").reduce<unknown>((node, key) => (node as Record<string, unknown> | undefined)?.[key], en)
+    return typeof value === "string" ? value : document.id
+  }).label
 
   return (
     <>
@@ -280,86 +278,4 @@ function DocsMeter({ approved, total }: { approved: number; total: number }) {
   )
 }
 
-const QUEUE_STATUSES: ReviewStatus[] = ["pending", "changes-requested"]
-
-type Mode = "queue" | "registered"
-
-const MODES: { id: Mode; label: string }[] = [
-  { id: "queue", label: "Queue" },
-  { id: "registered", label: "Registered" },
-]
-
-/**
- * One role's own review page. "Queue" is only whoever actually needs a
- * decision right now (`pending`/`changes-requested`); "Registered" is
- * everyone who has ever submitted for this role, whatever their current
- * status — the roster, not the to-do list. Genuinely a list now (many
- * buyers, many sellers), not the single global slot per role the old
- * prototype's `localStorage` model was stuck with.
- */
-function ReviewQueueView({ role }: { role: OnboardingRole }) {
-  const admin = useCurrentAdmin()
-  const submissions = useVerificationQueue(role)
-  const [mode, setMode] = React.useState<Mode>("queue")
-  const roleLabel = role === "buyer" ? "Buyer" : "Seller"
-
-  if (!admin) return null
-
-  if (!admin.can("onboarding.review")) {
-    return (
-      <div>
-        <h1 className="text-[28px] font-bold tracking-tight">{roleLabel} queue</h1>
-        <AdminEmptyState
-          icon={Inbox}
-          title="No review permission on your role"
-          description="Ask a Master Admin for the 'Review onboarding' permission to see applications here."
-        />
-      </div>
-    )
-  }
-
-  const visible = mode === "registered" ? submissions : submissions.filter((entry) => QUEUE_STATUSES.includes(entry.reviewStatus))
-
-  return (
-    <div className={PAGE_TABS_SPACE}>
-      <h1 className="text-[28px] font-bold tracking-tight">{roleLabel} queue</h1>
-
-      <PageTabs
-        label={`${roleLabel} lists`}
-        className="mt-5"
-        value={mode}
-        onChange={setMode}
-        tabs={MODES.map(({ id, label }) => ({
-          value: id,
-          label,
-          count:
-            id === "queue"
-              ? submissions.filter((entry) => QUEUE_STATUSES.includes(entry.reviewStatus)).length
-              : submissions.length,
-        }))}
-      />
-
-      {visible.length === 0 ? (
-        <AdminEmptyState
-          icon={Inbox}
-          title={mode === "queue" ? "Nothing waiting" : "No one registered yet"}
-          description={
-            mode === "queue"
-              ? `${roleLabel} applications land here once someone finishes onboarding and submits their documents.`
-              : `Once a ${role} finishes onboarding, they'll show up here regardless of review status.`
-          }
-        />
-      ) : (
-        <TooltipProvider delay={300}>
-          <div className="mt-4 flex flex-col gap-3">
-            {visible.map((submission) => (
-              <SubmissionCard key={submission.userId} submission={submission} />
-            ))}
-          </div>
-        </TooltipProvider>
-      )}
-    </div>
-  )
-}
-
-export { ReviewQueueView }
+export { SubmissionCard }

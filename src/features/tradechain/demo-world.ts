@@ -3128,10 +3128,23 @@ export const CONTAINERS: Container[] = [
 
   /* ---- Closed trades — sailed, discharged and delivered ---------------- */
   {
-    id: "MEDU 918344-0", tradeId: "AMT-2026-00439", type: "2 × 40ft High Cube Reefer (lead box)",
+    id: "MEDU 918344-0", tradeId: "AMT-2026-00439", type: "40ft High Cube Reefer",
     bookingRef: "MSCUBK-4398112", line: "MSC", vessel: "MSC Positano", voyage: "2638E",
     setpointC: 2, ventCbmPerHr: 25, humidityPct: 70, ptiRef: "PTI-NSA-26-38810",
     sealNo: "SL-0098870", vgmKg: 53610, vgmFiledAt: "2026-09-05T17:30:00+05:30",
+    palletIds: [], cutoffGateIn: "2026-09-06T16:00:00+05:30",
+    cutoffVgm: "2026-09-06T10:00:00+05:30", cutoffSi: "2026-09-05T16:00:00+05:30",
+    etd: "2026-09-07T04:00:00+05:30", eta: "2026-09-13T08:00:00+04:00",
+    backupBookingRef: "CMACGM-8802716", backupEtd: "2026-09-10T06:00:00+05:30",
+    stuffedAt: "2026-09-05T10:30:00+05:30", doorCloseAt: "2026-09-05T16:40:00+05:30",
+    gensetOffAt: "2026-09-06T13:50:00+05:30", terminalPlugInAt: "2026-09-06T14:05:00+05:30",
+    gateInAt: "2026-09-06T14:10:00+05:30", state: "delivered",
+  },
+  {
+    id: "MEDU 918351-7", tradeId: "AMT-2026-00439", type: "40ft High Cube Reefer",
+    bookingRef: "MSCUBK-4398112", line: "MSC", vessel: "MSC Positano", voyage: "2638E",
+    setpointC: 2, ventCbmPerHr: 25, humidityPct: 70, ptiRef: "PTI-NSA-26-38811",
+    sealNo: "SL-0098871", vgmKg: 26720, vgmFiledAt: "2026-09-05T17:30:00+05:30",
     palletIds: [], cutoffGateIn: "2026-09-06T16:00:00+05:30",
     cutoffVgm: "2026-09-06T10:00:00+05:30", cutoffSi: "2026-09-05T16:00:00+05:30",
     etd: "2026-09-07T04:00:00+05:30", eta: "2026-09-13T08:00:00+04:00",
@@ -3210,12 +3223,27 @@ export const CONTAINERS: Container[] = [
     bookingRef: "MSCUBK-4482117", line: "MSC", vessel: "MSC Bianca", voyage: "2642E",
     setpointC: 2, ventCbmPerHr: 25, humidityPct: 70, ptiRef: "PTI-NSA-26-51870",
     sealNo: "", vgmKg: 0, vgmFiledAt: "",
-    palletIds: PALLETS.filter((pallet) => pallet.tradeId === "AMT-2026-00443").map((pallet) => pallet.id),
+    // A 40ft reefer takes 20 pallets; the other 8 follow on the backup sailing.
+    palletIds: PALLETS.filter((pallet) => pallet.tradeId === "AMT-2026-00443").slice(0, 20).map((pallet) => pallet.id),
     cutoffGateIn: "2026-10-09T16:00:00+05:30",
     cutoffVgm: "2026-10-09T10:00:00+05:30",
     cutoffSi: "2026-10-08T18:00:00+05:30",
     etd: "2026-10-10T08:00:00+05:30", eta: "2026-10-14T14:00:00+04:00",
     backupBookingRef: "HLCUBOM-2210984", backupEtd: "2026-10-12T22:00:00+05:30",
+    stuffedAt: null, doorCloseAt: null, gensetOffAt: null, terminalPlugInAt: null,
+    gateInAt: null, state: "booked",
+  },
+  {
+    id: "HLBU 220931-4", tradeId: "AMT-2026-00443", type: "40ft High Cube Reefer",
+    bookingRef: "HLCUBOM-2210984", line: "Hapag-Lloyd", vessel: "Hapag Kobe Express", voyage: "121E",
+    setpointC: 2, ventCbmPerHr: 25, humidityPct: 70, ptiRef: "",
+    sealNo: "", vgmKg: 0, vgmFiledAt: "",
+    palletIds: PALLETS.filter((pallet) => pallet.tradeId === "AMT-2026-00443").slice(20).map((pallet) => pallet.id),
+    cutoffGateIn: "2026-10-12T10:00:00+05:30",
+    cutoffVgm: "2026-10-11T18:00:00+05:30",
+    cutoffSi: "2026-10-11T12:00:00+05:30",
+    etd: "2026-10-12T22:00:00+05:30", eta: "2026-10-17T10:00:00+04:00",
+    backupBookingRef: null, backupEtd: null,
     stuffedAt: null, doorCloseAt: null, gensetOffAt: null, terminalPlugInAt: null,
     gateInAt: null, state: "booked",
   },
@@ -5144,6 +5172,9 @@ export type Shipment = {
   legs: ShipmentLeg[]
   charges: FreightCharge[]
   milestones: ShipmentMilestone[]
+  /** Which lots ride in this shipment, when an order ships in more than
+   *  one. Omitted when the trade has a single shipment carrying every lot. */
+  lotIds?: string[]
 }
 
 export const SHIPMENTS: Shipment[] = [
@@ -5296,6 +5327,36 @@ export const SHIPMENTS: Shipment[] = [
       { code: "DOC", label: "Documentation and B/L fee", amountUsd: 120, payer: "AMAMA", status: "paid" },
       { code: "DEM", label: "Demurrage — 1 day at destination", amountUsd: 180, payer: "Buyer", status: "paid" },
     ],
+    lotIds: ["LOT-MH-ONI-2026-00091", "LOT-MH-ONI-2026-00092", "LOT-MH-ONI-2026-00093"],
+    milestones: [
+      { key: "gatein", label: "Terminal gate-in", plannedAt: "2026-09-06T16:00:00+05:30", actualAt: "2026-09-06T14:10:00+05:30", state: "complete" },
+      { key: "sail", label: "Vessel sailed", plannedAt: "2026-09-07T04:00:00+05:30", actualAt: "2026-09-07T05:10:00+05:30", state: "complete" },
+      { key: "bl", label: "Bill of lading released", plannedAt: "2026-09-08T12:00:00+05:30", actualAt: "2026-09-08T14:00:00+05:30", state: "complete" },
+      { key: "arrive", label: "Arrived Jebel Ali", plannedAt: "2026-09-13T08:00:00+04:00", actualAt: "2026-09-13T11:30:00+04:00", state: "complete" },
+      { key: "pod", label: "Delivered and POD signed", plannedAt: "2026-09-14T12:00:00+04:00", actualAt: "2026-09-14T11:00:00+04:00", state: "complete" },
+    ],
+  },
+  {
+    id: "SHP-00439-2", tradeId: "AMT-2026-00439", containerId: "MEDU 918351-7", status: "delivered",
+    carrier: "MSC", bookingRef: "MSCUBK-4398112", vessel: "MSC Positano", voyage: "2638E",
+    blNo: "MEDUMU4398113", blReleasedAt: "2026-09-08T14:00:00+05:30",
+    portOfLoading: "INNSA — Nhava Sheva", portOfDischarge: "AEJEA — Jebel Ali",
+    incoterm: "CFR Jebel Ali", freightTerms: "Prepaid",
+    etd: "2026-09-07T04:00:00+05:30", eta: "2026-09-13T08:00:00+04:00",
+    atd: "2026-09-07T05:10:00+05:30", ata: "2026-09-13T11:30:00+04:00", etaVarianceHrs: 3.5,
+    transitDays: 6, remainingShelfLifeDays: null,
+    legs: [
+      { id: "SHP-00439-2-L1", sequence: 1, mode: "road", from: "Dindori", to: "Nhava Sheva", carrier: "Deccan Reefer Lines", reference: "TRK-MH-15-EK-9031", departedAt: "2026-09-05T18:00:00+05:30", arrivedAt: "2026-09-06T09:20:00+05:30", state: "complete" },
+      { id: "SHP-00439-2-L2", sequence: 2, mode: "sea", from: "Nhava Sheva", to: "Jebel Ali", carrier: "MSC", reference: "MSC Positano 2638E", departedAt: "2026-09-07T05:10:00+05:30", arrivedAt: "2026-09-13T11:30:00+04:00", state: "complete" },
+      { id: "SHP-00439-2-L3", sequence: 3, mode: "road", from: "Jebel Ali", to: "Al Noor cold store, Dubai", carrier: "Buyer's haulier", reference: "DXB-4472", departedAt: "2026-09-14T08:00:00+04:00", arrivedAt: "2026-09-14T11:00:00+04:00", state: "complete" },
+    ],
+    charges: [
+      { code: "THC-O", label: "Terminal handling — origin", amountUsd: 260, payer: "AMAMA", status: "paid" },
+      { code: "OFR", label: "Ocean freight, 40ft HC reefer", amountUsd: 1740, payer: "AMAMA", status: "paid" },
+      { code: "DOC", label: "Documentation and B/L fee", amountUsd: 120, payer: "AMAMA", status: "paid" },
+      { code: "DEM", label: "Demurrage — 1 day at destination", amountUsd: 180, payer: "Buyer", status: "paid" },
+    ],
+    lotIds: ["LOT-MH-ONI-2026-00094", "LOT-MH-ONI-2026-00095"],
     milestones: [
       { key: "gatein", label: "Terminal gate-in", plannedAt: "2026-09-06T16:00:00+05:30", actualAt: "2026-09-06T14:10:00+05:30", state: "complete" },
       { key: "sail", label: "Vessel sailed", plannedAt: "2026-09-07T04:00:00+05:30", actualAt: "2026-09-07T05:10:00+05:30", state: "complete" },
@@ -5492,6 +5553,31 @@ export const SHIPMENTS: Shipment[] = [
       { key: "sail", label: "Vessel sailed", plannedAt: "2026-10-10T08:00:00+05:30", actualAt: null, state: "pending" },
       { key: "arrive", label: "Arrived Jebel Ali", plannedAt: "2026-10-14T14:00:00+04:00", actualAt: null, state: "pending" },
     ],
+    lotIds: ["LOT-MH-ONI-2026-00104", "LOT-MH-ONI-2026-00105"],
+  },
+  {
+    id: "SHP-00443-2", tradeId: "AMT-2026-00443", containerId: "HLBU 220931-4", status: "booked",
+    carrier: "Hapag-Lloyd", bookingRef: "HLCUBOM-2210984", vessel: "Hapag Kobe Express", voyage: "121E",
+    blNo: null, blReleasedAt: null,
+    portOfLoading: "INNSA — Nhava Sheva", portOfDischarge: "AEJEA — Jebel Ali",
+    incoterm: "CFR Jebel Ali", freightTerms: "Prepaid",
+    etd: "2026-10-12T22:00:00+05:30", eta: "2026-10-17T10:00:00+04:00",
+    atd: null, ata: null, etaVarianceHrs: 0, transitDays: 5, remainingShelfLifeDays: 100,
+    legs: [
+      { id: "SHP-00443-2-L1", sequence: 1, mode: "road", from: "Lasalgaon pack-house", to: "Nhava Sheva terminal", carrier: "Deccan Reefer Lines", reference: "Pending allocation", departedAt: null, arrivedAt: null, state: "pending" },
+      { id: "SHP-00443-2-L2", sequence: 2, mode: "sea", from: "Nhava Sheva", to: "Jebel Ali", carrier: "Hapag-Lloyd", reference: "Hapag Kobe Express 121E", departedAt: null, arrivedAt: null, state: "pending" },
+      { id: "SHP-00443-2-L3", sequence: 3, mode: "road", from: "Jebel Ali", to: "Al Noor cold store, Dubai", carrier: "Buyer's haulier", reference: "—", departedAt: null, arrivedAt: null, state: "pending" },
+    ],
+    charges: [
+      { code: "OFR", label: "Ocean freight, 40ft HC reefer", amountUsd: 1480, payer: "AMAMA", status: "accrued" },
+    ],
+    milestones: [
+      { key: "stuff", label: "Stuffing complete", plannedAt: "2026-10-11T10:00:00+05:30", actualAt: null, state: "pending" },
+      { key: "gatein", label: "Terminal gate-in", plannedAt: "2026-10-12T10:00:00+05:30", actualAt: null, state: "pending" },
+      { key: "sail", label: "Vessel sailed", plannedAt: "2026-10-12T22:00:00+05:30", actualAt: null, state: "pending" },
+      { key: "arrive", label: "Arrived Jebel Ali", plannedAt: "2026-10-17T10:00:00+04:00", actualAt: null, state: "pending" },
+    ],
+    lotIds: ["LOT-MH-ONI-2026-00106"],
   },
   {
     id: "SHP-00445", tradeId: "AMT-2026-00445", containerId: "TCKU 330276-8", status: "booked",

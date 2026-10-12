@@ -9,6 +9,7 @@ import {
   FileStack,
   Fingerprint,
   IdCard,
+  BadgeCheck,
   Landmark,
   MapPinned,
   PackageSearch,
@@ -28,6 +29,7 @@ import {
 import { useDocumentDraft } from "@/features/documents/document-draft-store"
 import {
   documentCatalog,
+  documentText,
   getRequiredDocuments,
   type DocumentId,
 } from "@/features/documents/documents"
@@ -57,6 +59,7 @@ const icons: Record<string, LucideIcon> = {
   ShieldCheck,
   PackageSearch,
   Landmark,
+  BadgeCheck,
 }
 
 const iconNameById = Object.fromEntries(
@@ -147,6 +150,7 @@ function DocumentsStep({ role }: { role: OnboardingRole }) {
     role,
     entityType: current.entityType,
     sellerSubType: role === "seller" ? draft.seller.sellerSubType : undefined,
+    certifications: role === "seller" ? draft.seller.certifications : undefined,
   })
 
   const visibleDocuments = isResubmission
@@ -256,7 +260,7 @@ function DocumentsStep({ role }: { role: OnboardingRole }) {
                 .map((document) => (
                   <li key={document.id} className="text-[13px] leading-relaxed text-muted-foreground">
                     <span className="font-medium text-foreground">
-                      {t(`onboarding.options.documents.${document.id}.label`)}
+                      {documentText(document.id, t).label}
                     </span>
                     {document.reviewNote ? <> — {document.reviewNote}</> : null}
                   </li>
@@ -269,8 +273,8 @@ function DocumentsStep({ role }: { role: OnboardingRole }) {
           <DocumentUploadCard
             key={id}
             documentId={id}
-            label={t(`onboarding.options.documents.${id}.label`)}
-            hint={t(`onboarding.options.documents.${id}.hint`)}
+            label={documentText(id, t).label}
+            hint={documentText(id, t).hint}
             required={required}
             icon={icons[iconNameById[id]] ?? IdCard}
             initialFile={uploads[id] ?? null}

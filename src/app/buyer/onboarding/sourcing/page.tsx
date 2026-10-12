@@ -11,11 +11,13 @@ import {
   SelectableTile,
   SelectableTileGroup,
 } from "@/features/onboarding/components/selectable"
+import { CustomProducts } from "@/features/onboarding/components/custom-products"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import {
   cropImageUrl,
   crops,
   effectiveSteps,
+  isCatalogCrop,
   nextStep,
   previousStep,
   stepIndex,
@@ -104,6 +106,11 @@ function BuyerSourcingPageInner() {
           )
         })}
       </SelectableTileGroup>
+      <CustomProducts
+        custom={picked.filter((id) => !isCatalogCrop(id))}
+        onAdd={(id) => updateBuyer((prev) => ({ sourcing: prev.sourcing.includes(id) ? prev.sourcing : [...prev.sourcing, id] }))}
+        onRemove={(id) => updateBuyer((prev) => ({ sourcing: prev.sourcing.filter((entry) => entry !== id) }))}
+      />
     </StepShell>
   )
 }

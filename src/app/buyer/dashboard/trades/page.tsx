@@ -1,7 +1,6 @@
-"use client"
+import { redirect } from "next/navigation"
 
-import { TradesPage } from "@/features/trades/trade-pages"
-
+/** Buyers follow their trades as orders now. */
 export default function Page() {
-  return <TradesPage perspective="buyer" />
+  redirect("/buyer/dashboard/orders")
 }

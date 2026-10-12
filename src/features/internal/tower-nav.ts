@@ -196,7 +196,7 @@ export function railItemsFor(sectionId: string): RailItem[] {
     case "settings":
       return [
         { id: "team", label: "Team & roles", href: "/internal/team" },
-        { id: "review-queue", label: "Review queue", href: "/internal/review-queue" },
+        { id: "tickets", label: "Tickets", href: "/internal/tickets" },
         { id: "listings", label: "Listing moderation", href: "/internal/listings" },
         { id: "announcements", label: "Announcements", href: "/internal/announcements" },
         { id: "profile", label: "My profile", href: "/internal/profile" },

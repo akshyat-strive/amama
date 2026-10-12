@@ -1,4 +1,16 @@
-import type { OnboardingDraft, OnboardingRole } from "@/features/onboarding/types"
+import { emptyPreferences, type BuyerPreferences, type OnboardingDraft, type OnboardingRole } from "@/features/onboarding/types"
+
+/** The demo buyer's priorities — the server profile has no column for
+ *  these yet, so they are restored from here on sign-in. */
+const DEMO_PREFERENCES: BuyerPreferences = {
+  products: ["cashew", "tea", "spices"],
+  grades: ["Grade A+", "W-240", "Grade A"],
+  orderSize: "20to50",
+}
+
+const DEMO_BUYER_PREFERENCES: Record<string, BuyerPreferences> = {
+  "buyer@amama.in": DEMO_PREFERENCES,
+}
 
 /**
  * The two accounts a client demo actually logs in as — already through
@@ -23,6 +35,7 @@ const demoBuyerDraft: OnboardingDraft = {
     sourcing: ["tea", "spices", "cashew", "grains"],
     annualVolume: "between100And500",
     incoterm: "cif",
+    preferences: DEMO_PREFERENCES,
   },
   seller: {
     email: "",
@@ -37,6 +50,7 @@ const demoBuyerDraft: OnboardingDraft = {
     producerType: "",
     produce: [],
     certifications: [],
+    bio: "",
   },
 }
 
@@ -54,6 +68,7 @@ const demoSellerDraft: OnboardingDraft = {
     sourcing: [],
     annualVolume: "",
     incoterm: "",
+    preferences: emptyPreferences,
   },
   seller: {
     email: "seller@amama.in",
@@ -68,6 +83,7 @@ const demoSellerDraft: OnboardingDraft = {
     producerType: "",
     produce: ["tea", "spices", "cashew", "grains"],
     certifications: ["haccp", "iso22000"],
+    bio: "Three generations growing on the same black-soil plots outside Kolar. Drip-irrigated, residue-tested every season, and packed the same day we pick.",
   },
 }
 
@@ -93,6 +109,7 @@ const demoKashmirSellerDraft: OnboardingDraft = {
     sourcing: [],
     annualVolume: "",
     incoterm: "",
+    preferences: emptyPreferences,
   },
   seller: {
     email: "kashmir@amama.in",
@@ -107,6 +124,7 @@ const demoKashmirSellerDraft: OnboardingDraft = {
     producerType: "",
     produce: ["apple"],
     certifications: [],
+    bio: "",
   },
 }
 
@@ -114,4 +132,4 @@ function demoDraftFor(role: OnboardingRole): OnboardingDraft {
   return role === "buyer" ? demoBuyerDraft : demoSellerDraft
 }
 
-export { demoDraftFor, demoKashmirSellerDraft }
+export { DEMO_BUYER_PREFERENCES, demoDraftFor, demoKashmirSellerDraft }

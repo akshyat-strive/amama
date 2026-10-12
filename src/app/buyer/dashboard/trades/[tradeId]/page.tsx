@@ -1,6 +1,7 @@
-import { TradePage } from "@/features/trades/trade-pages"
+import { redirect } from "next/navigation"
 
+/** Buyers follow their trades as orders now. */
 export default async function Page({ params }: { params: Promise<{ tradeId: string }> }) {
   const { tradeId } = await params
-  return <TradePage perspective="buyer" tradeId={decodeURIComponent(tradeId)} />
+  redirect(`/buyer/dashboard/orders/${tradeId}`)
 }

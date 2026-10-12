@@ -1,5 +1,6 @@
-import { BirthdayStep } from "@/features/onboarding/components/birthday-step"
+import { redirect } from "next/navigation"
 
+/** Sellers introduce their farm instead of giving a date of birth. */
 export default function SellerBirthdayPage() {
-  return <BirthdayStep role="seller" />
+  redirect("/seller/onboarding/about")
 }

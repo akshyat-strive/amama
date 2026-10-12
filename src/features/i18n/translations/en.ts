@@ -25,6 +25,10 @@ export type TranslationShape = {
     submittedDocuments: string
     fixDocuments: string
     finishOnboarding: string
+    ticket: string
+    stepSubmitted: string
+    stepReview: string
+    stepVerified: string
   }
   auth: {
     buyerTitle: string
@@ -132,6 +136,10 @@ export type TranslationShape = {
       description: string
       annualVolumeLegend: string
       incotermLegend: string
+      gradeLegend: string
+      quantityLegend: string
+      noCrops: string
+      editCrops: string
     }
     certifications: {
       title: string
@@ -262,7 +270,7 @@ const en: TranslationShape = {
     trigger: "Change language",
   },
   review: {
-    pendingTitle: "We're checking your documents",
+    pendingTitle: "We're verifying your KYC",
     pendingDescription:
       "A key account manager reviews every new account by hand. It usually takes a working day — we'll email you the moment it's done.",
     changesTitle: "One thing needs another look",
@@ -270,10 +278,14 @@ const en: TranslationShape = {
       "Your account is nearly there. Here's what your account manager sent back:",
     notSubmittedTitle: "Finish setting up first",
     notSubmittedDescription:
-      "Your account isn't submitted for review yet. Complete onboarding and send your documents to get started.",
-    submittedDocuments: "What you sent",
-    fixDocuments: "Update my documents",
+      "Your dashboard unlocks once your KYC is verified. Finish onboarding to submit it.",
+    submittedDocuments: "Your KYC documents",
+    fixDocuments: "Update my KYC",
     finishOnboarding: "Finish onboarding",
+    ticket: "KYC ticket",
+    stepSubmitted: "Submitted",
+    stepReview: "In review",
+    stepVerified: "Verified",
   },
   auth: {
     buyerTitle: "Source direct from origin",
@@ -382,11 +394,15 @@ const en: TranslationShape = {
       selectedAnnouncement: "{count} crops selected",
     },
     volume: {
-      title: "How do you like to trade?",
+      title: "Your preferences",
       description:
-        "This shapes the quotes you get. Nothing here is binding — you can change it per order.",
+        "We'll show lots that match first. Change these anytime.",
       annualVolumeLegend: "Expected annual volume",
       incotermLegend: "Preferred incoterm",
+      gradeLegend: "Grades",
+      quantityLegend: "Quantity per order",
+      noCrops: "Pick what you source first, then set grades here.",
+      editCrops: "Edit products",
     },
     certifications: {
       title: "Any certifications?",
@@ -394,9 +410,9 @@ const en: TranslationShape = {
         "Certified lots earn better prices. No certificates yet? Skip this — we'll show you the route to one.",
     },
     documents: {
-      title: "Documents you'll need",
+      title: "KYC verification",
       description:
-        "This is based on where you're trading from and how you're set up — you don't need any of this now, just a heads-up on what to have ready.",
+        "Verify your business once. Your dashboard unlocks when KYC is approved.",
       dropHint: "Drag & drop, or click to browse",
       upTo: "up to {size}",
       uploading: "Uploading {file}…",

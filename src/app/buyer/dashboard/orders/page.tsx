@@ -1,7 +1,7 @@
 "use client"
 
-import { OrdersView } from "@/features/dashboard/views/orders-view"
+import { BuyerOrdersPage } from "@/features/orders/buyer-orders-view"
 
 export default function Page() {
-  return <OrdersView role="buyer" />
+  return <BuyerOrdersPage />
 }

@@ -97,6 +97,8 @@ function DashboardShell({
   }, [role, draft.buyer])
 
   const person = role === "buyer" ? draft.buyer : draft.seller
+  // Buyers follow trades as orders; sellers still have the trades board.
+  const tradeBase = role === "buyer" ? "/buyer/dashboard/orders" : `/${role}/dashboard/trades`
   const displayName = person.fullName.trim() || "Your account"
 
   return (
@@ -104,10 +106,10 @@ function DashboardShell({
       <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center gap-4 bg-transparent ps-3 pe-4 sm:pe-6">
         <SidebarToggle open={sidebarOpen} onToggle={toggleSidebar} />
         <TopbarBrand href="/" role={role === "seller" ? "Seller" : undefined} />
-        <TopbarSearch perspective={role} email={person.email} basePath={`/${role}/dashboard/trades`} />
+        <TopbarSearch perspective={role} email={person.email} basePath={tradeBase} />
 
         <TopbarActions>
-          <TopbarNotifications perspective={role} email={person.email} basePath={`/${role}/dashboard/trades`} />
+          <TopbarNotifications perspective={role} email={person.email} basePath={tradeBase} />
           <LanguageSwitcher variant="inline" />
           <AccountMenu
             grouped

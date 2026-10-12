@@ -8,7 +8,6 @@ import { StoreIcon, XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { InfoTip } from "@/features/dashboard/info-tip"
 import { CATALOG_CATEGORIES, productLabel, slugify } from "@/features/marketplace/catalog"
 import { CategoryChips, CategoryRail, type CategoryRailItem } from "@/features/marketplace/category-rail"
 import { CatalogTile } from "@/features/marketplace/catalog-tile"
@@ -19,6 +18,7 @@ import { useListings, type Listing } from "@/features/marketplace/listing-store"
 import { useWishlist } from "@/features/marketplace/wishlist-store"
 import { WishlistSwitch } from "@/features/marketplace/wishlist-switch"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
+import { ORDER_SIZE_MIN_MT, type orderSizes } from "@/features/onboarding/steps"
 
 const ALL = "all"
 const STICK_AT = 68
@@ -47,6 +47,38 @@ function SourcingWorkspace() {
   const { draft } = useOnboarding()
   const buyer = buyerIdentity(draft.buyer)
   const mySourcing = draft.buyer.sourcing
+  const preferences = draft.buyer.preferences
+  const incoterm = draft.buyer.incoterm
+
+  /** Products the buyer told us they buy — picked at onboarding, or put
+   *  on their priority list (a variant counts for its product). */
+  const interests = React.useMemo(
+    () => new Set([...mySourcing, ...(preferences?.products ?? []).map((id) => id.split("/")[0])]),
+    [mySourcing, preferences]
+  )
+
+  /** How well a listing fits the buyer's priorities: where its product or
+   *  variant sits on their product list, where its grade sits on their
+   *  grade list, and whether it can fill their usual order. Higher first;
+   *  it only orders things, never hides them. */
+  const fit = React.useCallback(
+    (listing: Listing) => {
+      const products = preferences?.products ?? []
+      const grades = preferences?.grades ?? []
+      const variantRank = products.indexOf(`${listing.cropId}/${slugify(listing.variety)}`)
+      const productRank = products.indexOf(listing.cropId)
+      const rank = variantRank >= 0 ? variantRank : productRank
+      const gradeRank = grades.indexOf(listing.grade)
+      const minMt = preferences?.orderSize ? (ORDER_SIZE_MIN_MT[preferences.orderSize as (typeof orderSizes)[number]] ?? 0) : null
+      return (
+        (rank >= 0 ? (products.length - rank) * 10 : 0) +
+        (gradeRank >= 0 ? (grades.length - gradeRank) * 3 : 0) +
+        (interests.has(listing.cropId) ? 5 : 0) +
+        (minMt !== null && listing.quantityMt >= minMt ? 1 : 0)
+      )
+    },
+    [preferences, interests]
+  )
 
   const allListings = useListings()
   const listings = React.useMemo(
@@ -55,7 +87,7 @@ function SourcingWorkspace() {
   )
 
   const [wishlistOnly, setWishlistOnly] = React.useState(false)
-  const [scope, setScope] = React.useState<"mine" | "all">("mine")
+  const [scope, setScope] = React.useState<"all" | "mine">("all")
   const [selectedId, setSelectedId] = React.useState<string>(ALL)
   const [sort, setSort] = React.useState<Sort>("name")
   const wishlist = useWishlist(buyer.id)
@@ -71,21 +103,27 @@ function SourcingWorkspace() {
         [productLabel(listing.cropId), listing.variety, listing.sellerName, listing.region].join(" ").toLowerCase().includes(needle)
       )
     }
-    return result
-  }, [flatMode, listings, wishlistOnly, wishlist, query])
+    return [...result].sort((a, b) => fit(b) - fit(a))
+  }, [flatMode, listings, wishlistOnly, wishlist, query, fit])
 
   const categories = React.useMemo(
     () =>
       CATALOG_CATEGORIES.map((category) => {
         const inCategory = listings.filter((listing) => listing.categoryId === category.id)
         if (inCategory.length === 0) return null
-        return { category, listings: inCategory, forMe: inCategory.some((listing) => mySourcing.includes(listing.cropId)) }
+        return { category, listings: inCategory, forMe: inCategory.some((listing) => interests.has(listing.cropId)) }
       }).filter((entry) => entry !== null),
-    [listings, mySourcing]
+    [listings, interests]
   )
 
-  const canScope = mySourcing.length > 0 && categories.some((entry) => entry.forMe)
-  const visible = canScope && scope === "mine" ? categories.filter((entry) => entry.forMe) : categories
+  const canScope = categories.some((entry) => entry.forMe)
+  const mine = canScope && scope === "mine"
+  // "All products" keeps every category, the buyer's own leading the rail;
+  // "My interests" keeps only those.
+  const visible = React.useMemo(() => {
+    const ordered = [...categories].sort((a, b) => Number(b.forMe) - Number(a.forMe))
+    return mine ? ordered.filter((entry) => entry.forMe) : ordered
+  }, [categories, mine])
   const activeId = selectedId === ALL || visible.some((entry) => entry.category.id === selectedId) ? selectedId : ALL
 
   const railItems: CategoryRailItem[] = React.useMemo(() => {
@@ -98,11 +136,16 @@ function SourcingWorkspace() {
 
   const products = React.useMemo(() => {
     const ids = new Set<string>(visible.map((entry) => entry.category.id))
-    const scoped = listings.filter((listing) => (activeId === ALL ? ids.has(listing.categoryId) : listing.categoryId === activeId))
+    const scoped = listings.filter(
+      (listing) =>
+        (activeId === ALL ? ids.has(listing.categoryId) : listing.categoryId === activeId) && (!mine || interests.has(listing.cropId))
+    )
     const byProduct = new Map<string, Listing[]>()
     for (const listing of scoped) byProduct.set(listing.cropId, [...(byProduct.get(listing.cropId) ?? []), listing])
     const rows = [...byProduct.entries()].map(([cropId, group]) => ({
       cropId,
+      fit: Math.max(...group.map(fit)),
+      gradeMatch: group.some((listing) => preferences?.grades.includes(listing.grade)),
       categoryId: group[0].categoryId,
       label: productLabel(cropId),
       photo: group[0].photo,
@@ -110,8 +153,8 @@ function SourcingWorkspace() {
       sellerCount: new Set(group.map((listing) => listing.sellerId)).size,
       minPrice: Math.min(...group.map((listing) => listing.pricePerTonneUsd)),
     }))
-    return rows.sort((a, b) => (sort === "price" ? a.minPrice - b.minPrice : a.label.localeCompare(b.label)))
-  }, [listings, activeId, visible, sort])
+    return rows.sort((a, b) => b.fit - a.fit || (sort === "price" ? a.minPrice - b.minPrice : a.label.localeCompare(b.label)))
+  }, [listings, activeId, visible, sort, fit, preferences, mine, interests])
 
   /* The full rail scrolls away; its compact twin pins under the topbar. */
   const railRef = React.useRef<HTMLDivElement>(null)
@@ -146,30 +189,22 @@ function SourcingWorkspace() {
         <h1 className="text-[28px] font-bold tracking-tight">Marketplace</h1>
         <div className="flex items-center gap-2">
           {canScope && !flatMode ? (
-            <div className="flex items-center gap-1">
-              <div role="radiogroup" aria-label="Categories shown" className="flex rounded-full border border-border bg-card p-0.5">
-                {(["mine", "all"] as const).map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    role="radio"
-                    aria-checked={scope === value}
-                    onClick={() => setScope(value)}
-                    className={cn(
-                      "h-8 rounded-full px-3.5 text-[12.5px] font-medium transition-colors",
-                      scope === value ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {value === "mine" ? "For you" : "All"}
-                  </button>
-                ))}
-              </div>
-              <InfoTip title="For you">
-                Categories matching what you told us you buy.{" "}
-                <Link href="/buyer/onboarding/sourcing?from=marketplace" className="font-medium text-amama-deep hover:underline">
-                  Edit buying interests
-                </Link>
-              </InfoTip>
+            <div role="radiogroup" aria-label="Products shown" className="flex rounded-full border border-border bg-card p-0.5">
+              {(["all", "mine"] as const).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={scope === value}
+                  onClick={() => setScope(value)}
+                  className={cn(
+                    "h-8 rounded-full px-3.5 text-[12.5px] font-medium transition-colors",
+                    scope === value ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {value === "all" ? "All products" : "My interests"}
+                </button>
+              ))}
             </div>
           ) : null}
           <WishlistSwitch checked={wishlistOnly} onCheckedChange={setWishlistOnly} />
@@ -238,6 +273,11 @@ function SourcingWorkspace() {
             <p className="text-[13px] text-muted-foreground">
               <span className="font-semibold text-foreground tabular-nums">{products.length}</span> {products.length === 1 ? "product" : "products"}
               {activeId !== ALL ? ` in ${railItems.find((item) => item.id === activeId)?.label}` : ""}
+              {" · "}
+              {incoterm && incoterm !== "notSure" ? `${incoterm.toUpperCase()} · ` : ""}
+              <Link href="/buyer/onboarding/volume?from=marketplace" className="font-medium text-amama-deep hover:underline">
+                {preferences?.products.length || preferences?.grades.length ? "Ranked by your preferences" : "Set preferences"}
+              </Link>
             </p>
             <Select items={SORT_ITEMS} value={sort} onValueChange={(next) => next && setSort(next as Sort)}>
               <SelectTrigger size="sm" aria-label="Sort products" className="bg-card">
@@ -256,31 +296,52 @@ function SourcingWorkspace() {
           {products.length === 0 ? (
             <EmptyState message="No sellers have listed anything in this category yet." />
           ) : (
-            <motion.div layout className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-              <AnimatePresence mode="popLayout">
-                {products.map((product, index) => (
-                  <motion.div
-                    key={`${product.categoryId}-${product.cropId}`}
-                    layout
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0, transition: { delay: Math.min(index, 8) * 0.035 } }}
-                    exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
-                  >
-                    <CatalogTile
-                      href={`/buyer/dashboard/sourcing/${product.categoryId}/${product.cropId}`}
-                      photo={product.photo}
-                      title={product.label}
-                      subtitle={`${product.variantCount} ${product.variantCount === 1 ? "variant" : "variants"} · ${product.sellerCount} ${product.sellerCount === 1 ? "seller" : "sellers"}`}
-                      meta={`from ${formatInr(product.minPrice)}/t`}
-                    />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </motion.div>
+            <ProductGrid products={products} />
           )}
         </>
       )}
     </div>
+  )
+}
+
+type ProductRow = {
+  cropId: string
+  categoryId: string
+  label: string
+  photo: string
+  variantCount: number
+  sellerCount: number
+  minPrice: number
+  gradeMatch: boolean
+}
+
+function ProductGrid({ products }: { products: ProductRow[] }) {
+  return (
+    <motion.div layout className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+      <AnimatePresence mode="popLayout">
+        {products.map((product, index) => (
+          <motion.div
+            key={`${product.categoryId}-${product.cropId}`}
+            layout
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0, transition: { delay: Math.min(index, 8) * 0.035 } }}
+            exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+          >
+            <CatalogTile
+              href={`/buyer/dashboard/sourcing/${product.categoryId}/${product.cropId}`}
+              photo={product.photo}
+              title={product.label}
+              subtitle={
+                product.gradeMatch
+                  ? `Your grade · ${product.sellerCount} ${product.sellerCount === 1 ? "seller" : "sellers"}`
+                  : `${product.variantCount} ${product.variantCount === 1 ? "variant" : "variants"} · ${product.sellerCount} ${product.sellerCount === 1 ? "seller" : "sellers"}`
+              }
+              meta={`from ${formatInr(product.minPrice)}/t`}
+            />
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </motion.div>
   )
 }
 

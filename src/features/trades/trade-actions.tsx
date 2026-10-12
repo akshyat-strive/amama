@@ -477,7 +477,9 @@ function StageActionsPanel({
 
   const reasons = [
     pendingTasks.length > 0 ? `${pendingTasks.length} task${pendingTasks.length === 1 ? "" : "s"} to tick` : null,
-    openDocuments.length > 0 ? `${openDocuments.length} document${openDocuments.length === 1 ? "" : "s"} to verify` : null,
+    openDocuments.length > 0
+      ? `${openDocuments.length} document${openDocuments.length === 1 ? "" : "s"} to ${perspective === "internal" ? "verify" : "sign"}`
+      : null,
     blocked ? "resolve the open issue" : null,
   ].filter(Boolean)
 
@@ -560,7 +562,9 @@ function StageActionsPanel({
 
       {openDocuments.length > 0 ? (
         <p className="mt-3 text-[12.5px] text-muted-foreground">
-          {openDocuments.length} mandatory document{openDocuments.length === 1 ? "" : "s"} open below — {perspective === "internal" ? "verify them" : "sign or upload yours"} to clear the gate.
+          {perspective === "internal"
+            ? `${openDocuments.length} mandatory document${openDocuments.length === 1 ? "" : "s"} open below — verify them to clear the gate.`
+            : `${openDocuments.length} document${openDocuments.length === 1 ? "" : "s"} still to sign.`}
         </p>
       ) : null}
 

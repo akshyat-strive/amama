@@ -8,6 +8,9 @@ import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { FullPageLoader } from "@/components/ui/full-page-loader"
 import { useI18n } from "@/features/i18n/i18n-context"
+import { useOnboarding } from "@/features/onboarding/onboarding-context"
+import { documentText } from "@/features/documents/documents"
+import { kycTicketId } from "@/features/verification/ticket"
 import { useVerification } from "@/features/verification/verification-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
 
@@ -30,6 +33,8 @@ function ReviewGate({
 }) {
   const { t, locale } = useI18n()
   const { statusFor, submissions, isLoaded } = useVerification()
+  const { draft } = useOnboarding()
+  const email = role === "buyer" ? draft.buyer.email : draft.seller.email
   const status = statusFor(role)
   const submission = submissions[role]
 
@@ -109,6 +114,16 @@ function ReviewGate({
           {variant.description}
         </p>
 
+        {effectiveStatus !== "not-submitted" ? (
+          <KycProgress
+            ticket={email ? kycTicketId(role, email) : null}
+            stage={0}
+            labels={[t("review.stepSubmitted"), t("review.stepReview"), t("review.stepVerified")]}
+            ticketLabel={t("review.ticket")}
+            needsAction={effectiveStatus === "changes-requested"}
+          />
+        ) : null}
+
         {/* The KAM's own words, not a paraphrase — someone sent back for a
             blurry land record needs to know it was the land record. Shown
             for a whole-application send-back; a single rejected document
@@ -148,7 +163,7 @@ function ReviewGate({
                         )}
                       />
                       <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
-                        {t(`onboarding.options.documents.${document.id}.label`)}
+                        {documentText(document.id, t).label}
                       </span>
                       <span className="shrink-0 truncate text-[12px] text-muted-foreground">
                         {document.name}
@@ -183,6 +198,50 @@ function ReviewGate({
           </Link>
         ) : null}
       </main>
+    </div>
+  )
+}
+
+/** Where the KYC ticket stands: submitted, in review, verified. */
+function KycProgress({
+  ticket,
+  stage,
+  labels,
+  ticketLabel,
+  needsAction,
+}: {
+  ticket: string | null
+  /** Index of the step currently in progress. */
+  stage: number
+  labels: string[]
+  ticketLabel: string
+  needsAction: boolean
+}) {
+  return (
+    <div className="mt-6 rounded-2xl border border-border px-4 py-3.5">
+      {ticket ? (
+        <p className="text-[12.5px] text-muted-foreground">
+          {ticketLabel} <span className="font-mono font-medium text-foreground">{ticket}</span>
+        </p>
+      ) : null}
+      <ol className={cn("grid grid-cols-3 gap-2", ticket && "mt-3")}>
+        {labels.map((label, index) => {
+          const done = index <= stage
+          const current = index === stage + 1
+          return (
+            <li key={label} className="flex flex-col gap-1.5">
+              <span
+                aria-hidden
+                className={cn(
+                  "h-1.5 rounded-full",
+                  done ? "bg-amama-deep" : current ? (needsAction ? "bg-status-warning" : "bg-amama/40") : "bg-border"
+                )}
+              />
+              <span className={cn("text-[12px]", done || current ? "font-medium text-foreground" : "text-muted-foreground")}>{label}</span>
+            </li>
+          )
+        })}
+      </ol>
     </div>
   )
 }

@@ -17,15 +17,15 @@ const buyerSteps: StepDefinition[] = [
   { slug: "birthday", href: "/buyer/onboarding/birthday", title: "Date of birth" },
   { slug: "company", href: "/buyer/onboarding/company", title: "Your company" },
   { slug: "sourcing", href: "/buyer/onboarding/sourcing", title: "What you source" },
-  { slug: "volume", href: "/buyer/onboarding/volume", title: "Trade terms" },
-  { slug: "documents", href: "/buyer/onboarding/documents", title: "Documents" },
+  { slug: "volume", href: "/buyer/onboarding/volume", title: "Preferences" },
+  { slug: "documents", href: "/buyer/onboarding/documents", title: "KYC" },
   { slug: "done", href: "/buyer/onboarding/done", title: "All set" },
 ]
 
 const sellerSteps: StepDefinition[] = [
   { slug: "country", href: "/seller/onboarding/country", title: "Your country" },
   { slug: "account", href: "/seller/onboarding/account", title: "Your account" },
-  { slug: "birthday", href: "/seller/onboarding/birthday", title: "Date of birth" },
+  { slug: "about", href: "/seller/onboarding/about", title: "About your farm" },
   { slug: "farm", href: "/seller/onboarding/farm", title: "Your farm" },
   { slug: "produce", href: "/seller/onboarding/produce", title: "What you grow" },
   {
@@ -33,7 +33,7 @@ const sellerSteps: StepDefinition[] = [
     href: "/seller/onboarding/certifications",
     title: "Certifications",
   },
-  { slug: "documents", href: "/seller/onboarding/documents", title: "Documents" },
+  { slug: "documents", href: "/seller/onboarding/documents", title: "KYC" },
   { slug: "done", href: "/seller/onboarding/done", title: "All set" },
 ]
 
@@ -273,6 +273,59 @@ export const annualVolumes = [
   "between500And2000",
   "over2000",
 ] as const
+
+/**
+ * Grades a buyer can ask for, per crop. The common trade grades come
+ * first so they line up with how listings are graded; the specialty
+ * grades after them are the ones that crop is actually bought on. Grade
+ * names are trade codes and stay untranslated, like incoterms.
+ */
+const BASE_GRADES = ["Grade A+", "Grade A", "Grade B"] as const
+export const gradesByCrop: Record<string, readonly string[]> = {
+  coffee: [...BASE_GRADES, "AA", "AB", "PB", "Monsooned"],
+  cocoa: [...BASE_GRADES, "Fermented", "Fine flavour"],
+  cashew: [...BASE_GRADES, "W-180", "W-240", "W-320"],
+  sesame: [...BASE_GRADES, "Hulled", "Natural"],
+  spices: [...BASE_GRADES, "ASTA 90+", "Steam-sterilised"],
+  tea: [...BASE_GRADES, "FOP", "BOP", "CTC"],
+  grains: [...BASE_GRADES, "Sortex cleaned", "Aged 12 months"],
+  pulses: [...BASE_GRADES, "Machine cleaned", "Split"],
+  apple: [...BASE_GRADES, "Extra Fancy", "Fancy"],
+  "fresh-fruit": [...BASE_GRADES, "Export Class I"],
+  "dried-fruit": [...BASE_GRADES, "Jumbo", "Sortex"],
+  vegetables: [...BASE_GRADES, "Export Class I"],
+  nuts: [...BASE_GRADES, "Light halves", "Kernels"],
+  cotton: [...BASE_GRADES, "Long staple"],
+  sugar: [...BASE_GRADES, "ICUMSA 45"],
+  oils: [...BASE_GRADES, "Cold-pressed", "Refined"],
+}
+export const gradesFor = (cropId: string): readonly string[] => gradesByCrop[cropId] ?? BASE_GRADES
+
+/** Every grade worth suggesting for a set of products — the common
+ *  grades first, then each product's own, without repeats. */
+export function gradeSuggestions(cropIds: readonly string[]): string[] {
+  return [...new Set([...BASE_GRADES, "Grade C", ...cropIds.flatMap((id) => gradesByCrop[id] ?? [])])]
+}
+
+/** True for a product on the built-in catalog; false for a custom one the
+ *  person typed in (stored as a slugified name). */
+export const isCatalogCrop = (id: string) => crops.some((crop) => crop.id === id)
+
+/** Typical order size, for the whole account. */
+export const orderSizes = ["under20", "20to50", "50to100", "over100"] as const
+export const ORDER_SIZE_LABELS: Record<(typeof orderSizes)[number], string> = {
+  under20: "Under 20 MT",
+  "20to50": "20–50 MT",
+  "50to100": "50–100 MT",
+  over100: "100+ MT",
+}
+/** The smallest quantity a listing must offer to fill an order of that size. */
+export const ORDER_SIZE_MIN_MT: Record<(typeof orderSizes)[number], number> = {
+  under20: 0,
+  "20to50": 20,
+  "50to100": 50,
+  over100: 100,
+}
 
 // Incoterms are standard international trade codes, unchanged across
 // languages — only "not sure yet" is actual prose to translate.

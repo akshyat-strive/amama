@@ -16,6 +16,23 @@ export type EntityType = "individual" | "organization" | ""
  */
 export type SellerSubType = "producer" | "trader" | ""
 
+/**
+ * How a buyer likes to buy, independent of any one product. Every list is
+ * ordered — the first entry matters most — and every field is optional;
+ * the marketplace uses them only to decide what to show first.
+ */
+export type BuyerPreferences = {
+  /** Product ids (crop ids, or a slugified custom name) and variants
+   *  (`<productId>/<variety slug>`), most wanted first. */
+  products: string[]
+  /** Grade names, most wanted first. */
+  grades: string[]
+  /** One of `orderSizes` in steps.ts, "" when not chosen. */
+  orderSize: string
+}
+
+export const emptyPreferences: BuyerPreferences = { products: [], grades: [], orderSize: "" }
+
 export type BuyerDraft = {
   email: string
   fullName: string
@@ -27,8 +44,10 @@ export type BuyerDraft = {
   importLicence: string
   /** Crop ids the buyer wants to source. */
   sourcing: string[]
+  /** Kept for submissions made before preferences replaced it. */
   annualVolume: string
   incoterm: string
+  preferences: BuyerPreferences
 }
 
 export type SellerDraft = {
@@ -45,6 +64,8 @@ export type SellerDraft = {
   /** Crop ids the producer grows. */
   produce: string[]
   certifications: string[]
+  /** "Tell us about your farm" — optional, shown to buyers. */
+  bio: string
 }
 
 export type OnboardingDraft = {
@@ -65,6 +86,7 @@ export const emptyBuyer: BuyerDraft = {
   sourcing: [],
   annualVolume: "",
   incoterm: "",
+  preferences: emptyPreferences,
 }
 
 export const emptySeller: SellerDraft = {
@@ -80,6 +102,7 @@ export const emptySeller: SellerDraft = {
   producerType: "",
   produce: [],
   certifications: [],
+  bio: "",
 }
 
 export const emptyDraft: OnboardingDraft = {

@@ -61,8 +61,8 @@ function OnboardingAside({ step, className }: { step: number; className?: string
   const photo = photos[(Math.max(step, 1) - 1) % photos.length]
 
   return (
-    <aside className={cn("hidden p-3 ps-0 lg:block", className)}>
-      <div className="relative h-full overflow-hidden rounded-[32px] bg-muted">
+    <aside className={cn("hidden lg:block", className)}>
+      <div className="relative h-full overflow-hidden bg-muted">
         <Image
           key={photo.id}
           src={cropImageUrl(photo.id, 1400)}
@@ -78,12 +78,12 @@ function OnboardingAside({ step, className }: { step: number; className?: string
             href={photo.credit.profileUrl}
             target="_blank"
             rel="noreferrer"
-            className="absolute start-5 top-5 rounded-full bg-black/30 px-3 py-1 text-[11px] font-medium text-white/90 backdrop-blur-sm transition-colors hover:bg-black/50 hover:text-white"
+            className="absolute start-6 top-6 rounded-full bg-black/30 px-3 py-1 text-[11px] font-medium text-white/90 backdrop-blur-sm transition-colors hover:bg-black/50 hover:text-white"
           >
             Photo: {photo.credit.name} / Unsplash
           </a>
         ) : null}
-        <div className="absolute inset-x-8 bottom-8 xl:inset-x-10 xl:bottom-10">
+        <div className="absolute inset-x-10 bottom-10 xl:inset-x-14 xl:bottom-14">
           <ProfilePreview role={role} />
           <p className="mt-3 text-[13px] text-white/85">{role === "buyer" ? "How sellers will see you" : "How buyers will see you"}</p>
         </div>

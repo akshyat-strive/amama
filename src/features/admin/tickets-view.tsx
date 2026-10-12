@@ -2,10 +2,12 @@
 
 import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { ChevronDownIcon, Inbox, SearchIcon } from "lucide-react"
+import { ChevronDownIcon, Columns3Icon, Inbox, ListIcon, SearchIcon } from "lucide-react"
+import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
+import { Sheet, SheetCloseButton, SheetContent } from "@/components/ui/sheet"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { AdminEmptyState, AdminListSkeleton } from "@/features/admin/admin-ui"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
@@ -15,6 +17,7 @@ import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
 import { countries } from "@/features/onboarding/countries"
 import type { ReviewStatus } from "@/features/verification/verification-context"
 import {
+  approveApplication,
   useAllVerificationQueuesLoaded,
   useVerificationQueue,
   type AdminSubmission,
@@ -31,6 +34,16 @@ import { kycTicketId } from "@/features/verification/ticket"
 
 type TicketState = "open" | "waiting" | "resolved"
 type Filter = TicketState | "all"
+type View = "list" | "board"
+
+type Ticket = {
+  submission: AdminSubmission
+  id: string
+  state: TicketState
+  tags: Tag[]
+}
+
+const BOARD_COLUMNS: TicketState[] = ["open", "waiting", "resolved"]
 
 const STATE_OF: Record<ReviewStatus, TicketState | null> = {
   pending: "open",
@@ -60,6 +73,11 @@ function tagsOf(submission: AdminSubmission): Tag[] {
   return tags
 }
 
+const VIEWS = [
+  { value: "list", label: "List", icon: ListIcon },
+  { value: "board", label: "Board", icon: Columns3Icon },
+] as const
+
 const FILTER_TAGS: Tag[] = [
   { id: "buyer-kyc", label: "Buyer KYC" },
   { id: "seller-kyc", label: "Seller KYC" },
@@ -87,6 +105,8 @@ function TicketsWorkspace() {
   const loaded = useAllVerificationQueuesLoaded()
 
   const filter = (searchParams.get("status") as Filter | null) ?? "open"
+  const view: View = searchParams.get("view") === "board" ? "board" : "list"
+  const [sheetId, setSheetId] = React.useState<string | null>(null)
   const activeTags = searchParams.get("tag")?.split(",").filter(Boolean) ?? []
   const [query, setQuery] = React.useState("")
   const [openId, setOpenId] = React.useState<string | null>(null)
@@ -114,7 +134,7 @@ function TicketsWorkspace() {
           state: STATE_OF[submission.reviewStatus],
           tags: tagsOf(submission),
         }))
-        .filter((ticket): ticket is typeof ticket & { state: TicketState } => ticket.state !== null)
+        .filter((ticket): ticket is Ticket => ticket.state !== null)
         .sort((a, b) => (b.submission.submittedAt ?? "").localeCompare(a.submission.submittedAt ?? "")),
     [buyers, sellers]
   )
@@ -127,6 +147,27 @@ function TicketsWorkspace() {
   )
   const visible = filter === "all" ? tagged : tagged.filter((ticket) => ticket.state === filter)
   const count = (state: Filter) => (state === "all" ? tagged.length : tagged.filter((ticket) => ticket.state === state).length)
+  const sheetTicket = sheetId ? (tickets.find((ticket) => ticket.id === sheetId) ?? null) : null
+
+  /** Moving a card is a decision: Resolved approves the application,
+   *  Waiting opens the ticket so the reviewer can say what to fix. A
+   *  ticket never moves back to Open — that only happens when the
+   *  applicant resubmits. */
+  const moveTicket = (ticket: Ticket, to: TicketState) => {
+    if (ticket.state === to) return
+    if (to === "resolved") {
+      toast.promise(approveApplication(ticket.submission.role, ticket.submission.userId), {
+        loading: `Approving ${ticket.id}…`,
+        success: `${ticket.id} approved`,
+        error: `Couldn't approve ${ticket.id}`,
+      })
+    } else if (to === "waiting") {
+      setSheetId(ticket.id)
+      toast("Say what needs fixing, then send it back")
+    } else {
+      toast("A ticket reopens when the applicant resubmits")
+    }
+  }
 
   if (!admin) return null
   if (!admin.can("onboarding.review")) {
@@ -144,20 +185,42 @@ function TicketsWorkspace() {
 
   return (
     <div className={PAGE_TABS_SPACE}>
-      <h1 className="text-[28px] font-bold tracking-tight">Tickets</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-[28px] font-bold tracking-tight">Tickets</h1>
+        <div role="radiogroup" aria-label="View" className="flex rounded-full border border-border bg-card p-0.5">
+          {VIEWS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={view === option.value}
+              onClick={() => setParams({ view: option.value === "list" ? null : option.value })}
+              className={cn(
+                "inline-flex h-8 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-medium transition-colors",
+                view === option.value ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <option.icon aria-hidden className="size-3.5" />
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      <PageTabs
-        label="Ticket status"
-        className="mt-5"
-        value={filter}
-        onChange={(next) => setParams({ status: next === "open" ? null : next })}
-        tabs={[
-          { value: "open", label: "Open", count: count("open") },
-          { value: "waiting", label: "Waiting", count: count("waiting") },
-          { value: "resolved", label: "Resolved", count: count("resolved") },
-          { value: "all", label: "All", count: count("all") },
-        ]}
-      />
+      {view === "list" ? (
+        <PageTabs
+          label="Ticket status"
+          className="mt-5"
+          value={filter}
+          onChange={(next) => setParams({ status: next === "open" ? null : next })}
+          tabs={[
+            { value: "open", label: "Open", count: count("open") },
+            { value: "waiting", label: "Waiting", count: count("waiting") },
+            { value: "resolved", label: "Resolved", count: count("resolved") },
+            { value: "all", label: "All", count: count("all") },
+          ]}
+        />
+      ) : null}
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <div className="relative w-full sm:w-64">
@@ -195,6 +258,8 @@ function TicketsWorkspace() {
         <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
           <AdminListSkeleton rows={4} />
         </div>
+      ) : view === "board" ? (
+        <TicketBoard tickets={tagged} onOpen={setSheetId} onMove={moveTicket} />
       ) : visible.length === 0 ? (
         <AdminEmptyState
           icon={Inbox}
@@ -250,6 +315,121 @@ function TicketsWorkspace() {
           </ul>
         </TooltipProvider>
       )}
+
+      <Sheet open={sheetTicket !== null} onOpenChange={(open) => !open && setSheetId(null)}>
+        <SheetContent side="responsive" className="overflow-y-auto sm:max-w-xl">
+          <SheetCloseButton />
+          {sheetTicket ? (
+            <TooltipProvider delay={300}>
+              <p className="mb-3 font-mono text-[12px] text-muted-foreground">{sheetTicket.id}</p>
+              <SubmissionCard submission={sheetTicket.submission} />
+            </TooltipProvider>
+          ) : null}
+        </SheetContent>
+      </Sheet>
+    </div>
+  )
+}
+
+/** Three columns, one per ticket state. Cards open the ticket; dragging a
+ *  card to another column makes that decision (see `moveTicket`). */
+function TicketBoard({
+  tickets,
+  onOpen,
+  onMove,
+}: {
+  tickets: Ticket[]
+  onOpen: (id: string) => void
+  onMove: (ticket: Ticket, to: TicketState) => void
+}) {
+  const [dragging, setDragging] = React.useState<string | null>(null)
+  const [over, setOver] = React.useState<TicketState | null>(null)
+
+  return (
+    <div className="-mx-4 mt-4 flex snap-x gap-3 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
+      {BOARD_COLUMNS.map((state) => {
+        const column = tickets.filter((ticket) => ticket.state === state)
+        const label = STATE_LABEL[state]
+        return (
+          <section
+            key={state}
+            aria-label={`${label.label}, ${column.length}`}
+            onDragOver={(event) => {
+              if (!dragging) return
+              event.preventDefault()
+              setOver(state)
+            }}
+            onDragLeave={() => setOver((current) => (current === state ? null : current))}
+            onDrop={(event) => {
+              event.preventDefault()
+              const ticket = tickets.find((entry) => entry.id === dragging)
+              setDragging(null)
+              setOver(null)
+              if (ticket) onMove(ticket, state)
+            }}
+            className={cn(
+              "flex w-[82%] shrink-0 snap-start flex-col rounded-[20px] bg-muted/60 p-2 transition-colors sm:w-auto",
+              over === state && "bg-amama-subtle ring-2 ring-amama-deep/30"
+            )}
+          >
+            <header className="flex items-center justify-between gap-2 px-2 pt-1 pb-2.5">
+              <StatusPill tone={label.tone}>{label.label}</StatusPill>
+              <span className="text-[12px] font-medium text-muted-foreground tabular-nums">{column.length}</span>
+            </header>
+            {column.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-border px-3 py-6 text-center text-[12.5px] text-muted-foreground">
+                No tickets
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {column.map((ticket) => (
+                  <li key={ticket.id}>
+                    <button
+                      type="button"
+                      draggable
+                      onDragStart={(event) => {
+                        event.dataTransfer.effectAllowed = "move"
+                        setDragging(ticket.id)
+                      }}
+                      onDragEnd={() => {
+                        setDragging(null)
+                        setOver(null)
+                      }}
+                      onClick={() => onOpen(ticket.id)}
+                      className={cn(
+                        "w-full cursor-grab rounded-2xl border border-border bg-card p-3 text-start shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-md active:cursor-grabbing",
+                        dragging === ticket.id && "opacity-50"
+                      )}
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-[11.5px] text-muted-foreground">{ticket.id}</span>
+                        <span className="text-[11.5px] text-muted-foreground tabular-nums">{ago(ticket.submission.submittedAt)}</span>
+                      </span>
+                      <span className="mt-1.5 block truncate text-[13.5px] font-semibold text-foreground">
+                        {ticket.submission.fullName || "Unnamed applicant"}
+                      </span>
+                      <span className="block truncate text-[12px] text-muted-foreground">{ticket.submission.email}</span>
+                      <span className="mt-2 flex flex-wrap gap-1">
+                        {ticket.tags.map((tag) => (
+                          <span
+                            key={tag.id}
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                              tag.id.endsWith("-kyc") ? "bg-foreground/[0.07] text-foreground" : "bg-muted text-muted-foreground"
+                            )}
+                          >
+                            {tag.label}
+                          </span>
+                        ))}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )
+      })}
     </div>
   )
 }

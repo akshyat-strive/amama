@@ -8,10 +8,14 @@ import { Button } from "@/components/ui/button"
 import { FieldGroup, FieldGroupRow } from "@/components/ui/field-group"
 import { useI18n } from "@/features/i18n/i18n-context"
 import { CountryCombobox } from "@/features/onboarding/components/country-select"
+import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
+import { detectCountry } from "@/features/onboarding/detect-country"
 import { StepShell } from "@/features/onboarding/components/step-shell"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import { effectiveSteps, nextStep, stepIndex } from "@/features/onboarding/steps"
 import type { OnboardingRole } from "@/features/onboarding/types"
+
+const noSubscribe = () => () => {}
 
 /**
  * The very first onboarding question, ahead of even name and email. Which
@@ -30,6 +34,18 @@ function CountryStep({ role }: { role: OnboardingRole }) {
   React.useEffect(() => {
     if (draft.role !== role) setRole(role)
   }, [draft.role, role, setRole])
+
+  // Pre-filled from the device's time zone, so most people only confirm.
+  // The server has no idea where the visitor is, so it renders empty and
+  // the guess arrives on hydration.
+  const detected = React.useSyncExternalStore(noSubscribe, detectCountry, () => "")
+  const autoFilled = React.useRef(false)
+  React.useEffect(() => {
+    if (autoFilled.current || !detected || current.country) return
+    autoFilled.current = true
+    update({ country: detected })
+  }, [detected, current.country, update])
+  const detectedName = countries.find((country) => country.code === detected)?.name
 
   const canContinue = current.country.trim().length > 0
   const target = nextStep(role, "country")
@@ -67,6 +83,11 @@ function CountryStep({ role }: { role: OnboardingRole }) {
           />
         </FieldGroupRow>
       </FieldGroup>
+      {detectedName && current.country === detected ? (
+        <p className="mt-2.5 text-[13px] text-muted-foreground">
+          <span aria-hidden>{countryCodeToFlag(detected)}</span> {detectedName} is a guess from your device&apos;s time zone. Change it if it&apos;s wrong.
+        </p>
+      ) : null}
     </StepShell>
   )
 }

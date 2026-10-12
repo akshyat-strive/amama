@@ -16,8 +16,7 @@ const buyerSteps: StepDefinition[] = [
   { slug: "account", href: "/buyer/onboarding/account", title: "Your account" },
   { slug: "birthday", href: "/buyer/onboarding/birthday", title: "Date of birth" },
   { slug: "company", href: "/buyer/onboarding/company", title: "Your company" },
-  { slug: "sourcing", href: "/buyer/onboarding/sourcing", title: "What you source" },
-  { slug: "volume", href: "/buyer/onboarding/volume", title: "Preferences" },
+  { slug: "sourcing", href: "/buyer/onboarding/sourcing", title: "What you buy" },
   { slug: "documents", href: "/buyer/onboarding/documents", title: "KYC" },
   { slug: "done", href: "/buyer/onboarding/done", title: "All set" },
 ]
@@ -25,7 +24,6 @@ const buyerSteps: StepDefinition[] = [
 const sellerSteps: StepDefinition[] = [
   { slug: "country", href: "/seller/onboarding/country", title: "Your country" },
   { slug: "account", href: "/seller/onboarding/account", title: "Your account" },
-  { slug: "about", href: "/seller/onboarding/about", title: "About your farm" },
   { slug: "farm", href: "/seller/onboarding/farm", title: "Your farm" },
   { slug: "produce", href: "/seller/onboarding/produce", title: "What you grow" },
   {
@@ -300,12 +298,6 @@ export const gradesByCrop: Record<string, readonly string[]> = {
   oils: [...BASE_GRADES, "Cold-pressed", "Refined"],
 }
 export const gradesFor = (cropId: string): readonly string[] => gradesByCrop[cropId] ?? BASE_GRADES
-
-/** Every grade worth suggesting for a set of products — the common
- *  grades first, then each product's own, without repeats. */
-export function gradeSuggestions(cropIds: readonly string[]): string[] {
-  return [...new Set([...BASE_GRADES, "Grade C", ...cropIds.flatMap((id) => gradesByCrop[id] ?? [])])]
-}
 
 /** True for a product on the built-in catalog; false for a custom one the
  *  person typed in (stored as a slugified name). */

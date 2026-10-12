@@ -24,13 +24,14 @@ const STORAGE_KEY = "amama.onboarding.draft"
 const PREFERENCES_KEY = (email: string) => `amama.buyer.preferences.${email.trim().toLowerCase()}`
 
 const hasPreferences = (preferences: BuyerPreferences) =>
-  preferences.products.length > 0 || preferences.grades.length > 0 || preferences.orderSize !== ""
+  preferences.categories.length > 0 || preferences.products.length > 0 || preferences.grades.length > 0 || preferences.orderSize !== ""
 
 /** Drafts saved before preferences were reshaped carried a per-product
  *  map; anything not in the current shape starts empty. */
 function normalisePreferences(value: unknown): BuyerPreferences {
   const raw = (value ?? {}) as Partial<BuyerPreferences>
   return {
+    categories: Array.isArray(raw.categories) ? raw.categories : [],
     products: Array.isArray(raw.products) ? raw.products : [],
     grades: Array.isArray(raw.grades) ? raw.grades : [],
     orderSize: typeof raw.orderSize === "string" ? raw.orderSize : "",

@@ -259,4 +259,46 @@ function SelectableRow({
   )
 }
 
-export { SelectableTile, SelectableTileGroup, SelectableRow, SelectableGroup }
+/** Single choice as a grid of short buttons — far shorter than a stack of
+ *  `SelectableRow`s when the options are a word or two each. With
+ *  `clearable`, pressing the chosen option again un-picks it. */
+function ChoiceChips<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  clearable,
+  className,
+}: {
+  label: string
+  options: readonly { value: T; label: string }[]
+  value: string
+  onChange: (value: T | "") => void
+  clearable?: boolean
+  className?: string
+}) {
+  return (
+    <div role="radiogroup" aria-label={label} className={cn("grid grid-cols-2 gap-2", className)}>
+      {options.map((option) => {
+        const on = value === option.value
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => onChange(on && clearable ? "" : option.value)}
+            className={cn(
+              "min-h-11 rounded-2xl border px-3 py-2 text-[14px] leading-tight font-medium transition-colors",
+              on ? "border-amama-deep bg-amama-subtle text-amama-deep" : "border-border bg-card text-foreground hover:bg-muted"
+            )}
+          >
+            {option.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+export { SelectableTile, SelectableTileGroup, SelectableRow, SelectableGroup, ChoiceChips }

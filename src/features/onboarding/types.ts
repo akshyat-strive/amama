@@ -17,21 +17,25 @@ export type EntityType = "individual" | "organization" | ""
 export type SellerSubType = "producer" | "trader" | ""
 
 /**
- * How a buyer likes to buy, independent of any one product. Every list is
- * ordered — the first entry matters most — and every field is optional;
- * the marketplace uses them only to decide what to show first.
+ * What a buyer is interested in, beyond the plain product list in
+ * `sourcing`. Nothing here is ranked — every list is a set — and every
+ * field is optional; the marketplace uses them only to decide what to
+ * show first, never to hide anything.
  */
 export type BuyerPreferences = {
-  /** Product ids (crop ids, or a slugified custom name) and variants
-   *  (`<productId>/<variety slug>`), most wanted first. */
+  /** Whole categories — a catalog category id, or a slugified custom name. */
+  categories: string[]
+  /** Variants (`<productId>/<variety slug>`). Older drafts may also hold
+   *  plain product ids here; they count the same as `sourcing`. */
   products: string[]
-  /** Grade names, most wanted first. */
+  /** A grade of one product (`<productId>::<grade>`), or a bare grade
+   *  name for "this grade, whatever the product". */
   grades: string[]
   /** One of `orderSizes` in steps.ts, "" when not chosen. */
   orderSize: string
 }
 
-export const emptyPreferences: BuyerPreferences = { products: [], grades: [], orderSize: "" }
+export const emptyPreferences: BuyerPreferences = { categories: [], products: [], grades: [], orderSize: "" }
 
 export type BuyerDraft = {
   email: string

@@ -50,34 +50,41 @@ function SourcingWorkspace() {
   const preferences = draft.buyer.preferences
   const incoterm = draft.buyer.incoterm
 
-  /** Products the buyer told us they buy — picked at onboarding, or put
-   *  on their priority list (a variant counts for its product). */
+  /** Products the buyer told us they buy — picked outright, or through
+   *  one of their varieties or grades. */
   const interests = React.useMemo(
-    () => new Set([...mySourcing, ...(preferences?.products ?? []).map((id) => id.split("/")[0])]),
+    () =>
+      new Set([
+        ...mySourcing,
+        ...(preferences?.products ?? []).map((id) => id.split("/")[0]),
+        ...(preferences?.grades ?? []).filter((grade) => grade.includes("::")).map((grade) => grade.split("::")[0]),
+      ]),
     [mySourcing, preferences]
   )
+  const categoryInterests = React.useMemo(() => new Set(preferences?.categories ?? []), [preferences])
+  const isInterest = React.useCallback(
+    (listing: Listing) => interests.has(listing.cropId) || categoryInterests.has(listing.categoryId),
+    [interests, categoryInterests]
+  )
 
-  /** How well a listing fits the buyer's priorities: where its product or
-   *  variant sits on their product list, where its grade sits on their
-   *  grade list, and whether it can fill their usual order. Higher first;
-   *  it only orders things, never hides them. */
+  /** How well a listing fits what the buyer picked: its exact variety,
+   *  its product, its grade (for that product or any), its category, and
+   *  whether it can fill their usual order. Higher first; it only orders
+   *  things, never hides them. */
   const fit = React.useCallback(
     (listing: Listing) => {
       const products = preferences?.products ?? []
       const grades = preferences?.grades ?? []
-      const variantRank = products.indexOf(`${listing.cropId}/${slugify(listing.variety)}`)
-      const productRank = products.indexOf(listing.cropId)
-      const rank = variantRank >= 0 ? variantRank : productRank
-      const gradeRank = grades.indexOf(listing.grade)
       const minMt = preferences?.orderSize ? (ORDER_SIZE_MIN_MT[preferences.orderSize as (typeof orderSizes)[number]] ?? 0) : null
       return (
-        (rank >= 0 ? (products.length - rank) * 10 : 0) +
-        (gradeRank >= 0 ? (grades.length - gradeRank) * 3 : 0) +
-        (interests.has(listing.cropId) ? 5 : 0) +
+        (products.includes(`${listing.cropId}/${slugify(listing.variety)}`) ? 30 : 0) +
+        (grades.includes(`${listing.cropId}::${listing.grade}`) || grades.includes(`${listing.cropId}::${listing.variety}`) ? 20 : grades.includes(listing.grade) ? 8 : 0) +
+        (interests.has(listing.cropId) ? 10 : 0) +
+        (categoryInterests.has(listing.categoryId) ? 5 : 0) +
         (minMt !== null && listing.quantityMt >= minMt ? 1 : 0)
       )
     },
-    [preferences, interests]
+    [preferences, interests, categoryInterests]
   )
 
   const allListings = useListings()
@@ -111,9 +118,9 @@ function SourcingWorkspace() {
       CATALOG_CATEGORIES.map((category) => {
         const inCategory = listings.filter((listing) => listing.categoryId === category.id)
         if (inCategory.length === 0) return null
-        return { category, listings: inCategory, forMe: inCategory.some((listing) => interests.has(listing.cropId)) }
+        return { category, listings: inCategory, forMe: inCategory.some(isInterest) }
       }).filter((entry) => entry !== null),
-    [listings, interests]
+    [listings, isInterest]
   )
 
   const canScope = categories.some((entry) => entry.forMe)
@@ -138,14 +145,16 @@ function SourcingWorkspace() {
     const ids = new Set<string>(visible.map((entry) => entry.category.id))
     const scoped = listings.filter(
       (listing) =>
-        (activeId === ALL ? ids.has(listing.categoryId) : listing.categoryId === activeId) && (!mine || interests.has(listing.cropId))
+        (activeId === ALL ? ids.has(listing.categoryId) : listing.categoryId === activeId) && (!mine || isInterest(listing))
     )
     const byProduct = new Map<string, Listing[]>()
     for (const listing of scoped) byProduct.set(listing.cropId, [...(byProduct.get(listing.cropId) ?? []), listing])
     const rows = [...byProduct.entries()].map(([cropId, group]) => ({
       cropId,
       fit: Math.max(...group.map(fit)),
-      gradeMatch: group.some((listing) => preferences?.grades.includes(listing.grade)),
+      gradeMatch: group.some((listing) =>
+        [listing.grade, `${listing.cropId}::${listing.grade}`, `${listing.cropId}::${listing.variety}`].some((grade) => preferences?.grades.includes(grade))
+      ),
       categoryId: group[0].categoryId,
       label: productLabel(cropId),
       photo: group[0].photo,
@@ -154,7 +163,7 @@ function SourcingWorkspace() {
       minPrice: Math.min(...group.map((listing) => listing.pricePerTonneUsd)),
     }))
     return rows.sort((a, b) => b.fit - a.fit || (sort === "price" ? a.minPrice - b.minPrice : a.label.localeCompare(b.label)))
-  }, [listings, activeId, visible, sort, fit, preferences, mine, interests])
+  }, [listings, activeId, visible, sort, fit, preferences, mine, isInterest])
 
   /* The full rail scrolls away; its compact twin pins under the topbar. */
   const railRef = React.useRef<HTMLDivElement>(null)
@@ -275,8 +284,8 @@ function SourcingWorkspace() {
               {activeId !== ALL ? ` in ${railItems.find((item) => item.id === activeId)?.label}` : ""}
               {" · "}
               {incoterm && incoterm !== "notSure" ? `${incoterm.toUpperCase()} · ` : ""}
-              <Link href="/buyer/onboarding/volume?from=marketplace" className="font-medium text-amama-deep hover:underline">
-                {preferences?.products.length || preferences?.grades.length ? "Ranked by your preferences" : "Set preferences"}
+              <Link href="/buyer/onboarding/sourcing?from=marketplace" className="font-medium text-amama-deep hover:underline">
+                {preferences?.products.length || preferences?.grades.length || preferences?.categories.length ? "Matched to your picks" : "Set preferences"}
               </Link>
             </p>
             <Select items={SORT_ITEMS} value={sort} onValueChange={(next) => next && setSort(next as Sort)}>

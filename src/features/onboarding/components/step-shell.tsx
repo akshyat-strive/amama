@@ -7,6 +7,7 @@ import { ArrowLeftIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { useI18n } from "@/features/i18n/i18n-context"
+import { OnboardingAside } from "@/features/onboarding/components/onboarding-aside"
 
 type StepShellProps = {
   /** 1-based position, used for the bar and the announcement. */
@@ -77,9 +78,10 @@ function StepDots({ step, totalSteps }: { step: number; totalSteps: number }) {
 /**
  * The frame every onboarding step shares: back affordance, dot progress, a
  * big friendly headline, then a footer that stays reachable with one thumb
- * on a phone and centres itself on a desktop. Plain white surface — the
- * onboarding flow isn't part of the dashboard shell, so it gets the same
- * clean, chrome-less feel as the login screens either side of it.
+ * on a phone. On a desktop it splits 4:3 — the step on the left, centred
+ * vertically with its buttons right under it, and a photo with a live
+ * profile preview on the right — so a short step never floats in an
+ * empty white page.
  */
 function StepShell({
   step,
@@ -96,75 +98,86 @@ function StepShell({
   const { t } = useI18n()
 
   return (
-    <div className="flex min-h-dvh flex-col bg-card">
-      <header className="sticky top-0 z-20 bg-card/85 backdrop-blur-sm">
-        {/* Extra end padding reserves room for the fixed `[en]` language
-            switcher pinned to the same corner on every screen — on mobile
-            widths there's no outer gutter for it to float in otherwise, so
-            without this it would sit on top of the step count. */}
-        <div className="mx-auto flex w-full max-w-lg items-center gap-3 ps-4 pe-16 py-3">
-          {/* A link is a link: styled with the button recipe rather than routed
-              through <Button>, which would strip native anchor semantics. */}
-          <Link
-            href={backHref}
-            aria-label={t("common.goBack")}
+    // Fixed to the viewport on a desktop, so a long step scrolls inside the
+    // left column and the photo stays put beside it.
+    <div className="min-h-dvh bg-card lg:grid lg:h-dvh lg:grid-cols-[4fr_3fr] lg:overflow-hidden">
+      <div className="flex min-h-dvh flex-col lg:min-h-0 lg:overflow-y-auto">
+        <header className="sticky top-0 z-20 bg-card/85 backdrop-blur-sm">
+          {/* Extra end padding reserves room for the fixed `[en]` language
+              switcher pinned to the same corner on every screen — on mobile
+              widths there's no outer gutter for it to float in otherwise, so
+              without this it would sit on top of the step count. On a desktop
+              it floats over the photo instead. */}
+          <div className="mx-auto flex w-full max-w-lg items-center gap-3 ps-4 pe-28 py-3 lg:max-w-xl lg:px-10 lg:pt-6">
+            {/* A link is a link: styled with the button recipe rather than routed
+                through <Button>, which would strip native anchor semantics. */}
+            <Link
+              href={backHref}
+              aria-label={t("common.goBack")}
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "icon" }),
+                "-ms-2 shrink-0"
+              )}
+            >
+              {/* Mirrors automatically in RTL. */}
+              <ArrowLeftIcon />
+            </Link>
+            <StepDots step={step} totalSteps={totalSteps} />
+            <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
+              {step}/{totalSteps}
+            </span>
+          </div>
+        </header>
+
+        <div className="flex flex-1 flex-col lg:justify-center">
+          <main
             className={cn(
-              buttonVariants({ variant: "ghost", size: "icon" }),
-              "-ms-2 shrink-0"
+              "mx-auto flex w-full max-w-lg flex-1 flex-col px-5 pb-6 pt-4 lg:max-w-xl lg:flex-none lg:px-10 lg:pt-2",
+              className
             )}
           >
-            {/* Mirrors automatically in RTL. */}
-            <ArrowLeftIcon />
-          </Link>
-          <StepDots step={step} totalSteps={totalSteps} />
-          <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
-            {step}/{totalSteps}
-          </span>
-        </div>
-      </header>
-
-      <main
-        className={cn(
-          "mx-auto flex w-full max-w-lg flex-1 flex-col px-5 pb-6 pt-4",
-          className
-        )}
-      >
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-balance text-foreground sm:text-[32px]">
-          {title}
-        </h1>
-        {description ? (
-          <p className="mt-2 text-[15px] leading-relaxed text-pretty text-muted-foreground">
-            {description}
-          </p>
-        ) : null}
-        <div className="mt-7 flex-1">{children}</div>
-      </main>
-
-      {/* Inset from the edges rather than a full-bleed bar, rounded only where
-          it meets the page content — the bottom edge sits flush against the
-          viewport, so there's nothing to round there. */}
-      <footer className="sticky bottom-0 z-20 px-3 sm:px-0">
-        <div className="mx-auto w-full max-w-lg rounded-t-[40px] border border-b-0 border-border/60 bg-card/95 px-5 pt-4 pb-0 [max(1rem,env(safe-area-inset-bottom))] shadow-[0_-12px_24px_-16px_rgba(0,0,0,0.15)] backdrop-blur-sm">
-          <div className="flex items-stretch gap-2">
-            {skipHref ? (
-              <Link
-                href={skipHref}
-                className={cn(buttonVariants({ variant: "outline", size: "xl" }))}
-              >
-                {t("common.skip")}
-              </Link>
+            <h1 className="text-[28px] font-bold leading-tight tracking-tight text-balance text-foreground sm:text-[32px]">
+              {title}
+            </h1>
+            {description ? (
+              <p className="mt-2 text-[15px] leading-relaxed text-pretty text-muted-foreground">
+                {description}
+              </p>
             ) : null}
-            <div className="flex-1">{footer}</div>
-          </div>
-          {/* Fixed height whether or not a note is passed — the terms notice
-              only appears on the account step, and without this the card (and
-              the button inside it) would sit at a different height on every
-              other step, reading as a layout jump between screens. */}
-          <div className="flex h-9 items-center justify-center text-center">
-            {footerNote}
-          </div>
+            <div className="mt-7 flex-1">{children}</div>
+          </main>
+
+          {/* Inset from the edges rather than a full-bleed bar, rounded only where
+              it meets the page content — the bottom edge sits flush against the
+              viewport, so there's nothing to round there. On a desktop it drops
+              the floating-sheet look and sits right under the step, still
+              sticky for steps taller than the viewport. */}
+          <footer className="sticky bottom-0 z-20 px-3 sm:px-0">
+            <div className="mx-auto w-full max-w-lg rounded-t-[40px] border border-b-0 border-border/60 bg-card/95 px-5 pt-4 pb-0 shadow-[0_-12px_24px_-16px_rgba(0,0,0,0.15)] backdrop-blur-sm lg:max-w-xl lg:rounded-none lg:border-0 lg:px-10 lg:shadow-none">
+              <div className="flex items-stretch gap-2">
+                {skipHref ? (
+                  <Link
+                    href={skipHref}
+                    className={cn(buttonVariants({ variant: "outline", size: "xl" }))}
+                  >
+                    {t("common.skip")}
+                  </Link>
+                ) : null}
+                <div className="flex-1">{footer}</div>
+              </div>
+              {/* Fixed height whether or not a note is passed — the terms notice
+                  only appears on the account step, and without this the card (and
+                  the button inside it) would sit at a different height on every
+                  other step, reading as a layout jump between screens. */}
+              <div className="flex h-9 items-center justify-center text-center">
+                {footerNote}
+              </div>
+            </div>
+          </footer>
         </div>
-      </footer>
+      </div>
+
+      <OnboardingAside step={step} />
     </div>
   )
 }

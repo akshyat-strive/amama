@@ -79,7 +79,7 @@ function ProfileView({ role }: { role: OnboardingRole }) {
               <div className="flex flex-col gap-1 px-5 py-3.5">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-[13px] text-muted-foreground">About your farm</span>
-                  <Link href="/seller/onboarding/about" className="text-[13px] font-medium text-amama-deep hover:underline">
+                  <Link href="/seller/onboarding/farm" className="text-[13px] font-medium text-amama-deep hover:underline">
                     {draft.seller.bio ? "Edit" : "Add"}
                   </Link>
                 </div>

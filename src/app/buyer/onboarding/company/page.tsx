@@ -11,10 +11,7 @@ import {
 } from "@/components/ui/field-group"
 import { useI18n } from "@/features/i18n/i18n-context"
 import { StepShell } from "@/features/onboarding/components/step-shell"
-import {
-  SelectableRow,
-  SelectableGroup,
-} from "@/features/onboarding/components/selectable"
+import { ChoiceChips } from "@/features/onboarding/components/selectable"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import {
   businessTypes,
@@ -81,21 +78,17 @@ export default function BuyerCompanyPage() {
           </FieldGroupRow>
         </FieldGroup>
 
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-[14px] font-semibold">
+        <fieldset>
+          <legend className="text-[14px] font-semibold">
             {t("onboarding.company.businessTypeLegend")}
           </legend>
-          <SelectableGroup>
-            {businessTypes.map((type) => (
-              <SelectableRow
-                key={type}
-                name="businessType"
-                label={t(`onboarding.options.businessTypes.${type}`)}
-                selected={buyer.businessType === type}
-                onSelect={() => updateBuyer({ businessType: type })}
-              />
-            ))}
-          </SelectableGroup>
+          <ChoiceChips
+            label={t("onboarding.company.businessTypeLegend")}
+            className="mt-2.5 sm:grid-cols-3"
+            value={buyer.businessType}
+            options={businessTypes.map((type) => ({ value: type, label: t(`onboarding.options.businessTypes.${type}`) }))}
+            onChange={(businessType) => updateBuyer({ businessType })}
+          />
         </fieldset>
       </div>
     </StepShell>

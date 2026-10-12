@@ -6,19 +6,20 @@ import { ArrowRightIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/features/i18n/i18n-context"
+import { productLabel } from "@/features/marketplace/catalog"
+import { IncotermInfoButton } from "@/features/marketplace/incoterm-picker"
+import { InterestPicker } from "@/features/onboarding/components/interest-picker"
+import { ChoiceChips } from "@/features/onboarding/components/selectable"
 import { StepShell } from "@/features/onboarding/components/step-shell"
-import {
-  SelectableTile,
-  SelectableTileGroup,
-} from "@/features/onboarding/components/selectable"
-import { CustomProducts } from "@/features/onboarding/components/custom-products"
+import { pickedKeys } from "@/features/onboarding/interests"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import {
-  cropImageUrl,
-  crops,
+  ORDER_SIZE_LABELS,
   effectiveSteps,
+  incoterms,
   isCatalogCrop,
   nextStep,
+  orderSizes,
   previousStep,
   stepIndex,
 } from "@/features/onboarding/steps"
@@ -33,84 +34,78 @@ export default function BuyerSourcingPage() {
   )
 }
 
+/**
+ * What the buyer buys and how: one search for categories, products,
+ * varieties and grades, then a usual order size and incoterm. Nothing is
+ * ranked and nothing is required — it only decides what the marketplace
+ * shows first.
+ */
 function BuyerSourcingPageInner() {
   const router = useRouter()
   const { t } = useI18n()
   const { draft, updateBuyer } = useOnboarding()
-  const picked = draft.buyer.sourcing
-  const entityType = draft.buyer.entityType
+  const buyer = draft.buyer
+  const picked = pickedKeys(buyer).length
 
-  const toggle = (id: string) =>
-    updateBuyer((prev) => ({
-      sourcing: prev.sourcing.includes(id)
-        ? prev.sourcing.filter((crop) => crop !== id)
-        : [...prev.sourcing, id],
-    }))
+  const nameOf = React.useCallback(
+    (cropId: string) => (isCatalogCrop(cropId) ? t(`onboarding.options.crops.${cropId}`) : productLabel(cropId)),
+    [t]
+  )
 
-  // Reached from the Profile page's "Edit product list" link, or the
-  // marketplace's "Edit buying interests" popover, rather than walking the
-  // wizard in order — every pick already saves immediately (see `toggle`
-  // above), so there's nothing left to "continue" into. Both the back arrow
-  // and the primary button return straight to wherever the buyer came from
-  // instead of the next/previous onboarding step.
+  // Reached from the Profile page or the marketplace rather than walking
+  // the wizard in order — every pick already saves immediately, so both
+  // the back arrow and the primary button return to wherever the buyer
+  // came from instead of the next/previous onboarding step.
   const from = useSearchParams().get("from")
-  const returnHref =
-    from === "profile"
-      ? "/buyer/dashboard/profile"
-      : from === "marketplace"
-        ? "/buyer/dashboard/sourcing"
-        : null
+  const returnHref = from === "profile" ? "/buyer/dashboard/profile" : from === "marketplace" ? "/buyer/dashboard/sourcing" : null
 
-  const target = nextStep("buyer", "sourcing", entityType)
-  const back = previousStep("buyer", "sourcing", entityType)
+  const target = nextStep("buyer", "sourcing", buyer.entityType)
+  const back = previousStep("buyer", "sourcing", buyer.entityType)
   const continueHref = returnHref ?? target?.href
 
   return (
     <StepShell
-      step={stepIndex("buyer", "sourcing", entityType) + 1}
-      totalSteps={effectiveSteps("buyer", entityType).length}
+      step={stepIndex("buyer", "sourcing", buyer.entityType) + 1}
+      totalSteps={effectiveSteps("buyer", buyer.entityType).length}
       backHref={returnHref ?? back?.href ?? "/"}
-      title={t("onboarding.sourcing.title")}
-      description={t("onboarding.sourcing.description")}
+      title="What do you buy?"
+      description="Search a category, product, variety or grade, and pick as many as you like."
       skipHref={continueHref}
       footer={
-        <Button
-          size="xl"
-          className="w-full"
-          onClick={() => continueHref && router.push(continueHref)}
-        >
-          {picked.length > 0
-            ? t("common.continueWithCount", { count: picked.length })
-            : t("common.continue")}
+        <Button size="xl" className="w-full" onClick={() => continueHref && router.push(continueHref)}>
+          {picked > 0 ? t("common.continueWithCount", { count: picked }) : t("common.continue")}
           <ArrowRightIcon />
         </Button>
       }
     >
-      <p aria-live="polite" className="sr-only">
-        {t("onboarding.sourcing.selectedAnnouncement", { count: picked.length })}
-      </p>
-      <SelectableTileGroup
-        aria-label={t("onboarding.sourcing.title")}
-        className="grid grid-cols-2 gap-3 sm:grid-cols-3"
-      >
-        {crops.map((crop) => {
-          const label = t(`onboarding.options.crops.${crop.id}`)
-          return (
-            <SelectableTile
-              key={crop.id}
-              label={label}
-              photo={{ src: cropImageUrl(crop.photo), alt: label }}
-              selected={picked.includes(crop.id)}
-              onToggle={() => toggle(crop.id)}
-            />
-          )
-        })}
-      </SelectableTileGroup>
-      <CustomProducts
-        custom={picked.filter((id) => !isCatalogCrop(id))}
-        onAdd={(id) => updateBuyer((prev) => ({ sourcing: prev.sourcing.includes(id) ? prev.sourcing : [...prev.sourcing, id] }))}
-        onRemove={(id) => updateBuyer((prev) => ({ sourcing: prev.sourcing.filter((entry) => entry !== id) }))}
-      />
+      <InterestPicker buyer={buyer} onChange={updateBuyer} nameOf={nameOf} />
+
+      <fieldset className="mt-8">
+        <legend className="text-[14px] font-semibold">Usual order size</legend>
+        <ChoiceChips
+          label="Usual order size"
+          className="mt-2.5 sm:grid-cols-4"
+          clearable
+          value={buyer.preferences.orderSize}
+          options={orderSizes.map((size) => ({ value: size, label: ORDER_SIZE_LABELS[size] }))}
+          onChange={(orderSize) => updateBuyer((previous) => ({ preferences: { ...previous.preferences, orderSize } }))}
+        />
+      </fieldset>
+
+      <fieldset className="mt-6">
+        <legend className="flex items-center gap-1.5 text-[14px] font-semibold">
+          {t("onboarding.volume.incotermLegend")}
+          <IncotermInfoButton />
+        </legend>
+        <ChoiceChips
+          label={t("onboarding.volume.incotermLegend")}
+          className="mt-2.5 sm:grid-cols-3"
+          clearable
+          value={buyer.incoterm}
+          options={incoterms.map((term) => ({ value: term, label: t(`onboarding.options.incoterms.${term}`) }))}
+          onChange={(incoterm) => updateBuyer({ incoterm })}
+        />
+      </fieldset>
     </StepShell>
   )
 }

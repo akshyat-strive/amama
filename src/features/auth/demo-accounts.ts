@@ -1,10 +1,11 @@
 import { emptyPreferences, type BuyerPreferences, type OnboardingDraft, type OnboardingRole } from "@/features/onboarding/types"
 
-/** The demo buyer's priorities — the server profile has no column for
+/** The demo buyer's interests — the server profile has no column for
  *  these yet, so they are restored from here on sign-in. */
 const DEMO_PREFERENCES: BuyerPreferences = {
-  products: ["cashew", "tea", "spices"],
-  grades: ["Grade A+", "W-240", "Grade A"],
+  categories: [],
+  products: [],
+  grades: ["Grade A+", "cashew::W-240"],
   orderSize: "20to50",
 }
 

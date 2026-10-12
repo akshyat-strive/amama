@@ -10,6 +10,7 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   FileWarningIcon,
+  GitPullRequestArrowIcon,
   LayoutGridIcon,
   ListOrderedIcon,
   PackageIcon,
@@ -60,10 +61,11 @@ import {
 } from "@/features/trades/trade-format"
 import { ClockInfo, DocumentsInfo, ExcursionInfo, QuantityInfo, ScenarioInfo, SpineInfo } from "@/features/trades/trade-info"
 import { LegStepper, PhaseStepper } from "@/features/trades/trade-journey"
+import { ChangesTab } from "@/features/trades/trade-changes"
 import { DocumentRows, StagesPanel } from "@/features/trades/trade-stage-panel"
 import { Dot, EmptyNote, Facts, Mono, Panel, Pill, Status, TEXT_TONE } from "@/features/trades/trade-ui"
 
-type Tab = "overview" | "stages" | TradeDomain
+type Tab = "overview" | "stages" | TradeDomain | "changes"
 
 const TABS: PageTab<Tab>[] = [
   { value: "overview", label: "Overview", icon: LayoutGridIcon },
@@ -71,6 +73,7 @@ const TABS: PageTab<Tab>[] = [
   { value: "shipment", label: "Shipment", icon: ShipIcon },
   { value: "quality", label: "Quality", icon: BadgeCheckIcon },
   { value: "finance", label: "Finance", icon: WalletIcon },
+  { value: "changes", label: "Changes", icon: GitPullRequestArrowIcon },
 ]
 
 const usd = (value: number) => `USD ${Math.round(value).toLocaleString("en-US")}`
@@ -150,6 +153,27 @@ function attentionFor(trade: W.Trade): Attention[] {
       title: `${excursion.peakTempC} °C vs ${excursion.setpointC} °C`,
       meta: `${excursion.durationMin} min · −${excursion.shelfLifeDebitDays} d shelf life`,
       tab: "shipment",
+    })
+  }
+  for (const request of W.changeRequestsForTrade(trade.id).filter((entry) => entry.status === "awaiting-approval")) {
+    items.push({
+      key: request.id,
+      icon: GitPullRequestArrowIcon,
+      tone: "warn",
+      title: `Change requested · ${request.kind}`,
+      meta: `${request.from} → ${request.to}`,
+      tab: "changes",
+    })
+  }
+  for (const claim of W.claimsForTrade(trade.id).filter((entry) => entry.status === "open" || entry.status === "under-review")) {
+    items.push({
+      key: claim.id,
+      icon: AlertTriangleIcon,
+      tone: "crit",
+      title: `Claim ${claim.id} · ${claim.reason}`,
+      meta: `${claim.affectedMt} MT · USD ${claim.claimedUsd.toLocaleString("en-US")}`,
+      tab: "stages",
+      stage: 15,
     })
   }
   for (const record of exceptionStages(trade)) {
@@ -866,11 +890,12 @@ function Detail({
       <div className="mt-4">
         {tab === "overview" ? <OverviewTab trade={trade} perspective={perspective} partyIds={partyIds} onNavigate={navigate} /> : null}
         {tab === "stages" ? (
-          <StagesPanel trade={trade} perspective={perspective} selected={stage} onSelect={(next) => navigate("stages", next)} />
+          <StagesPanel trade={trade} perspective={perspective} partyIds={partyIds} selected={stage} onSelect={(next) => navigate("stages", next)} />
         ) : null}
         {tab === "shipment" ? <ShipmentTab trade={trade} /> : null}
         {tab === "quality" ? <QualityTab trade={trade} partyIds={partyIds} /> : null}
         {tab === "finance" ? <FinanceTab trade={trade} perspective={perspective} partyIds={partyIds} /> : null}
+        {tab === "changes" ? <ChangesTab trade={trade} perspective={perspective} partyIds={partyIds} /> : null}
       </div>
     </div>
   )

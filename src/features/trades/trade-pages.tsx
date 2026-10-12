@@ -1,6 +1,7 @@
 "use client"
 
 import * as W from "@/features/tradechain/demo-world"
+import { useLiveWorld } from "@/features/tradechain/live-world"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import { canView, partyIdsFor, tradesFor, type TradePerspective } from "@/features/trades/trade-access"
 import { TradeBoard } from "@/features/trades/trade-board"
@@ -20,11 +21,13 @@ function useViewerEmail(perspective: TradePerspective): string {
 }
 
 function TradesPage({ perspective }: { perspective: TradePerspective }) {
+  useLiveWorld()
   const email = useViewerEmail(perspective)
   return <TradeBoard trades={tradesFor(perspective, email)} perspective={perspective} basePath={BASE_PATH[perspective]} />
 }
 
 function TradePage({ perspective, tradeId }: { perspective: TradePerspective; tradeId: string }) {
+  useLiveWorld()
   const email = useViewerEmail(perspective)
   const trade = canView(perspective, email, tradeId) ? W.tradeById(tradeId) : undefined
   return (

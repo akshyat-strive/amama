@@ -17,6 +17,7 @@ import {
   pad2,
   scenarioMeta,
 } from "@/features/trades/trade-format"
+import { ClaimsPanel, DocumentActions, StageActionsPanel, StageActivity } from "@/features/trades/trade-actions"
 import { DocumentsInfo, ScenarioInfo, StageInfo } from "@/features/trades/trade-info"
 import { Dot, Facts, Panel, Pill, Status } from "@/features/trades/trade-ui"
 
@@ -110,7 +111,17 @@ function Outcome({ text }: { text: string }) {
   )
 }
 
-function StageDetail({ trade, stageNo, perspective }: { trade: W.Trade; stageNo: W.StageNo; perspective: TradePerspective }) {
+function StageDetail({
+  trade,
+  stageNo,
+  perspective,
+  partyIds,
+}: {
+  trade: W.Trade
+  stageNo: W.StageNo
+  perspective: TradePerspective
+  partyIds: string[]
+}) {
   const stage = W.stageByNo(stageNo)
   const record = W.stageRecord(trade.id, stageNo)
   const state = stageStateFor(trade, stageNo)
@@ -158,6 +169,10 @@ function StageDetail({ trade, stageNo, perspective }: { trade: W.Trade; stageNo:
         />
         {reached && record ? <Outcome text={record.outcome} /> : null}
       </Panel>
+
+      <StageActionsPanel trade={trade} stageNo={stageNo} perspective={perspective} partyIds={partyIds} />
+
+      {stageNo === 15 ? <ClaimsPanel trade={trade} perspective={perspective} /> : null}
 
       {chain && ran ? (
         <Panel
@@ -213,9 +228,16 @@ function StageDetail({ trade, stageNo, perspective }: { trade: W.Trade; stageNo:
 
       {documents.length > 0 ? (
         <Panel title="Documents" info={<DocumentsInfo />} flush>
-          <DocumentRows documents={documents} />
+          <DocumentRows
+            documents={documents}
+            renderActions={(document) => (
+              <DocumentActions trade={trade} document={document} perspective={perspective} partyIds={partyIds} />
+            )}
+          />
         </Panel>
       ) : null}
+
+      <StageActivity trade={trade} stageNo={stageNo} />
 
       {internal && stage.notifications.length > 0 ? (
         <Panel title="Alerts" flush>
@@ -235,20 +257,30 @@ function StageDetail({ trade, stageNo, perspective }: { trade: W.Trade; stageNo:
   )
 }
 
-function DocumentRows({ documents }: { documents: W.TradeDocument[] }) {
+function DocumentRows({
+  documents,
+  renderActions,
+}: {
+  documents: W.TradeDocument[]
+  renderActions?: (document: W.TradeDocument) => React.ReactNode
+}) {
   return (
     <ul className="divide-y divide-border">
       {documents.map((document) => (
-        <li key={document.id} className="flex items-center gap-3 px-5 py-2.5">
+        <li key={document.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-2.5">
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[13px] font-medium text-foreground">{document.name}</span>
-            <span className="block truncate text-[12px] text-muted-foreground">
+            <span className="block truncate text-[12px] text-muted-foreground" title={document.note ?? undefined}>
               {document.issuer}
               {document.requirement === "O" ? " · Optional" : ""}
               {document.blocks.length > 0 ? ` · Blocks ${document.blocks[0].toLowerCase()}` : ""}
             </span>
+            {renderActions && document.note ? (
+              <span className="mt-0.5 block text-[12px] text-muted-foreground">{document.note}</span>
+            ) : null}
           </span>
           <Status tone={DOC_STATUS_TONE[document.status]}>{DOC_STATUS_LABEL[document.status]}</Status>
+          {renderActions ? renderActions(document) : null}
         </li>
       ))}
     </ul>
@@ -258,11 +290,13 @@ function DocumentRows({ documents }: { documents: W.TradeDocument[] }) {
 function StagesPanel({
   trade,
   perspective,
+  partyIds,
   selected,
   onSelect,
 }: {
   trade: W.Trade
   perspective: TradePerspective
+  partyIds: string[]
   selected: W.StageNo
   onSelect: (stage: W.StageNo) => void
 }) {
@@ -293,7 +327,7 @@ function StagesPanel({
       <div className="hidden lg:sticky lg:top-[124px] lg:block">
         <StageRail trade={trade} selected={selected} onSelect={onSelect} />
       </div>
-      <StageDetail key={`${trade.id}-${selected}`} trade={trade} stageNo={selected} perspective={perspective} />
+      <StageDetail key={`${trade.id}-${selected}`} trade={trade} stageNo={selected} perspective={perspective} partyIds={partyIds} />
     </div>
   )
 }

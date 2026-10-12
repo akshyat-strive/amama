@@ -7,6 +7,7 @@ import { BellIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import * as W from "@/features/tradechain/demo-world"
+import { useLiveWorld } from "@/features/tradechain/live-world"
 import { tradesFor, type TradePerspective } from "@/features/trades/trade-access"
 import { formatStamp } from "@/features/trades/trade-format"
 
@@ -68,6 +69,8 @@ function markRead(ids: string[]) {
  *  unread count. "Read" is a per-browser convenience, nothing more. */
 function TopbarNotifications({ perspective, email, basePath }: { perspective: TradePerspective; email: string; basePath: string }) {
   const read = React.useSyncExternalStore(subscribe, readSnapshot, () => EMPTY)
+  // Actions on a trade raise notifications of their own.
+  const world = useLiveWorld()
 
   const items = React.useMemo(() => {
     const ids = new Set(tradesFor(perspective, email).map((trade) => trade.id))
@@ -77,7 +80,9 @@ function TopbarNotifications({ perspective, email, basePath }: { perspective: Tr
         ids.has(notification.tradeId) &&
         (perspective === "internal" || !INTERNAL_ONLY.includes(notification.ownerRole))
     ).sort((a, b) => b.at.localeCompare(a.at))
-  }, [perspective, email])
+    // `world` is the live-world version: the list is re-read when it moves.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [perspective, email, world])
 
   const unread = items.filter((item) => !item.read && !read.has(item.id)).length
 

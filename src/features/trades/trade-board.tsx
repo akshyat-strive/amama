@@ -8,6 +8,7 @@ import {
   ChevronRightIcon,
   Columns3Icon,
   FileWarningIcon,
+  GitPullRequestArrowIcon,
   ListIcon,
   SearchIcon,
   ThermometerIcon,
@@ -312,10 +313,25 @@ function Board({ trades, perspective, basePath }: { trades: W.Trade[]; perspecti
   const volume = live.reduce((sum, trade) => sum + trade.qtyContractedMt, 0)
   const value = live.reduce((sum, trade) => sum + trade.qtyContractedMt * trade.priceUsdPerMt, 0)
   const hrefFor = (trade: W.Trade) => `${basePath}/${trade.id}`
+  const pendingChanges = W.CHANGE_REQUESTS.filter((request) => request.status === "awaiting-approval").length
 
   return (
     <div className={PAGE_TABS_SPACE}>
-      <h1 className="text-[28px] font-bold tracking-tight">Trades</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-[28px] font-bold tracking-tight">Trades</h1>
+        {perspective === "internal" ? (
+          <Link
+            href={`${basePath}/changes`}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-card px-4 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted"
+          >
+            <GitPullRequestArrowIcon aria-hidden className="size-4" />
+            Change requests
+            {pendingChanges > 0 ? (
+              <span className="grid min-w-5 place-items-center rounded-full bg-status-warning px-1.5 text-[11px] font-bold text-white tabular-nums">{pendingChanges}</span>
+            ) : null}
+          </Link>
+        ) : null}
+      </div>
 
       <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile label="Live" value={live.length} caption={`${trades.length - live.length} closed`} />

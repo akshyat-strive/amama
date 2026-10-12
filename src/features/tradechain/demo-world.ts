@@ -1724,6 +1724,58 @@ export const TRADES: Trade[] = [
     spec: "Nashik Red, Grade A, 45–70 mm, single-layer sun-cured, max 2% sprouting.",
     nextAction: { label: "Close the margin review — log the substituted pallet and extra pre-cooling run as fixes for next season", ownerRole: "finance", dueAt: "2026-10-09T17:00:00+05:30" },
   },
+  /* ---- Live at the quieter stages -----------------------------------
+     One trade parked on each stage the book above only shows as
+     history — lot creation (04), export QC (08), customs (12) and buyer
+     delivery (15) — so every stage has a live edge someone can act on. */
+  {
+    id: "AMT-2026-00441",
+    buyerId: "b-gulfstar", kamId: "u-rohit", productId: "apple", variantId: "apple--1",
+    origin: "Kotkhai & Jubbal, Shimla, Himachal Pradesh", destination: "Deira, Dubai",
+    portOfLoading: "INMUN — Mundra", portOfDischarge: "AEJEA — Jebel Ali",
+    incoterm: "CIF Jebel Ali", paymentTerms: "30% advance · 70% at B/L + 30 days",
+    qtyContractedMt: 14, qtyShippedMt: null, priceUsdPerMt: 1165,
+    contractSignedAt: "2026-09-27T12:30:00+05:30", deliveryWindow: ["2026-10-28", "2026-11-10"],
+    currentStage: 4, status: "active", risk: 24, sellerIds: ["s-tilak", "s-suresh"],
+    spec: "Royal Delicious, Grade A, 100–125 count. Minimum 60% red blush, firmness ≥ 14 lbf, brix ≥ 12, max 2% defects, hail marks tolerated up to 3% of surface.",
+    nextAction: { label: "Confirm the weighed quantity on lot 00133 and print its QR labels", ownerRole: "qc", dueAt: "2026-10-07T19:00:00+05:30" },
+  },
+  {
+    id: "AMT-2026-00443",
+    buyerId: "b-alnoor", kamId: "u-rohit", productId: "onion", variantId: "onion--1",
+    origin: "Dindori, Nashik, Maharashtra", destination: "Jebel Ali, Dubai",
+    portOfLoading: "INNSA — Nhava Sheva", portOfDischarge: "AEJEA — Jebel Ali",
+    incoterm: "CFR Jebel Ali", paymentTerms: "30% advance · 70% at B/L + 30 days",
+    qtyContractedMt: 28, qtyShippedMt: null, priceUsdPerMt: 362,
+    contractSignedAt: "2026-09-15T10:40:00+05:30", deliveryWindow: ["2026-10-14", "2026-10-24"],
+    currentStage: 8, status: "active", risk: 36, sellerIds: ["s-krishna"],
+    spec: "Nashik Red, Grade A, 45–70 mm, single-layer sun-cured, dry neck, max 2% sprouting, packed in 25 kg leno mesh bags.",
+    nextAction: { label: "Sign off export QC on the last six pallets before the 10:00 stuffing slot", ownerRole: "qc", dueAt: "2026-10-08T08:00:00+05:30" },
+  },
+  {
+    id: "AMT-2026-00445",
+    buyerId: "b-moskva", kamId: "u-fatima", productId: "black-tea", variantId: "black-tea--2",
+    origin: "Kotagiri, Nilgiris, Tamil Nadu", destination: "Moscow",
+    portOfLoading: "INCOK — Cochin", portOfDischarge: "RULED — St Petersburg",
+    incoterm: "CFR St Petersburg", paymentTerms: "100% against scanned B/L",
+    qtyContractedMt: 18, qtyShippedMt: 18, priceUsdPerMt: 3420,
+    contractSignedAt: "2026-09-09T16:00:00+05:30", deliveryWindow: ["2026-10-28", "2026-11-12"],
+    currentStage: 12, status: "at-risk", risk: 46, sellerIds: ["s-ooty"],
+    spec: "Nilgiri Orthodox, whole leaf FOP, moisture ≤ 6%, 5 kg foil-lined packs in export cartons, Tea Board RCMC on file.",
+    nextAction: { label: "Answer the customs query on the HS sub-heading and attach the Tea Board RCMC", ownerRole: "documentation", dueAt: "2026-10-07T20:00:00+05:30" },
+  },
+  {
+    id: "AMT-2026-00447",
+    buyerId: "b-gulfstar", kamId: "u-rohit", productId: "pomegranate", variantId: "pomegranate--1",
+    origin: "Dindori, Nashik, Maharashtra", destination: "Deira, Dubai",
+    portOfLoading: "INNSA — Nhava Sheva", portOfDischarge: "AEJEA — Jebel Ali",
+    incoterm: "CIF Jebel Ali", paymentTerms: "30% advance · 70% at B/L + 30 days",
+    qtyContractedMt: 15, qtyShippedMt: 14.8, priceUsdPerMt: 1290,
+    contractSignedAt: "2026-09-03T11:15:00+05:30", deliveryWindow: ["2026-10-04", "2026-10-14"],
+    currentStage: 15, status: "active", risk: 39, sellerIds: ["s-krishna"],
+    spec: "Bhagwa, Grade A, 220 g+, deep red aril, max 2% sunscald, cracked fruit nil, 3.5 kg telescopic cartons.",
+    nextAction: { label: "Gulf Star to countersign the POD and confirm final quality on arrival", ownerRole: "kam", dueAt: "2026-10-08T12:00:00+05:30" },
+  },
   /* ---- Scenario reference trades ------------------------------------
      Five closed, fully-worked runs — one per exception chain (A–E) — so
      every stage has a concrete example of all five chains, not just the
@@ -2128,6 +2180,83 @@ export const LOTS: Lot[] = [
     harvestedAt: "2026-09-05T06:00:00+05:30", shelfLifeStart: "2026-09-05T06:00:00+05:30", qtyAcceptedKg: 12000,
     grade: "Grade A", qcDecision: "PASS", qcRecordId: "QC-00505-02", qcNote: null,
     gps: [21.2428, 76.0389], state: "shipped",
+  },
+
+  /* AMT-2026-00441 — Royal Delicious, Gulf Star (lot creation live) */
+  {
+    id: "LOT-HP-APL-2026-00131", tradeId: "AMT-2026-00441", sellerId: "s-tilak", variantId: "apple--1",
+    harvestedAt: "2026-10-06T07:30:00+05:30", shelfLifeStart: "2026-10-06T07:30:00+05:30", qtyAcceptedKg: 5200,
+    grade: "Grade A", qcDecision: "PASS", qcRecordId: "QC-00441-01", qcNote: null,
+    gps: [31.1251, 77.5427], state: "in-store",
+  },
+  {
+    id: "LOT-HP-APL-2026-00132", tradeId: "AMT-2026-00441", sellerId: "s-suresh", variantId: "apple--1",
+    harvestedAt: "2026-10-06T08:10:00+05:30", shelfLifeStart: "2026-10-06T08:10:00+05:30", qtyAcceptedKg: 4800,
+    grade: "Grade A", qcDecision: "PASS", qcRecordId: "QC-00441-02", qcNote: null,
+    gps: [31.1092, 77.6608], state: "in-store",
+  },
+  {
+    id: "LOT-HP-APL-2026-00133", tradeId: "AMT-2026-00441", sellerId: "s-tilak", variantId: "apple--1",
+    harvestedAt: "2026-10-07T07:00:00+05:30", shelfLifeStart: "2026-10-07T07:00:00+05:30", qtyAcceptedKg: 3950,
+    grade: "Grade A", qcDecision: "CONDITIONAL", qcRecordId: "QC-00441-03",
+    qcNote: "Upper block took hail on 2 October — marks on 2.6% of surface, inside the 3% clause. 3,950 kg weighed at the grading shed against 4,100 offered; quantity still to be confirmed by the warehouse before the QR labels print.",
+    gps: [31.1263, 77.5401], state: "in-store",
+  },
+
+  /* AMT-2026-00443 — Nashik Red onion, Al Noor (export QC live) */
+  {
+    id: "LOT-MH-ONI-2026-00104", tradeId: "AMT-2026-00443", sellerId: "s-krishna", variantId: "onion--1",
+    harvestedAt: "2026-09-22T06:30:00+05:30", shelfLifeStart: "2026-09-22T06:30:00+05:30", qtyAcceptedKg: 9800,
+    grade: "Grade A", qcDecision: "PASS", qcRecordId: "QC-00443-01", qcNote: null,
+    gps: [20.2034, 73.8341], state: "packed",
+  },
+  {
+    id: "LOT-MH-ONI-2026-00105", tradeId: "AMT-2026-00443", sellerId: "s-krishna", variantId: "onion--1",
+    harvestedAt: "2026-09-23T06:30:00+05:30", shelfLifeStart: "2026-09-23T06:30:00+05:30", qtyAcceptedKg: 9400,
+    grade: "Grade A", qcDecision: "PASS", qcRecordId: "QC-00443-02", qcNote: null,
+    gps: [20.1987, 73.8402], state: "packed",
+  },
+  {
+    id: "LOT-MH-ONI-2026-00106", tradeId: "AMT-2026-00443", sellerId: "s-krishna", variantId: "onion--1",
+    harvestedAt: "2026-09-24T06:30:00+05:30", shelfLifeStart: "2026-09-24T06:30:00+05:30", qtyAcceptedKg: 8600,
+    grade: "Grade A", qcDecision: "CONDITIONAL", qcRecordId: "QC-00443-03",
+    qcNote: "Curing ran a day short after the 24 Sep rain — neck dryness borderline on 4% of the sample. Accepted on condition of a re-check at export QC.",
+    gps: [20.2061, 73.8299], state: "packed",
+  },
+
+  /* AMT-2026-00445 — Nilgiri Orthodox, Moskva Fresh (customs live) */
+  {
+    id: "LOT-TN-TEA-2026-00021", tradeId: "AMT-2026-00445", sellerId: "s-ooty", variantId: "black-tea--2",
+    harvestedAt: "2026-08-28T10:00:00+05:30", shelfLifeStart: "2026-08-28T10:00:00+05:30", qtyAcceptedKg: 9000,
+    grade: "FOP", qcDecision: "PASS", qcRecordId: "QC-00445-01", qcNote: null,
+    gps: [11.4211, 76.8622], state: "packed",
+  },
+  {
+    id: "LOT-TN-TEA-2026-00022", tradeId: "AMT-2026-00445", sellerId: "s-ooty", variantId: "black-tea--2",
+    harvestedAt: "2026-09-04T10:00:00+05:30", shelfLifeStart: "2026-09-04T10:00:00+05:30", qtyAcceptedKg: 9000,
+    grade: "FOP", qcDecision: "PASS", qcRecordId: "QC-00445-02", qcNote: null,
+    gps: [11.4198, 76.8597], state: "packed",
+  },
+
+  /* AMT-2026-00447 — Bhagwa pomegranate, Gulf Star (buyer delivery live) */
+  {
+    id: "LOT-MH-POM-2026-00071", tradeId: "AMT-2026-00447", sellerId: "s-krishna", variantId: "pomegranate--1",
+    harvestedAt: "2026-09-15T06:00:00+05:30", shelfLifeStart: "2026-09-15T06:00:00+05:30", qtyAcceptedKg: 5200,
+    grade: "Grade A", qcDecision: "PASS", qcRecordId: "QC-00447-01", qcNote: null,
+    gps: [20.2019, 73.8355], state: "shipped",
+  },
+  {
+    id: "LOT-MH-POM-2026-00072", tradeId: "AMT-2026-00447", sellerId: "s-krishna", variantId: "pomegranate--1",
+    harvestedAt: "2026-09-15T07:30:00+05:30", shelfLifeStart: "2026-09-15T07:30:00+05:30", qtyAcceptedKg: 5000,
+    grade: "Grade A", qcDecision: "PASS", qcRecordId: "QC-00447-02", qcNote: null,
+    gps: [20.2045, 73.8318], state: "shipped",
+  },
+  {
+    id: "LOT-MH-POM-2026-00073", tradeId: "AMT-2026-00447", sellerId: "s-krishna", variantId: "pomegranate--1",
+    harvestedAt: "2026-09-16T06:00:00+05:30", shelfLifeStart: "2026-09-16T06:00:00+05:30", qtyAcceptedKg: 4600,
+    grade: "Grade A", qcDecision: "CONDITIONAL", qcRecordId: "QC-00447-03",
+    qcNote: "Sunscald at 1.8% against the 2% clause on the south-facing block. Accepted — the closest number to a claim this trade carries.",
+    gps: [20.1998, 73.8376], state: "shipped",
   },
 ]
 
@@ -2691,6 +2820,144 @@ export const QC_RECORDS: QcRecord[] = [
     ],
     defectPct: 1.0, decision: "PASS", note: null, photos: 10, gps: [21.2428, 76.0389],
   },
+
+  /* AMT-2026-00441 — Royal Delicious */
+  {
+    id: "QC-00441-01", lotId: "LOT-HP-APL-2026-00131", tradeId: "AMT-2026-00441",
+    inspectorId: "u-meera", inspectedAt: "2026-10-06T10:40:00+05:30", sampleSize: 100,
+    measurements: [
+      { label: "Count size in 100–125 band", value: "84%", spec: "≥ 80%", pass: true },
+      { label: "Firmness", value: "15.6 lbf", spec: "≥ 14 lbf", pass: true },
+      { label: "Brix", value: "12.8", spec: "≥ 12", pass: true },
+      { label: "Red blush", value: "68%", spec: "≥ 60%", pass: true },
+      { label: "Defects", value: "1.2%", spec: "≤ 2%", pass: true },
+    ],
+    defectPct: 1.2, decision: "PASS", note: null, photos: 14, gps: [31.1251, 77.5427],
+  },
+  {
+    id: "QC-00441-02", lotId: "LOT-HP-APL-2026-00132", tradeId: "AMT-2026-00441",
+    inspectorId: "u-meera", inspectedAt: "2026-10-06T14:20:00+05:30", sampleSize: 100,
+    measurements: [
+      { label: "Count size in 100–125 band", value: "81%", spec: "≥ 80%", pass: true },
+      { label: "Firmness", value: "14.9 lbf", spec: "≥ 14 lbf", pass: true },
+      { label: "Brix", value: "13.1", spec: "≥ 12", pass: true },
+      { label: "Red blush", value: "72%", spec: "≥ 60%", pass: true },
+      { label: "Defects", value: "1.6%", spec: "≤ 2%", pass: true },
+    ],
+    defectPct: 1.6, decision: "PASS", note: null, photos: 12, gps: [31.1092, 77.6608],
+  },
+  {
+    id: "QC-00441-03", lotId: "LOT-HP-APL-2026-00133", tradeId: "AMT-2026-00441",
+    inspectorId: "u-meera", inspectedAt: "2026-10-07T11:05:00+05:30", sampleSize: 120,
+    measurements: [
+      { label: "Count size in 100–125 band", value: "80%", spec: "≥ 80%", pass: true },
+      { label: "Firmness", value: "14.4 lbf", spec: "≥ 14 lbf", pass: true },
+      { label: "Brix", value: "12.4", spec: "≥ 12", pass: true },
+      { label: "Hail marks", value: "2.6%", spec: "≤ 3% of surface", pass: true },
+      { label: "Defects", value: "1.9%", spec: "≤ 2%", pass: true },
+    ],
+    defectPct: 1.9, decision: "CONDITIONAL",
+    note: "Every measure inside spec but three of five at the edge. Sample widened to 120 fruit; conditional on the warehouse confirming weight before labels print.",
+    photos: 22, gps: [31.1263, 77.5401],
+  },
+
+  /* AMT-2026-00443 — Nashik Red onion */
+  {
+    id: "QC-00443-01", lotId: "LOT-MH-ONI-2026-00104", tradeId: "AMT-2026-00443",
+    inspectorId: "u-meera", inspectedAt: "2026-09-22T11:00:00+05:30", sampleSize: 80,
+    measurements: [
+      { label: "Bulb size 45–70 mm", value: "93%", spec: "≥ 90%", pass: true },
+      { label: "Neck dryness", value: "Dry", spec: "Fully cured", pass: true },
+      { label: "Sprouting", value: "0.5%", spec: "≤ 2%", pass: true },
+      { label: "Doubles / splits", value: "1.1%", spec: "≤ 2%", pass: true },
+    ],
+    defectPct: 1.1, decision: "PASS", note: null, photos: 9, gps: [20.2034, 73.8341],
+  },
+  {
+    id: "QC-00443-02", lotId: "LOT-MH-ONI-2026-00105", tradeId: "AMT-2026-00443",
+    inspectorId: "u-meera", inspectedAt: "2026-09-23T11:15:00+05:30", sampleSize: 80,
+    measurements: [
+      { label: "Bulb size 45–70 mm", value: "91%", spec: "≥ 90%", pass: true },
+      { label: "Neck dryness", value: "Dry", spec: "Fully cured", pass: true },
+      { label: "Sprouting", value: "0.8%", spec: "≤ 2%", pass: true },
+      { label: "Doubles / splits", value: "1.4%", spec: "≤ 2%", pass: true },
+    ],
+    defectPct: 1.4, decision: "PASS", note: null, photos: 8, gps: [20.1987, 73.8402],
+  },
+  {
+    id: "QC-00443-03", lotId: "LOT-MH-ONI-2026-00106", tradeId: "AMT-2026-00443",
+    inspectorId: "u-meera", inspectedAt: "2026-09-24T15:30:00+05:30", sampleSize: 100,
+    measurements: [
+      { label: "Bulb size 45–70 mm", value: "90%", spec: "≥ 90%", pass: true },
+      { label: "Neck dryness", value: "4% soft", spec: "Fully cured", pass: false },
+      { label: "Sprouting", value: "0.6%", spec: "≤ 2%", pass: true },
+      { label: "Doubles / splits", value: "1.8%", spec: "≤ 2%", pass: true },
+    ],
+    defectPct: 1.8, decision: "CONDITIONAL",
+    note: "Rain on the 24th cut curing short. Soft necks on 4% — re-check at export QC, where those bags are the first to show neck rot.",
+    photos: 13, gps: [20.2061, 73.8299],
+  },
+
+  /* AMT-2026-00445 — Nilgiri Orthodox */
+  {
+    id: "QC-00445-01", lotId: "LOT-TN-TEA-2026-00021", tradeId: "AMT-2026-00445",
+    inspectorId: "u-sanjay", inspectedAt: "2026-09-12T10:00:00+05:30", sampleSize: 12,
+    measurements: [
+      { label: "Moisture", value: "4.8%", spec: "≤ 6%", pass: true },
+      { label: "Leaf grade", value: "FOP", spec: "FOP whole leaf", pass: true },
+      { label: "Fibre / stalk", value: "1.2%", spec: "≤ 2%", pass: true },
+      { label: "Cup score", value: "84", spec: "≥ 80", pass: true },
+    ],
+    defectPct: 1.2, decision: "PASS", note: null, photos: 6, gps: [11.4211, 76.8622],
+  },
+  {
+    id: "QC-00445-02", lotId: "LOT-TN-TEA-2026-00022", tradeId: "AMT-2026-00445",
+    inspectorId: "u-sanjay", inspectedAt: "2026-09-12T13:30:00+05:30", sampleSize: 12,
+    measurements: [
+      { label: "Moisture", value: "5.1%", spec: "≤ 6%", pass: true },
+      { label: "Leaf grade", value: "FOP", spec: "FOP whole leaf", pass: true },
+      { label: "Fibre / stalk", value: "1.5%", spec: "≤ 2%", pass: true },
+      { label: "Cup score", value: "82", spec: "≥ 80", pass: true },
+    ],
+    defectPct: 1.5, decision: "PASS", note: null, photos: 6, gps: [11.4198, 76.8597],
+  },
+
+  /* AMT-2026-00447 — Bhagwa pomegranate */
+  {
+    id: "QC-00447-01", lotId: "LOT-MH-POM-2026-00071", tradeId: "AMT-2026-00447",
+    inspectorId: "u-meera", inspectedAt: "2026-09-15T10:30:00+05:30", sampleSize: 60,
+    measurements: [
+      { label: "Fruit weight", value: "246 g avg", spec: "≥ 220 g", pass: true },
+      { label: "Aril colour", value: "Deep red", spec: "Deep red, uniform", pass: true },
+      { label: "Sunscald", value: "0.9%", spec: "≤ 2%", pass: true },
+      { label: "Cracked fruit", value: "0%", spec: "Nil", pass: true },
+    ],
+    defectPct: 0.9, decision: "PASS", note: null, photos: 11, gps: [20.2019, 73.8355],
+  },
+  {
+    id: "QC-00447-02", lotId: "LOT-MH-POM-2026-00072", tradeId: "AMT-2026-00447",
+    inspectorId: "u-meera", inspectedAt: "2026-09-15T13:00:00+05:30", sampleSize: 60,
+    measurements: [
+      { label: "Fruit weight", value: "238 g avg", spec: "≥ 220 g", pass: true },
+      { label: "Aril colour", value: "Deep red", spec: "Deep red, uniform", pass: true },
+      { label: "Sunscald", value: "1.2%", spec: "≤ 2%", pass: true },
+      { label: "Cracked fruit", value: "0%", spec: "Nil", pass: true },
+    ],
+    defectPct: 1.2, decision: "PASS", note: null, photos: 10, gps: [20.2045, 73.8318],
+  },
+  {
+    id: "QC-00447-03", lotId: "LOT-MH-POM-2026-00073", tradeId: "AMT-2026-00447",
+    inspectorId: "u-meera", inspectedAt: "2026-09-16T10:45:00+05:30", sampleSize: 80,
+    measurements: [
+      { label: "Fruit weight", value: "231 g avg", spec: "≥ 220 g", pass: true },
+      { label: "Aril colour", value: "Deep red", spec: "Deep red, uniform", pass: true },
+      { label: "Sunscald", value: "1.8%", spec: "≤ 2%", pass: true },
+      { label: "Cracked fruit", value: "0.3%", spec: "Nil", pass: false },
+    ],
+    defectPct: 1.8, decision: "CONDITIONAL",
+    note: "Three cracked fruit in 80 culled at the bench; sunscald close to the clause. Accepted conditional — the lot to watch if Gulf Star's arrival QC comes back marginal.",
+    photos: 16, gps: [20.1998, 73.8376],
+  },
 ]
 
 export const qcRecordById = (id: string): QcRecord | undefined =>
@@ -2710,11 +2977,12 @@ export type Pallet = {
   netKg: number
   grossKg: number
   pulpTempAtPackC: number
-  qcResult: "approved" | "rejected" | "substituted"
+  /** `pending` — packed, not yet signed off at export QC. */
+  qcResult: "approved" | "rejected" | "substituted" | "pending"
   note: string | null
 }
 
-function buildPallets(): Pallet[] {
+function buildPrimaryPallets(): Pallet[] {
   // 20 pallets, 100 cartons each, 970 kg net — 19,400 kg total, which is
   // the 19.4 MT that actually shipped against 20.0 MT contracted.
   const lotOrder = [
@@ -2745,7 +3013,35 @@ function buildPallets(): Pallet[] {
   })
 }
 
-export const PALLETS: Pallet[] = buildPallets()
+/** AMT-2026-00443: 28 pallets of 40 × 25 kg mesh bags, export QC still
+ *  open — 21 signed off, one pulled on neck rot, the last six (all from the
+ *  conditionally accepted lot 00106) waiting on the re-check. */
+function buildOnionPallets(): Pallet[] {
+  const random = seededRandom(443)
+  return Array.from({ length: 28 }, (_, index) => {
+    const number = String(index + 1).padStart(2, "0")
+    const lotId = index < 10 ? "LOT-MH-ONI-2026-00104" : index < 20 ? "LOT-MH-ONI-2026-00105" : "LOT-MH-ONI-2026-00106"
+    const rejected = index === 13
+    const pending = index >= 22
+    return {
+      id: `PLT-00443-${number}`,
+      tradeId: "AMT-2026-00443",
+      lotId,
+      cartons: 40,
+      netKg: 1000,
+      grossKg: 1024,
+      pulpTempAtPackC: Math.round((2.2 + random() * 0.8) * 10) / 10,
+      qcResult: rejected ? ("rejected" as const) : pending ? ("pending" as const) : ("approved" as const),
+      note: rejected
+        ? "Neck rot found in three bags at export QC — pallet pulled and its bags sent back for regrading."
+        : pending
+          ? "From lot 00106 (conditional on curing). Waiting on the neck-dryness re-check before sign-off."
+          : null,
+    }
+  })
+}
+
+export const PALLETS: Pallet[] = [...buildPrimaryPallets(), ...buildOnionPallets()]
 export const palletById = (id: string): Pallet | undefined =>
   PALLETS.find((pallet) => pallet.id === id)
 export const palletsForTrade = (tradeId: string): Pallet[] =>
@@ -2794,7 +3090,7 @@ export const CONTAINERS: Container[] = [
     bookingRef: "MSCUBK-4471902", line: "MSC", vessel: "MSC Aurora", voyage: "2641E",
     setpointC: 0.5, ventCbmPerHr: 20, humidityPct: 90, ptiRef: "PTI-MUN-26-40118",
     sealNo: "SL-0099412", vgmKg: 26340, vgmFiledAt: "2026-10-06T19:20:00+05:30",
-    palletIds: PALLETS.map((pallet) => pallet.id),
+    palletIds: PALLETS.filter((pallet) => pallet.tradeId === "AMT-2026-00418").map((pallet) => pallet.id),
     cutoffGateIn: "2026-10-07T18:00:00+05:30",
     cutoffVgm: "2026-10-07T12:00:00+05:30",
     cutoffSi: "2026-10-06T18:00:00+05:30",
@@ -2908,6 +3204,49 @@ export const CONTAINERS: Container[] = [
     stuffedAt: "2026-09-11T03:00:00+05:30", doorCloseAt: "2026-09-11T07:05:00+05:30",
     gensetOffAt: "2026-09-15T14:00:00+05:30", terminalPlugInAt: "2026-09-15T14:15:00+05:30",
     gateInAt: "2026-09-15T14:30:00+05:30", state: "delivered",
+  },
+  {
+    id: "MSMU 771045-2", tradeId: "AMT-2026-00443", type: "40ft High Cube Reefer",
+    bookingRef: "MSCUBK-4482117", line: "MSC", vessel: "MSC Bianca", voyage: "2642E",
+    setpointC: 2, ventCbmPerHr: 25, humidityPct: 70, ptiRef: "PTI-NSA-26-51870",
+    sealNo: "", vgmKg: 0, vgmFiledAt: "",
+    palletIds: PALLETS.filter((pallet) => pallet.tradeId === "AMT-2026-00443").map((pallet) => pallet.id),
+    cutoffGateIn: "2026-10-09T16:00:00+05:30",
+    cutoffVgm: "2026-10-09T10:00:00+05:30",
+    cutoffSi: "2026-10-08T18:00:00+05:30",
+    etd: "2026-10-10T08:00:00+05:30", eta: "2026-10-14T14:00:00+04:00",
+    backupBookingRef: "HLCUBOM-2210984", backupEtd: "2026-10-12T22:00:00+05:30",
+    stuffedAt: null, doorCloseAt: null, gensetOffAt: null, terminalPlugInAt: null,
+    gateInAt: null, state: "booked",
+  },
+  {
+    id: "TCKU 330276-8", tradeId: "AMT-2026-00445", type: "20ft Dry",
+    bookingRef: "HLCUCOK-2209871", line: "Hapag-Lloyd", vessel: "Hapag Mumbai Express", voyage: "120W",
+    setpointC: 25, ventCbmPerHr: 0, humidityPct: 55, ptiRef: "—",
+    sealNo: "SL-0101877", vgmKg: 18420, vgmFiledAt: "2026-10-06T09:00:00+05:30",
+    palletIds: [],
+    cutoffGateIn: "2026-10-09T12:00:00+05:30",
+    cutoffVgm: "2026-10-08T12:00:00+05:30",
+    cutoffSi: "2026-10-06T18:00:00+05:30",
+    etd: "2026-10-10T20:00:00+05:30", eta: "2026-10-31T08:00:00+03:00",
+    backupBookingRef: "MAEU-7726650", backupEtd: "2026-10-14T18:00:00+05:30",
+    stuffedAt: "2026-10-05T11:00:00+05:30", doorCloseAt: "2026-10-05T14:00:00+05:30",
+    gensetOffAt: null, terminalPlugInAt: null, gateInAt: null, state: "sealed",
+  },
+  {
+    id: "MRKU 540871-3", tradeId: "AMT-2026-00447", type: "40ft High Cube Reefer",
+    bookingRef: "MAEU-7704412", line: "Maersk", vessel: "Maersk Cape Coral", voyage: "0426W",
+    setpointC: 5, ventCbmPerHr: 15, humidityPct: 92, ptiRef: "PTI-NSA-26-49912",
+    sealNo: "SL-0100634", vgmKg: 19870, vgmFiledAt: "2026-09-24T18:30:00+05:30",
+    palletIds: [],
+    cutoffGateIn: "2026-09-26T18:00:00+05:30",
+    cutoffVgm: "2026-09-26T10:00:00+05:30",
+    cutoffSi: "2026-09-25T18:00:00+05:30",
+    etd: "2026-09-27T04:00:00+05:30", eta: "2026-10-03T22:00:00+04:00",
+    backupBookingRef: null, backupEtd: null,
+    stuffedAt: "2026-09-24T13:00:00+05:30", doorCloseAt: "2026-09-24T17:40:00+05:30",
+    gensetOffAt: "2026-09-26T12:50:00+05:30", terminalPlugInAt: "2026-09-26T13:05:00+05:30",
+    gateInAt: "2026-09-26T13:10:00+05:30", state: "delivered",
   },
 ]
 
@@ -4139,6 +4478,17 @@ const SECONDARY_DOCUMENTS: TradeDocument[] = [
   { id: "DOC-00431-booking-confirmation", tradeId: "AMT-2026-00431", stage: 9, name: "Booking Confirmation", requirement: "M", issuer: "Shipping line", why: "Vessel, voyage, ETD, ETA and the three cut-offs that drive every later alert.", status: "PENDING", issuedOn: null, expiresOn: null, verifiedBy: null, verifiedAt: null, blocks: ["Container stuffing"], attachedTo: null, note: "Reefer availability tight on the preferred sailing — a backup is held two days later." },
   { id: "DOC-00437-bill-of-lading-final", tradeId: "AMT-2026-00437", stage: 14, name: "Bill of Lading (final)", requirement: "M", issuer: "Shipping line", why: "The title document. The scanned copy starts the buyer's payment clock.", status: "VERIFIED", issuedOn: "2026-10-02T16:00:00+05:30", expiresOn: null, verifiedBy: "u-imran", verifiedAt: "2026-10-02T16:40:00+05:30", blocks: [], attachedTo: { kind: "container", id: "CMAU 660214-3" }, note: "Released on 2 October — the 30-day payment clock runs from here." },
   { id: "DOC-00439-payment-advice-swift", tradeId: "AMT-2026-00439", stage: 16, name: "Payment Advice / SWIFT", requirement: "M", issuer: "Buyer's bank", why: "Evidence of the inward remittance, matched to the invoice and shipping bill.", status: "VERIFIED", issuedOn: "2026-10-06T14:00:00+05:30", expiresOn: null, verifiedBy: "u-kavita", verifiedAt: "2026-10-06T15:20:00+05:30", blocks: [], attachedTo: null, note: "Balance received. Farmer payout released against accepted quantity." },
+  { id: "DOC-00441-grade-quantity-declaration", tradeId: "AMT-2026-00441", stage: 4, name: "Grade & Quantity Declaration", requirement: "M", issuer: "QC / Warehouse", why: "What was actually accepted, by grade — the first quantity that can differ from the contract, and the one every later number reconciles to.", status: "PENDING", issuedOn: null, expiresOn: null, verifiedBy: null, verifiedAt: null, blocks: ["Farm pickup"], attachedTo: { kind: "lot", id: "LOT-HP-APL-2026-00133" }, note: "Lots 00131 and 00132 declared. Lot 00133 weighed at 3,950 kg against 4,100 offered — the warehouse has to confirm the figure before the declaration closes." },
+  { id: "DOC-00441-qr-traceability-record", tradeId: "AMT-2026-00441", stage: 4, name: "QR Traceability Record", requirement: "M", issuer: "System", why: "The QR on every crate that resolves to farm, GPS, harvest time and QC record.", status: "PENDING", issuedOn: null, expiresOn: null, verifiedBy: null, verifiedAt: null, blocks: ["Farm pickup"], attachedTo: { kind: "lot", id: "LOT-HP-APL-2026-00133" }, note: "Generated for 00131 and 00132. Lot 00133's labels print once its quantity is confirmed." },
+  { id: "DOC-00443-export-qc-certificate", tradeId: "AMT-2026-00443", stage: 8, name: "Export QC Certificate", requirement: "M", issuer: "QC Manager", why: "Final quantity, grade, packaging and labelling sign-off. Blocks: container stuffing.", status: "PENDING", issuedOn: null, expiresOn: null, verifiedBy: null, verifiedAt: null, blocks: ["Container stuffing"], attachedTo: null, note: "21 of 28 pallets signed off, one pulled on neck rot. The six pallets from lot 00106 are waiting on the neck-dryness re-check." },
+  { id: "DOC-00443-pallet-manifest", tradeId: "AMT-2026-00443", stage: 8, name: "Pallet Manifest", requirement: "M", issuer: "Warehouse system", why: "Pallet IDs mapped to lots — what stuffing reconciles against, scan by scan.", status: "PENDING", issuedOn: null, expiresOn: null, verifiedBy: null, verifiedAt: null, blocks: ["Container stuffing"], attachedTo: null, note: "Regenerates once the pulled pallet is replaced and the last six are approved." },
+  { id: "DOC-00445-shipping-bill", tradeId: "AMT-2026-00445", stage: 12, name: "Shipping Bill", requirement: "M", issuer: "CHA on the customs portal", why: "The export declaration. Value, HS code and quantity must agree with the invoice and packing list.", status: "PENDING", issuedOn: "2026-10-06T11:20:00+05:30", expiresOn: null, verifiedBy: null, verifiedAt: null, blocks: ["Let Export Order", "Terminal gate-in"], attachedTo: { kind: "container", id: "TCKU 330276-8" }, note: "Filed 6 Oct 11:20 under 0902.30. The assessing officer queried it at 15:40 — 5 kg packs read as 'immediate packings ≤ 3 kg' would move it to a different sub-heading. Response with the pack spec is being drafted." },
+  { id: "DOC-00445-e-sanchit-filing", tradeId: "AMT-2026-00445", stage: 12, name: "e-SANCHIT Filing", requirement: "M", issuer: "CHA", why: "Supporting documents uploaded to the customs single window against the shipping bill.", status: "REJECTED", issuedOn: "2026-10-06T11:30:00+05:30", expiresOn: null, verifiedBy: null, verifiedAt: null, blocks: ["Let Export Order"], attachedTo: null, note: "Tea Board RCMC missing from the upload set — the second half of the same query. Re-upload needed with the response." },
+  { id: "DOC-00445-supporting-certificates", tradeId: "AMT-2026-00445", stage: 12, name: "Supporting Certificates", requirement: "M", issuer: "Various", why: "Phyto, certificate of origin and any product-specific certificates referenced by the filing.", status: "VERIFIED", issuedOn: "2026-10-05T16:00:00+05:30", expiresOn: null, verifiedBy: "u-imran", verifiedAt: "2026-10-05T16:30:00+05:30", blocks: [], attachedTo: null, note: "Certificate of origin (EAEU form) and the pesticide residue report verified." },
+  { id: "DOC-00447-bill-of-lading-final", tradeId: "AMT-2026-00447", stage: 14, name: "Bill of Lading (final)", requirement: "M", issuer: "Shipping line", why: "The title document. The scanned copy starts the buyer's payment clock.", status: "VERIFIED", issuedOn: "2026-09-28T12:00:00+05:30", expiresOn: null, verifiedBy: "u-imran", verifiedAt: "2026-09-28T12:30:00+05:30", blocks: [], attachedTo: { kind: "container", id: "MRKU 540871-3" }, note: "Released 28 Sep — Gulf Star's 70% balance falls due 28 Oct." },
+  { id: "DOC-00447-import-clearance-documents", tradeId: "AMT-2026-00447", stage: 15, name: "Import Clearance Documents", requirement: "M", issuer: "Buyer's broker", why: "Destination customs entry and any food-safety release the market demands.", status: "VERIFIED", issuedOn: "2026-10-06T09:30:00+04:00", expiresOn: null, verifiedBy: "u-rohit", verifiedAt: "2026-10-06T10:15:00+04:00", blocks: [], attachedTo: null, note: "Dubai Municipality food-safety release came through on the 6th after a routine sample hold." },
+  { id: "DOC-00447-proof-of-delivery-pod", tradeId: "AMT-2026-00447", stage: 15, name: "Proof of Delivery (POD)", requirement: "M", issuer: "Buyer", why: "Signed receipt at the buyer's door. Closes the logistics chain and fixes the delivered quantity.", status: "PENDING", issuedOn: null, expiresOn: null, verifiedBy: null, verifiedAt: null, blocks: ["Final quality confirmation", "Settlement"], attachedTo: { kind: "container", id: "MRKU 540871-3" }, note: "Container at the Gulf Star warehouse in Deira since 10:30 local. The driver's note is signed at the gate; Gulf Star countersigns the POD once unloading and the carton count are done." },
+  { id: "DOC-00447-final-quality-confirmation", tradeId: "AMT-2026-00447", stage: 15, name: "Final Quality Confirmation", requirement: "M", issuer: "Buyer", why: "The buyer's own arrival QC — the claim / no-claim decision, in writing.", status: "PENDING", issuedOn: null, expiresOn: null, verifiedBy: null, verifiedAt: null, blocks: ["Settlement"], attachedTo: null, note: "Gulf Star's QC samples three cartons per pallet on arrival. A clean confirmation closes the claim window; anything else opens it." },
   { id: "DOC-00423-field-qc-report", tradeId: "AMT-2026-00423", stage: 3, name: "Field QC Report", requirement: "M", issuer: "QC Inspector", why: "Measurements against spec — the most valuable document you own when a claim arrives.", status: "PENDING", issuedOn: null, expiresOn: null, verifiedBy: null, verifiedAt: null, blocks: ["Lot creation", "Farm pickup"], attachedTo: null, note: "Inspector on site at Dindori. Sunscald reading above the 1% EU tolerance on two blocks — wider sample being pulled before sign-off." },
 ]
 
@@ -4501,6 +4851,78 @@ export const STAGE_RECORDS: StageRecord[] = [
   { id: "SR-00505-14", tradeId: "AMT-2026-00505", stage: 14, state: "complete", ownerId: "u-harpreet", startedAt: "2026-09-15T14:30:00+05:30", completedAt: "2026-09-23T14:30:00+05:30", scenario: "E", outcome: "A destination-side change — Gulf Star's broker switching from Jebel Ali Free Zone clearance to mainland Dubai — arrived after the vessel had sailed. Only the destination-side documents were amended in transit; the physical routing and ETA were untouched.", slaMet: true, documentIds: [] },
   { id: "SR-00505-15", tradeId: "AMT-2026-00505", stage: 15, state: "complete", ownerId: "u-rohit", startedAt: "2026-09-23T14:30:00+05:30", completedAt: "2026-09-25T14:30:00+05:30", scenario: "E", outcome: "The 2 MT trim from stage 01 finally reconciled against the delivered 23.6 MT on arrival — the buyer's own count came in slightly under the revised contract. Rather than reopen the shipment, the gap was resolved through the credit-note route Finance had already prepared.", slaMet: true, documentIds: [] },
   { id: "SR-00505-16", tradeId: "AMT-2026-00505", stage: 16, state: "complete", ownerId: "u-kavita", startedAt: "2026-09-25T14:30:00+05:30", completedAt: "2026-09-28T14:30:00+05:30", scenario: "E", outcome: "The credit note for the delivery-count gap was issued and reconciled against the final invoice within four days, and the realised margin — repriced twice over the trade's life — still landed within 2% of the revised plan.", slaMet: true, documentIds: [] },
+
+  /* ---- AMT-2026-00441 — Royal Delicious, Gulf Star — stage 04 live, lot 00133 awaiting quantity confirmation --- */
+  { id: "SR-00441-01", tradeId: "AMT-2026-00441", stage: 1, state: "complete", ownerId: "u-rohit", startedAt: "2026-09-21T10:00:00+05:30", completedAt: "2026-09-27T12:30:00+05:30", scenario: "A", outcome: "Reem Haddad came back for a second Himachal box after seeing the Al Noor programme: 14 MT Royal Delicious CIF Jebel Ali at USD 1,165/MT. The hail-mark tolerance (3% of surface) went into the spec up front — this season's orchards took hail in early October.", slaMet: true, documentIds: [] },
+  { id: "SR-00441-02", tradeId: "AMT-2026-00441", stage: 2, state: "complete", ownerId: "u-devendra", startedAt: "2026-09-27T13:00:00+05:30", completedAt: "2026-10-01T17:00:00+05:30", scenario: "A", outcome: "Allocated across Tilak Raj Negi (two blocks, 9.3 MT) and Suresh Chauhan (4.8 MT) — both verified growers with 90%+ pass rates, so no new onboarding sat on the critical path.", slaMet: true, documentIds: [] },
+  { id: "SR-00441-03", tradeId: "AMT-2026-00441", stage: 3, state: "complete", ownerId: "u-meera", startedAt: "2026-10-06T09:30:00+05:30", completedAt: "2026-10-07T11:05:00+05:30", scenario: "A", outcome: "Three inspections over two days. Both of Tilak's lower block and Suresh's Jubbal pick passed clean; Tilak's upper block, the one that took hail, came in CONDITIONAL at 2.6% hail marks against the 3% clause after a widened 120-fruit sample.", slaMet: true, documentIds: [] },
+  { id: "SR-00441-04", tradeId: "AMT-2026-00441", stage: 4, state: "in-progress", ownerId: "u-meera", startedAt: "2026-10-07T11:30:00+05:30", completedAt: null, scenario: "A", outcome: "LOT-HP-APL-2026-00131 and 00132 are created and labelled — 10,000 kg. Lot 00133 is generated but its 3,950 kg grading-shed weight still needs the warehouse's confirmation before the grade declaration closes and the QR labels print. Pickup is booked for tomorrow 06:00.", slaMet: null, documentIds: [] },
+  { id: "SR-00441-05", tradeId: "AMT-2026-00441", stage: 5, state: "pending", ownerId: "u-harpreet", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached. Reefer truck booked for 8 Oct 06:00 from the Kotkhai collection point.", slaMet: null, documentIds: [] },
+  { id: "SR-00441-06", tradeId: "AMT-2026-00441", stage: 6, state: "pending", ownerId: "u-pradeep", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached. Sonipat dock slot held for 8 Oct evening.", slaMet: null, documentIds: [] },
+  { id: "SR-00441-07", tradeId: "AMT-2026-00441", stage: 7, state: "pending", ownerId: "u-arun", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached.", slaMet: null, documentIds: [] },
+  { id: "SR-00441-08", tradeId: "AMT-2026-00441", stage: 8, state: "pending", ownerId: "u-sanjay", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached.", slaMet: null, documentIds: [] },
+  { id: "SR-00441-09", tradeId: "AMT-2026-00441", stage: 9, state: "pending", ownerId: "u-harpreet", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached. Target sailing out of Mundra around 20 Oct.", slaMet: null, documentIds: [] },
+  { id: "SR-00441-10", tradeId: "AMT-2026-00441", stage: 10, state: "pending", ownerId: "u-pradeep", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached.", slaMet: null, documentIds: [] },
+  { id: "SR-00441-11", tradeId: "AMT-2026-00441", stage: 11, state: "pending", ownerId: "u-imran", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached.", slaMet: null, documentIds: [] },
+  { id: "SR-00441-12", tradeId: "AMT-2026-00441", stage: 12, state: "pending", ownerId: "u-imran", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached.", slaMet: null, documentIds: [] },
+  { id: "SR-00441-13", tradeId: "AMT-2026-00441", stage: 13, state: "pending", ownerId: "u-harpreet", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached.", slaMet: null, documentIds: [] },
+  { id: "SR-00441-14", tradeId: "AMT-2026-00441", stage: 14, state: "pending", ownerId: "u-harpreet", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached.", slaMet: null, documentIds: [] },
+  { id: "SR-00441-15", tradeId: "AMT-2026-00441", stage: 15, state: "pending", ownerId: "u-rohit", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached. Delivery window 28 Oct – 10 Nov.", slaMet: null, documentIds: [] },
+  { id: "SR-00441-16", tradeId: "AMT-2026-00441", stage: 16, state: "pending", ownerId: "u-kavita", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached. 30% advance (USD 4,893) received 1 Oct.", slaMet: null, documentIds: [] },
+
+  /* ---- AMT-2026-00443 — Nashik Red onion, Al Noor — stage 08 live, six pallets awaiting export QC --- */
+  { id: "SR-00443-01", tradeId: "AMT-2026-00443", stage: 1, state: "complete", ownerId: "u-rohit", startedAt: "2026-09-10T09:30:00+05:30", completedAt: "2026-09-15T10:40:00+05:30", scenario: "A", outcome: "Al Noor's repeat Nashik Red order after the September box closed cleanly: 28 MT CFR Jebel Ali at USD 362/MT, 25 kg leno mesh bags, dry-neck clause carried over word for word.", slaMet: true, documentIds: [] },
+  { id: "SR-00443-02", tradeId: "AMT-2026-00443", stage: 2, state: "complete", ownerId: "u-devendra", startedAt: "2026-09-15T11:00:00+05:30", completedAt: "2026-09-18T16:00:00+05:30", scenario: "A", outcome: "Allocated to Krishna Valley's Dindori kharif-late crop across three picking days — the co-op's curing yards had capacity, which is the real constraint on onion, not acreage.", slaMet: true, documentIds: [] },
+  { id: "SR-00443-03", tradeId: "AMT-2026-00443", stage: 3, state: "complete", ownerId: "u-meera", startedAt: "2026-09-22T09:00:00+05:30", completedAt: "2026-09-24T15:30:00+05:30", scenario: "A", outcome: "Three lots inspected after field curing. Two passed clean; the third was CONDITIONAL — rain on the 24th cut curing short and 4% of necks were still soft, flagged for a re-check at export QC.", slaMet: true, documentIds: [] },
+  { id: "SR-00443-04", tradeId: "AMT-2026-00443", stage: 4, state: "complete", ownerId: "u-meera", startedAt: "2026-09-22T12:00:00+05:30", completedAt: "2026-09-24T17:00:00+05:30", scenario: "A", outcome: "LOT-MH-ONI-2026-00104 to 00106 created — 27,800 kg accepted against 28,000 contracted.", slaMet: true, documentIds: [] },
+  { id: "SR-00443-05", tradeId: "AMT-2026-00443", stage: 5, state: "complete", ownerId: "u-harpreet", startedAt: "2026-09-25T06:00:00+05:30", completedAt: "2026-09-25T15:30:00+05:30", scenario: "B", outcome: "The second truck was four hours late out of Dindori after a breakdown on the Saputara ghat; the pack-house inbound slot was moved to the evening shift and the new ETA confirmed inside the window.", slaMet: true, documentIds: [] },
+  { id: "SR-00443-06", tradeId: "AMT-2026-00443", stage: 6, state: "complete", ownerId: "u-pradeep", startedAt: "2026-09-25T15:30:00+05:30", completedAt: "2026-09-25T21:10:00+05:30", scenario: "A", outcome: "27,760 kg received at the Lasalgaon pack-house against 27,800 despatched — 0.14% variance, well inside tolerance. Racked in the ventilated store.", slaMet: true, documentIds: [] },
+  { id: "SR-00443-07", tradeId: "AMT-2026-00443", stage: 7, state: "complete", ownerId: "u-arun", startedAt: "2026-09-25T21:10:00+05:30", completedAt: "2026-10-05T08:00:00+05:30", scenario: "A", outcome: "Held at 2 °C and 65–70% RH. Onion punishes humidity more than heat — RH stayed in band the whole hold, no excursions.", slaMet: true, documentIds: [] },
+  { id: "SR-00443-08", tradeId: "AMT-2026-00443", stage: 8, state: "in-progress", ownerId: "u-sanjay", startedAt: "2026-10-05T08:00:00+05:30", completedAt: null, scenario: "A", outcome: "28 pallets packed in 25 kg mesh. 21 signed off; PLT-00443-14 pulled on neck rot in three bags and regraded. The last six — all from conditional lot 00106 — are waiting on Sanjay's neck-dryness re-check, which has to close before tomorrow's 10:00 stuffing slot.", slaMet: null, documentIds: [] },
+  { id: "SR-00443-09", tradeId: "AMT-2026-00443", stage: 9, state: "complete", ownerId: "u-harpreet", startedAt: "2026-10-02T10:00:00+05:30", completedAt: "2026-10-03T12:00:00+05:30", scenario: "A", outcome: "40ft HC reefer booked on MSC Bianca 2642E out of Nhava Sheva (MSCUBK-4482117), 2 °C, vents 25 m³/h, 70% RH — opened in parallel with packing. Hapag-Lloyd on the 12th held as backup.", slaMet: true, documentIds: [] },
+  { id: "SR-00443-10", tradeId: "AMT-2026-00443", stage: 10, state: "pending", ownerId: "u-pradeep", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached. Stuffing slot 8 Oct 10:00 at Lasalgaon; VGM cut-off 9 Oct 10:00.", slaMet: null, documentIds: [] },
+  { id: "SR-00443-11", tradeId: "AMT-2026-00443", stage: 11, state: "pending", ownerId: "u-imran", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached.", slaMet: null, documentIds: [] },
+  { id: "SR-00443-12", tradeId: "AMT-2026-00443", stage: 12, state: "pending", ownerId: "u-imran", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached.", slaMet: null, documentIds: [] },
+  { id: "SR-00443-13", tradeId: "AMT-2026-00443", stage: 13, state: "pending", ownerId: "u-harpreet", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached. Gate-in cut-off 9 Oct 16:00.", slaMet: null, documentIds: [] },
+  { id: "SR-00443-14", tradeId: "AMT-2026-00443", stage: 14, state: "pending", ownerId: "u-harpreet", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached. MSC Bianca ETD 10 Oct, ETA Jebel Ali 14 Oct.", slaMet: null, documentIds: [] },
+  { id: "SR-00443-15", tradeId: "AMT-2026-00443", stage: 15, state: "pending", ownerId: "u-rohit", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached.", slaMet: null, documentIds: [] },
+  { id: "SR-00443-16", tradeId: "AMT-2026-00443", stage: 16, state: "pending", ownerId: "u-kavita", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached. 30% advance (USD 3,041) received 1 Oct.", slaMet: null, documentIds: [] },
+
+  /* ---- AMT-2026-00445 — Nilgiri Orthodox, Moskva Fresh — stage 12 live, customs query on the HS sub-heading (B) --- */
+  { id: "SR-00445-01", tradeId: "AMT-2026-00445", stage: 1, state: "complete", ownerId: "u-fatima", startedAt: "2026-09-02T11:00:00+05:30", completedAt: "2026-09-09T16:00:00+05:30", scenario: "A", outcome: "Dmitri Sokolov placed Moskva's first Nilgiri order: 18 MT whole-leaf FOP in 5 kg foil packs at USD 3,420/MT CFR, 100% against scanned B/L. Russian retail needs the Tea Board RCMC on file, so it went into the contract as a named document.", slaMet: true, documentIds: [] },
+  { id: "SR-00445-02", tradeId: "AMT-2026-00445", stage: 2, state: "complete", ownerId: "u-devendra", startedAt: "2026-09-09T16:30:00+05:30", completedAt: "2026-09-11T12:00:00+05:30", scenario: "A", outcome: "Allocated from Nilgiri Highland Produce's August and early-September manufacture — already made tea in the Kotagiri factory store, so supply was a stock check, not a harvest forecast.", slaMet: true, documentIds: [] },
+  { id: "SR-00445-03", tradeId: "AMT-2026-00445", stage: 3, state: "complete", ownerId: "u-sanjay", startedAt: "2026-09-12T09:00:00+05:30", completedAt: "2026-09-12T14:00:00+05:30", scenario: "A", outcome: "Two invoices cupped and tested at the factory: moisture 4.8–5.1%, FOP whole leaf, cup scores 84 and 82. Both PASS.", slaMet: true, documentIds: [] },
+  { id: "SR-00445-04", tradeId: "AMT-2026-00445", stage: 4, state: "complete", ownerId: "u-sanjay", startedAt: "2026-09-12T14:00:00+05:30", completedAt: "2026-09-12T16:00:00+05:30", scenario: "A", outcome: "LOT-TN-TEA-2026-00021 and 00022 created — 18,000 kg, shelf life counted from manufacture.", slaMet: true, documentIds: [] },
+  { id: "SR-00445-05", tradeId: "AMT-2026-00445", stage: 5, state: "complete", ownerId: "u-harpreet", startedAt: "2026-09-29T07:00:00+05:30", completedAt: "2026-09-29T13:00:00+05:30", scenario: "A", outcome: "Moved down the ghat from Kotagiri to the Coimbatore packing unit on a covered truck — rain covers checked, no moisture pick-up.", slaMet: true, documentIds: [] },
+  { id: "SR-00445-06", tradeId: "AMT-2026-00445", stage: 6, state: "complete", ownerId: "u-pradeep", startedAt: "2026-09-29T13:00:00+05:30", completedAt: "2026-09-29T15:00:00+05:30", scenario: "A", outcome: "Received at Coimbatore against the factory dispatch note; weight variance nil, chests dry.", slaMet: true, documentIds: [] },
+  { id: "SR-00445-07", tradeId: "AMT-2026-00445", stage: 7, state: "complete", ownerId: "u-arun", startedAt: "2026-09-29T15:00:00+05:30", completedAt: "2026-10-02T09:00:00+05:30", scenario: "A", outcome: "Ambient dry store at 25 °C and 55% RH. Tea needs no cold chain; it needs to be kept away from anything that smells, which meant a separate bay from the spice line.", slaMet: true, documentIds: [] },
+  { id: "SR-00445-08", tradeId: "AMT-2026-00445", stage: 8, state: "complete", ownerId: "u-sanjay", startedAt: "2026-10-02T09:00:00+05:30", completedAt: "2026-10-04T18:00:00+05:30", scenario: "A", outcome: "Packed into 5 kg foil-lined packs, 4 per export carton, 900 cartons on 18 pallets. Russian-language labelling checked against Moskva's artwork.", slaMet: true, documentIds: [] },
+  { id: "SR-00445-09", tradeId: "AMT-2026-00445", stage: 9, state: "complete", ownerId: "u-harpreet", startedAt: "2026-09-24T10:00:00+05:30", completedAt: "2026-09-26T15:00:00+05:30", scenario: "E", outcome: "Moskva switched the discharge port from Novorossiysk to St Petersburg on 24 Sep to sit closer to its Moscow DC. Impact ran the same day — longer transit via Jebel Ali, +USD 410 freight absorbed on a revised plan, booking moved to Hapag Mumbai Express 120W.", slaMet: true, documentIds: [] },
+  { id: "SR-00445-10", tradeId: "AMT-2026-00445", stage: 10, state: "complete", ownerId: "u-pradeep", startedAt: "2026-10-05T09:00:00+05:30", completedAt: "2026-10-05T14:00:00+05:30", scenario: "A", outcome: "TCKU 330276-8 stuffed at Coimbatore, 18 pallets scanned against the manifest, seal SL-0101877 photographed. VGM 18,420 kg filed the next morning.", slaMet: true, documentIds: [] },
+  { id: "SR-00445-11", tradeId: "AMT-2026-00445", stage: 11, state: "complete", ownerId: "u-imran", startedAt: "2026-10-02T10:00:00+05:30", completedAt: "2026-10-06T10:00:00+05:30", scenario: "A", outcome: "Invoice, packing list, EAEU certificate of origin and the residue report reconciled to 18,000 kg net. The RCMC was on file — it just never made it into the customs upload set.", slaMet: true, documentIds: [] },
+  { id: "SR-00445-12", tradeId: "AMT-2026-00445", stage: 12, state: "in-progress", ownerId: "u-imran", startedAt: "2026-10-06T11:20:00+05:30", completedAt: null, scenario: "B", outcome: "Shipping bill filed 6 Oct 11:20 under 0902.30. At 15:40 the assessing officer queried the sub-heading (are 5 kg packs 'immediate packings' under 3 kg?) and flagged the Tea Board RCMC missing from e-SANCHIT. The 24-hour assessment SLA burned at 11:20 today; Imran is drafting the response with the pack spec and re-uploading the RCMC. Gate-in cut-off 9 Oct 12:00.", slaMet: null, documentIds: [] },
+  { id: "SR-00445-13", tradeId: "AMT-2026-00445", stage: 13, state: "pending", ownerId: "u-harpreet", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached. Gate-in cut-off 9 Oct 12:00 at Cochin.", slaMet: null, documentIds: [] },
+  { id: "SR-00445-14", tradeId: "AMT-2026-00445", stage: 14, state: "pending", ownerId: "u-harpreet", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached. Hapag Mumbai Express ETD 10 Oct, ETA St Petersburg 31 Oct.", slaMet: null, documentIds: [] },
+  { id: "SR-00445-15", tradeId: "AMT-2026-00445", stage: 15, state: "pending", ownerId: "u-fatima", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached.", slaMet: null, documentIds: [] },
+  { id: "SR-00445-16", tradeId: "AMT-2026-00445", stage: 16, state: "pending", ownerId: "u-kavita", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached. 100% against scanned B/L — USD 61,560.", slaMet: null, documentIds: [] },
+
+  /* ---- AMT-2026-00447 — Bhagwa pomegranate, Gulf Star — stage 15 live, delivered and awaiting the buyer's POD and quality confirmation --- */
+  { id: "SR-00447-01", tradeId: "AMT-2026-00447", stage: 1, state: "complete", ownerId: "u-rohit", startedAt: "2026-08-28T10:00:00+05:30", completedAt: "2026-09-03T11:15:00+05:30", scenario: "A", outcome: "Gulf Star's first pomegranate order: 15 MT Bhagwa, 220 g+, CIF Jebel Ali at USD 1,290/MT on 30/70 terms. Cracked fruit set at nil tolerance — the clause the arrival QC will be argued over if it comes to that.", slaMet: true, documentIds: [] },
+  { id: "SR-00447-02", tradeId: "AMT-2026-00447", stage: 2, state: "complete", ownerId: "u-devendra", startedAt: "2026-09-03T11:30:00+05:30", completedAt: "2026-09-06T17:00:00+05:30", scenario: "A", outcome: "Allocated to Krishna Valley's Dindori blocks against a mid-September harvest window.", slaMet: true, documentIds: [] },
+  { id: "SR-00447-03", tradeId: "AMT-2026-00447", stage: 3, state: "complete", ownerId: "u-meera", startedAt: "2026-09-15T09:00:00+05:30", completedAt: "2026-09-16T10:45:00+05:30", scenario: "A", outcome: "Three lots inspected. Two clean PASS; the south-facing block CONDITIONAL on sunscald at 1.8% and three cracked fruit culled at the bench.", slaMet: true, documentIds: [] },
+  { id: "SR-00447-04", tradeId: "AMT-2026-00447", stage: 4, state: "complete", ownerId: "u-meera", startedAt: "2026-09-15T11:00:00+05:30", completedAt: "2026-09-16T12:00:00+05:30", scenario: "A", outcome: "LOT-MH-POM-2026-00071 to 00073 created — 14,800 kg accepted.", slaMet: true, documentIds: [] },
+  { id: "SR-00447-05", tradeId: "AMT-2026-00447", stage: 5, state: "complete", ownerId: "u-harpreet", startedAt: "2026-09-16T14:00:00+05:30", completedAt: "2026-09-16T20:30:00+05:30", scenario: "A", outcome: "Two reefer trucks Dindori → Lasalgaon pack-house, both inside the 6-hour dispatch SLA.", slaMet: true, documentIds: [] },
+  { id: "SR-00447-06", tradeId: "AMT-2026-00447", stage: 6, state: "complete", ownerId: "u-pradeep", startedAt: "2026-09-16T20:30:00+05:30", completedAt: "2026-09-16T22:00:00+05:30", scenario: "A", outcome: "14,790 kg received against 14,800 despatched. Pre-cooling bay allocated straight off the dock.", slaMet: true, documentIds: [] },
+  { id: "SR-00447-07", tradeId: "AMT-2026-00447", stage: 7, state: "complete", ownerId: "u-arun", startedAt: "2026-09-16T22:00:00+05:30", completedAt: "2026-09-22T08:00:00+05:30", scenario: "A", outcome: "Pulled to 5 °C core in 1 h 50 min and held at 5 °C / 92% RH. No excursions.", slaMet: true, documentIds: [] },
+  { id: "SR-00447-08", tradeId: "AMT-2026-00447", stage: 8, state: "complete", ownerId: "u-sanjay", startedAt: "2026-09-22T08:00:00+05:30", completedAt: "2026-09-23T17:00:00+05:30", scenario: "A", outcome: "4,230 cartons of 3.5 kg on 16 pallets, export QC signed off with the conditional lot packed into its own two pallets for traceability.", slaMet: true, documentIds: [] },
+  { id: "SR-00447-09", tradeId: "AMT-2026-00447", stage: 9, state: "complete", ownerId: "u-harpreet", startedAt: "2026-09-18T10:00:00+05:30", completedAt: "2026-09-19T12:00:00+05:30", scenario: "A", outcome: "40ft HC reefer on Maersk Cape Coral 0426W out of Nhava Sheva (MAEU-7704412) at 5 °C, 92% RH.", slaMet: true, documentIds: [] },
+  { id: "SR-00447-10", tradeId: "AMT-2026-00447", stage: 10, state: "complete", ownerId: "u-pradeep", startedAt: "2026-09-24T13:00:00+05:30", completedAt: "2026-09-24T17:40:00+05:30", scenario: "A", outcome: "Stuffed and sealed SL-0100634, 16 pallets scanned, pulp 5.2–5.6 °C at close-out. VGM 19,870 kg.", slaMet: true, documentIds: [] },
+  { id: "SR-00447-11", tradeId: "AMT-2026-00447", stage: 11, state: "complete", ownerId: "u-imran", startedAt: "2026-09-20T10:00:00+05:30", completedAt: "2026-09-25T12:00:00+05:30", scenario: "A", outcome: "Full set verified 48 hours ahead of filing; phyto issued on the 24th.", slaMet: true, documentIds: [] },
+  { id: "SR-00447-12", tradeId: "AMT-2026-00447", stage: 12, state: "complete", ownerId: "u-imran", startedAt: "2026-09-25T12:00:00+05:30", completedAt: "2026-09-25T21:30:00+05:30", scenario: "A", outcome: "Shipping bill assessed without a query; LEO 21:30.", slaMet: true, documentIds: [] },
+  { id: "SR-00447-13", tradeId: "AMT-2026-00447", stage: 13, state: "complete", ownerId: "u-harpreet", startedAt: "2026-09-26T07:00:00+05:30", completedAt: "2026-09-26T13:10:00+05:30", scenario: "A", outcome: "Gated in at Nhava Sheva 13:10 against an 18:00 cut-off; 15 minutes from genset off to terminal power.", slaMet: true, documentIds: [] },
+  { id: "SR-00447-14", tradeId: "AMT-2026-00447", stage: 14, state: "complete", ownerId: "u-harpreet", startedAt: "2026-09-27T04:30:00+05:30", completedAt: "2026-10-04T06:00:00+04:00", scenario: "B", outcome: "Sailed 04:30 on the 27th. A berth queue at Jebel Ali added eight hours — ETA moved from 22:00 on the 3rd to 06:00 on the 4th. With 70+ days of shelf life left the only check was the buyer window, which held.", slaMet: true, documentIds: [] },
+  { id: "SR-00447-15", tradeId: "AMT-2026-00447", stage: 15, state: "in-progress", ownerId: "u-rohit", startedAt: "2026-10-04T06:00:00+04:00", completedAt: null, scenario: "A", outcome: "Discharged on the 4th; Dubai Municipality held a routine food-safety sample until the 6th, then released. The container reached Gulf Star's Deira warehouse at 10:30 local today. Reem's team is unloading — the POD countersignature and Gulf Star's own arrival QC (three cartons per pallet) are the two things standing between this trade and settlement.", slaMet: null, documentIds: [] },
+  { id: "SR-00447-16", tradeId: "AMT-2026-00447", stage: 16, state: "pending", ownerId: "u-kavita", startedAt: null, completedAt: null, scenario: "A", outcome: "Not reached. 30% advance (USD 5,805) received 8 Sep; 70% balance due 28 Oct.", slaMet: null, documentIds: [] },
 ]
 
 /** Attach the document ids to their stage records now that both exist. */
@@ -4532,6 +4954,8 @@ export type WorldEvent = {
   summary: string
   /** What this event is about — clicking it opens that record. */
   subject: EntityRef | null
+  /** The stage the event happened in, when it belongs to one. */
+  stage?: StageNo
 }
 
 /** Append-only. Drives the bottom activity strip and the audit trail. */
@@ -4566,6 +4990,19 @@ export const EVENTS: WorldEvent[] = [
   { id: "ev-028", at: "2026-10-07T16:32:00+05:30", kind: "message", tradeId: "AMT-2026-00418", actorId: "u-rohit", summary: "Buyer updated on gate-in status and the held backup sailing", subject: { kind: "conversation", id: "CONV-0418-BK" } },
   { id: "ev-029", at: "2026-10-07T16:40:00+05:30", kind: "message", tradeId: "AMT-2026-00418", actorId: "u-ananya", summary: "Master KAM asked for terminal acceptance to be posted to the ops thread on confirmation", subject: { kind: "conversation", id: "CONV-0418-OPS" } },
   { id: "ev-030", at: "2026-10-07T16:42:00+05:30", kind: "notification", tradeId: "AMT-2026-00429", actorId: null, summary: "ACTION — Kinnow accept / downgrade / reject decision due at 18:30", subject: { kind: "trade", id: "AMT-2026-00429" } },
+  { id: "ev-031", at: "2026-09-24T11:10:00+05:30", kind: "commercial", tradeId: "AMT-2026-00445", actorId: "b-moskva", summary: "Moskva Fresh asked to move discharge from Novorossiysk to St Petersburg — CR-2026-0019 raised", subject: { kind: "trade", id: "AMT-2026-00445" }, stage: 9 },
+  { id: "ev-032", at: "2026-09-26T15:00:00+05:30", kind: "commercial", tradeId: "AMT-2026-00445", actorId: "u-ananya", summary: "CR-2026-0019 approved — revised plan issued, booking moved to Hapag Mumbai Express 120W", subject: { kind: "trade", id: "AMT-2026-00445" }, stage: 9 },
+  { id: "ev-033", at: "2026-10-04T06:00:00+04:00", kind: "logistics", tradeId: "AMT-2026-00447", actorId: "u-harpreet", summary: "Maersk Cape Coral arrived Jebel Ali — 8 hours late on a berth queue", subject: { kind: "container", id: "MRKU 540871-3" }, stage: 14 },
+  { id: "ev-034", at: "2026-10-05T10:20:00+05:30", kind: "qc-decision", tradeId: "AMT-2026-00443", actorId: "u-sanjay", summary: "PLT-00443-14 pulled at export QC — neck rot in three bags", subject: { kind: "pallet", id: "PLT-00443-14" }, stage: 8 },
+  { id: "ev-035", at: "2026-10-06T11:20:00+05:30", kind: "document", tradeId: "AMT-2026-00445", actorId: "u-imran", summary: "Shipping bill filed under 0902.30 for 18 MT Nilgiri Orthodox", subject: { kind: "document", id: "DOC-00445-shipping-bill" }, stage: 12 },
+  { id: "ev-036", at: "2026-10-06T15:40:00+05:30", kind: "document", tradeId: "AMT-2026-00445", actorId: "u-imran", summary: "Customs query raised — HS sub-heading on 5 kg packs, Tea Board RCMC missing from e-SANCHIT", subject: { kind: "document", id: "DOC-00445-e-sanchit-filing" }, stage: 12 },
+  { id: "ev-037", at: "2026-10-06T10:15:00+04:00", kind: "document", tradeId: "AMT-2026-00447", actorId: "u-rohit", summary: "Dubai Municipality released the sample hold — import clearance verified", subject: { kind: "document", id: "DOC-00447-import-clearance-documents" }, stage: 15 },
+  { id: "ev-038", at: "2026-10-07T09:20:00+05:30", kind: "commercial", tradeId: "AMT-2026-00441", actorId: "b-gulfstar", summary: "Gulf Star asked to lift the order from 14 to 16 MT — CR-2026-0027 awaiting approval", subject: { kind: "trade", id: "AMT-2026-00441" }, stage: 4 },
+  { id: "ev-039", at: "2026-10-07T11:05:00+05:30", kind: "qc-decision", tradeId: "AMT-2026-00441", actorId: "u-meera", summary: "Field QC on Tilak's upper block — CONDITIONAL, hail marks 2.6% against 3%", subject: { kind: "lot", id: "LOT-HP-APL-2026-00133" }, stage: 3 },
+  { id: "ev-040", at: "2026-10-07T11:30:00+05:30", kind: "stage-advanced", tradeId: "AMT-2026-00441", actorId: "u-meera", summary: "Lots 00131 and 00132 created and labelled — 10,000 kg", subject: { kind: "trade", id: "AMT-2026-00441" }, stage: 4 },
+  { id: "ev-041", at: "2026-10-07T12:00:00+05:30", kind: "logistics", tradeId: "AMT-2026-00447", actorId: "u-rohit", summary: "Container delivered to Gulf Star, Deira — POD and arrival QC pending", subject: { kind: "container", id: "MRKU 540871-3" }, stage: 15 },
+  { id: "ev-042", at: "2026-10-07T13:40:00+05:30", kind: "commercial", tradeId: "AMT-2026-00443", actorId: "u-rohit", summary: "Price revision CR-2026-0028 raised — Lasalgaon mandi up 9% since signature", subject: { kind: "trade", id: "AMT-2026-00443" }, stage: 8 },
+  { id: "ev-043", at: "2026-10-07T14:15:00+05:30", kind: "commercial", tradeId: "AMT-2026-00419", actorId: "b-britannia", summary: "Britannia asked to move the Alphonso band to 280–320 g — CR-2026-0029 awaiting approval", subject: { kind: "trade", id: "AMT-2026-00419" }, stage: 1 },
 ]
 
 /** Newest first — what the activity strip renders. */
@@ -4625,6 +5062,12 @@ export const NOTIFICATIONS: Notification[] = [
   { id: "nt-27", level: "INFO", title: "Shelf-life reassessment filed", body: "Day-three door excursion on AMT-2026-00418 debited 1.2 days against a ~150 day budget. Ship-first not triggered.", at: "2026-10-01T15:10:00+05:30", tradeId: "AMT-2026-00418", ownerRole: "cold-chain", read: true, subject: { kind: "trade", id: "AMT-2026-00418" }, stage: 7 },
   { id: "nt-28", level: "ACTION", title: "Backup sailing decision point", body: "If gate-in fails tonight, CMACGM-8890344 on the 12th must be confirmed within 2 hours to stay inside the delivery window.", at: "2026-10-07T16:30:00+05:30", tradeId: "AMT-2026-00418", ownerRole: "logistics", read: false, subject: { kind: "container", id: "MSKU 784123-6" }, stage: 13 },
   { id: "nt-29", level: "INFO", title: "Term sheet signed", body: "TS-2026-0311 closed with all 8 clauses agreed. PO auto-accepted the same day.", at: "2026-09-18T12:41:00+05:30", tradeId: "AMT-2026-00418", ownerRole: "kam", read: true, subject: { kind: "termSheet", id: "TS-2026-0311" }, stage: 1 },
+  { id: "nt-31", level: "ACTION", title: "Customs query raised — response needed", body: "AMT-2026-00445: the officer queried the HS sub-heading on 5 kg tea packs and the Tea Board RCMC is missing from e-SANCHIT. Assessment SLA already burned; gate-in cut-off 9 Oct 12:00.", at: "2026-10-06T15:42:00+05:30", tradeId: "AMT-2026-00445", ownerRole: "documentation", read: false, subject: { kind: "document", id: "DOC-00445-shipping-bill" }, stage: 12 },
+  { id: "nt-32", level: "ACTION", title: "Export QC pending before stuffing cut-off", body: "Six pallets of Nashik Red on AMT-2026-00443 wait on the neck-dryness re-check. Stuffing slot 8 Oct 10:00.", at: "2026-10-07T15:00:00+05:30", tradeId: "AMT-2026-00443", ownerRole: "qc", read: false, subject: { kind: "trade", id: "AMT-2026-00443" }, stage: 8 },
+  { id: "nt-33", level: "ACTION", title: "Buyer quality confirmation pending", body: "AMT-2026-00447 delivered to Gulf Star at 10:30 local. The POD countersignature and arrival QC are open — the claim window runs 48 hours from delivery.", at: "2026-10-07T12:05:00+05:30", tradeId: "AMT-2026-00447", ownerRole: "kam", read: false, subject: { kind: "document", id: "DOC-00447-final-quality-confirmation" }, stage: 15 },
+  { id: "nt-34", level: "INFO", title: "Lot created and ready for pickup scheduling", body: "Lots 00131 and 00132 on AMT-2026-00441 are labelled. Lot 00133 waits on a quantity confirmation before its QR labels print.", at: "2026-10-07T11:32:00+05:30", tradeId: "AMT-2026-00441", ownerRole: "qc", read: false, subject: { kind: "trade", id: "AMT-2026-00441" }, stage: 4 },
+  { id: "nt-35", level: "ACTION", title: "Change request awaiting approval", body: "Gulf Star wants AMT-2026-00441 lifted from 14 to 16 MT. Impact assessed — needs a Master Admin decision before pickup tomorrow 06:00.", at: "2026-10-07T09:25:00+05:30", tradeId: "AMT-2026-00441", ownerRole: "master-admin", read: false, subject: { kind: "trade", id: "AMT-2026-00441" }, stage: 4 },
+  { id: "nt-36", level: "ACTION", title: "Price revision awaiting approval", body: "CR-2026-0028 on AMT-2026-00443 — USD 362 → 380/MT after the mandi moved. Margin falls to 4.1% if declined.", at: "2026-10-07T13:42:00+05:30", tradeId: "AMT-2026-00443", ownerRole: "master-admin", read: false, subject: { kind: "trade", id: "AMT-2026-00443" }, stage: 8 },
   { id: "nt-30", level: "WARNING", title: "Term sheet stalled on two clauses", body: "TS-2026-0325 has been open 3 days with price and packing disputed. Delivery window cannot be fixed until packing closes.", at: "2026-10-07T09:00:00+05:30", tradeId: null, ownerRole: "master-kam", read: false, subject: { kind: "termSheet", id: "TS-2026-0325" }, stage: 1 },
 ]
 
@@ -5022,6 +5465,91 @@ export const SHIPMENTS: Shipment[] = [
       { key: "pod", label: "Delivered and POD signed", plannedAt: "2026-09-25T12:00:00+04:00", actualAt: "2026-09-25T09:30:00+04:00", state: "complete" },
     ],
   },
+  {
+    id: "SHP-00443", tradeId: "AMT-2026-00443", containerId: "MSMU 771045-2", status: "booked",
+    carrier: "MSC", bookingRef: "MSCUBK-4482117", vessel: "MSC Bianca", voyage: "2642E",
+    blNo: null, blReleasedAt: null,
+    portOfLoading: "INNSA — Nhava Sheva", portOfDischarge: "AEJEA — Jebel Ali",
+    incoterm: "CFR Jebel Ali", freightTerms: "Prepaid",
+    etd: "2026-10-10T08:00:00+05:30", eta: "2026-10-14T14:00:00+04:00",
+    atd: null, ata: null, etaVarianceHrs: 0, transitDays: 4, remainingShelfLifeDays: 105,
+    legs: [
+      { id: "SHP-00443-L1", sequence: 1, mode: "road", from: "Lasalgaon pack-house", to: "Nhava Sheva terminal", carrier: "Deccan Reefer Lines", reference: "Pending allocation", departedAt: null, arrivedAt: null, state: "pending" },
+      { id: "SHP-00443-L2", sequence: 2, mode: "sea", from: "Nhava Sheva", to: "Jebel Ali", carrier: "MSC", reference: "MSC Bianca 2642E", departedAt: null, arrivedAt: null, state: "pending" },
+      { id: "SHP-00443-L3", sequence: 3, mode: "road", from: "Jebel Ali", to: "Al Noor cold store, Dubai", carrier: "Buyer's haulier", reference: "—", departedAt: null, arrivedAt: null, state: "pending" },
+    ],
+    charges: [
+      { code: "OFR", label: "Ocean freight, 40ft HC reefer", amountUsd: 1420, payer: "AMAMA", status: "accrued" },
+      { code: "THC-O", label: "Terminal handling — origin", amountUsd: 260, payer: "AMAMA", status: "accrued" },
+      { code: "GENSET", label: "Genset trailer hire, Lasalgaon → Nhava Sheva", amountUsd: 380, payer: "AMAMA", status: "accrued" },
+      { code: "THC-D", label: "Terminal handling — destination", amountUsd: 310, payer: "Buyer", status: "accrued" },
+    ],
+    milestones: [
+      { key: "stuff", label: "Stuffing complete", plannedAt: "2026-10-08T14:00:00+05:30", actualAt: null, state: "pending" },
+      { key: "si", label: "Shipping instructions filed", plannedAt: "2026-10-08T18:00:00+05:30", actualAt: null, state: "pending" },
+      { key: "vgm", label: "VGM filed", plannedAt: "2026-10-09T10:00:00+05:30", actualAt: null, state: "pending" },
+      { key: "gatein", label: "Terminal gate-in", plannedAt: "2026-10-09T16:00:00+05:30", actualAt: null, state: "pending" },
+      { key: "sail", label: "Vessel sailed", plannedAt: "2026-10-10T08:00:00+05:30", actualAt: null, state: "pending" },
+      { key: "arrive", label: "Arrived Jebel Ali", plannedAt: "2026-10-14T14:00:00+04:00", actualAt: null, state: "pending" },
+    ],
+  },
+  {
+    id: "SHP-00445", tradeId: "AMT-2026-00445", containerId: "TCKU 330276-8", status: "booked",
+    carrier: "Hapag-Lloyd", bookingRef: "HLCUCOK-2209871", vessel: "Hapag Mumbai Express", voyage: "120W",
+    blNo: null, blReleasedAt: null,
+    portOfLoading: "INCOK — Cochin", portOfDischarge: "RULED — St Petersburg",
+    incoterm: "CFR St Petersburg", freightTerms: "Prepaid",
+    etd: "2026-10-10T20:00:00+05:30", eta: "2026-10-31T08:00:00+03:00",
+    atd: null, ata: null, etaVarianceHrs: 0, transitDays: 21, remainingShelfLifeDays: 680,
+    legs: [
+      { id: "SHP-00445-L1", sequence: 1, mode: "road", from: "Coimbatore packing unit", to: "Cochin terminal", carrier: "Nilgiri Roadways", reference: "TRK-TN-43-H-2290", departedAt: null, arrivedAt: null, state: "pending" },
+      { id: "SHP-00445-L2", sequence: 2, mode: "sea", from: "Cochin", to: "St Petersburg", carrier: "Hapag-Lloyd", reference: "Hapag Mumbai Express 120W", departedAt: null, arrivedAt: null, state: "pending" },
+      { id: "SHP-00445-L3", sequence: 3, mode: "road", from: "St Petersburg", to: "Moskva Fresh DC, Moscow", carrier: "Buyer's haulier", reference: "—", departedAt: null, arrivedAt: null, state: "pending" },
+    ],
+    charges: [
+      { code: "OFR", label: "Ocean freight, 20ft dry via Jebel Ali", amountUsd: 2140, payer: "AMAMA", status: "invoiced" },
+      { code: "THC-O", label: "Terminal handling — origin", amountUsd: 190, payer: "AMAMA", status: "accrued" },
+      { code: "DOC", label: "Documentation and B/L fee", amountUsd: 120, payer: "AMAMA", status: "accrued" },
+      { code: "CHA", label: "Customs broker — query response", amountUsd: 85, payer: "AMAMA", status: "accrued" },
+    ],
+    milestones: [
+      { key: "stuff", label: "Stuffing complete", plannedAt: "2026-10-05T14:00:00+05:30", actualAt: "2026-10-05T14:00:00+05:30", state: "complete" },
+      { key: "vgm", label: "VGM filed", plannedAt: "2026-10-08T12:00:00+05:30", actualAt: "2026-10-06T09:00:00+05:30", state: "complete" },
+      { key: "si", label: "Shipping instructions filed", plannedAt: "2026-10-06T18:00:00+05:30", actualAt: "2026-10-06T15:00:00+05:30", state: "complete" },
+      { key: "leo", label: "Let Export Order", plannedAt: "2026-10-07T11:20:00+05:30", actualAt: null, state: "late" },
+      { key: "gatein", label: "Terminal gate-in", plannedAt: "2026-10-09T12:00:00+05:30", actualAt: null, state: "pending" },
+      { key: "sail", label: "Vessel sailed", plannedAt: "2026-10-10T20:00:00+05:30", actualAt: null, state: "pending" },
+    ],
+  },
+  {
+    id: "SHP-00447", tradeId: "AMT-2026-00447", containerId: "MRKU 540871-3", status: "arrived",
+    carrier: "Maersk", bookingRef: "MAEU-7704412", vessel: "Maersk Cape Coral", voyage: "0426W",
+    blNo: "MAEU247704412", blReleasedAt: "2026-09-28T12:00:00+05:30",
+    portOfLoading: "INNSA — Nhava Sheva", portOfDischarge: "AEJEA — Jebel Ali",
+    incoterm: "CIF Jebel Ali", freightTerms: "Prepaid",
+    etd: "2026-09-27T04:00:00+05:30", eta: "2026-10-03T22:00:00+04:00",
+    atd: "2026-09-27T04:30:00+05:30", ata: "2026-10-04T06:00:00+04:00", etaVarianceHrs: 8, transitDays: 7, remainingShelfLifeDays: 68,
+    legs: [
+      { id: "SHP-00447-L1", sequence: 1, mode: "road", from: "Lasalgaon pack-house", to: "Nhava Sheva terminal", carrier: "Deccan Reefer Lines", reference: "TRK-MH-15-GV-4410", departedAt: "2026-09-26T03:30:00+05:30", arrivedAt: "2026-09-26T12:40:00+05:30", state: "complete" },
+      { id: "SHP-00447-L2", sequence: 2, mode: "sea", from: "Nhava Sheva", to: "Jebel Ali", carrier: "Maersk", reference: "Maersk Cape Coral 0426W", departedAt: "2026-09-27T04:30:00+05:30", arrivedAt: "2026-10-04T06:00:00+04:00", state: "complete" },
+      { id: "SHP-00447-L3", sequence: 3, mode: "road", from: "Jebel Ali", to: "Gulf Star warehouse, Deira", carrier: "Buyer's haulier", reference: "DXB-5561", departedAt: "2026-10-07T08:30:00+04:00", arrivedAt: "2026-10-07T10:30:00+04:00", state: "complete" },
+    ],
+    charges: [
+      { code: "OFR", label: "Ocean freight, 40ft HC reefer", amountUsd: 1960, payer: "AMAMA", status: "paid" },
+      { code: "INS", label: "Marine cargo insurance (CIF)", amountUsd: 140, payer: "AMAMA", status: "paid" },
+      { code: "THC-O", label: "Terminal handling — origin", amountUsd: 260, payer: "AMAMA", status: "paid" },
+      { code: "THC-D", label: "Terminal handling — destination", amountUsd: 310, payer: "Buyer", status: "invoiced" },
+      { code: "DET", label: "Reefer plug at Jebel Ali during sample hold", amountUsd: 180, payer: "Buyer", status: "accrued" },
+    ],
+    milestones: [
+      { key: "gatein", label: "Terminal gate-in", plannedAt: "2026-09-26T18:00:00+05:30", actualAt: "2026-09-26T13:10:00+05:30", state: "complete" },
+      { key: "sail", label: "Vessel sailed", plannedAt: "2026-09-27T04:00:00+05:30", actualAt: "2026-09-27T04:30:00+05:30", state: "complete" },
+      { key: "bl", label: "Bill of lading released", plannedAt: "2026-09-28T18:00:00+05:30", actualAt: "2026-09-28T12:00:00+05:30", state: "complete" },
+      { key: "arrive", label: "Arrived Jebel Ali", plannedAt: "2026-10-03T22:00:00+04:00", actualAt: "2026-10-04T06:00:00+04:00", state: "complete" },
+      { key: "clear", label: "Import clearance", plannedAt: "2026-10-05T12:00:00+04:00", actualAt: "2026-10-06T09:30:00+04:00", state: "complete" },
+      { key: "pod", label: "Delivered and POD signed", plannedAt: "2026-10-07T12:00:00+04:00", actualAt: null, state: "due" },
+    ],
+  },
 ]
 
 export const shipmentById = (id: string): Shipment | undefined =>
@@ -5064,6 +5592,10 @@ export const ORDER_FULFILMENT: OrderFulfilment[] = [
   { tradeId: "AMT-2026-00435", allocatedMt: 19.2, harvestedMt: 19.2, packedMt: 19.2, shippedMt: 0, lotsCreated: 3, palletsPacked: 20, advanceReceivedUsd: 0, advanceReceivedAt: null, balanceDueUsd: 85440, balanceDueAt: "2026-11-28T00:00:00+05:30", balanceReceivedAt: null },
   { tradeId: "AMT-2026-00437", allocatedMt: 17, harvestedMt: 17, packedMt: 17, shippedMt: 17, lotsCreated: 2, palletsPacked: 17, advanceReceivedUsd: 0, advanceReceivedAt: null, balanceDueUsd: 97750, balanceDueAt: "2026-11-01T00:00:00+05:30", balanceReceivedAt: null },
   { tradeId: "AMT-2026-00439", allocatedMt: 48, harvestedMt: 48, packedMt: 47.6, shippedMt: 47.6, lotsCreated: 5, palletsPacked: 48, advanceReceivedUsd: 5112, advanceReceivedAt: "2026-08-20T10:00:00+05:30", balanceDueUsd: 11786, balanceDueAt: "2026-10-08T00:00:00+05:30", balanceReceivedAt: "2026-10-06T14:00:00+05:30" },
+  { tradeId: "AMT-2026-00441", allocatedMt: 14, harvestedMt: 14, packedMt: 0, shippedMt: 0, lotsCreated: 3, palletsPacked: 0, advanceReceivedUsd: 4893, advanceReceivedAt: "2026-10-01T11:00:00+05:30", balanceDueUsd: 11417, balanceDueAt: null, balanceReceivedAt: null },
+  { tradeId: "AMT-2026-00443", allocatedMt: 28, harvestedMt: 28, packedMt: 27, shippedMt: 0, lotsCreated: 3, palletsPacked: 28, advanceReceivedUsd: 3041, advanceReceivedAt: "2026-10-01T12:00:00+05:30", balanceDueUsd: 7095, balanceDueAt: null, balanceReceivedAt: null },
+  { tradeId: "AMT-2026-00445", allocatedMt: 18, harvestedMt: 18, packedMt: 18, shippedMt: 0, lotsCreated: 2, palletsPacked: 18, advanceReceivedUsd: 0, advanceReceivedAt: null, balanceDueUsd: 61560, balanceDueAt: null, balanceReceivedAt: null },
+  { tradeId: "AMT-2026-00447", allocatedMt: 15, harvestedMt: 14.8, packedMt: 14.8, shippedMt: 14.8, lotsCreated: 3, palletsPacked: 16, advanceReceivedUsd: 5805, advanceReceivedAt: "2026-09-08T10:00:00+05:30", balanceDueUsd: 13287, balanceDueAt: "2026-10-28T00:00:00+05:30", balanceReceivedAt: null },
 
   /* Scenario reference trades — closed, every quantity filled, balance in. */
   { tradeId: "AMT-2026-00501", allocatedMt: 12, harvestedMt: 12, packedMt: 12, shippedMt: 12, lotsCreated: 1, palletsPacked: 10, advanceReceivedUsd: 8880, advanceReceivedAt: "2026-08-13T10:00:00+05:30", balanceDueUsd: 8880, balanceDueAt: "2026-09-28T00:00:00+05:30", balanceReceivedAt: "2026-09-30T11:00:00+05:30" },
@@ -5075,6 +5607,224 @@ export const ORDER_FULFILMENT: OrderFulfilment[] = [
 
 export const fulfilmentForTrade = (tradeId: string): OrderFulfilment | undefined =>
   ORDER_FULFILMENT.find((row) => row.tradeId === tradeId)
+
+/* ════════════════════════════════════════════════════════════════════
+   CHANGE REQUESTS  (scenario E)
+   ════════════════════════════════════════════════════════════════════ */
+
+export type ChangeKind = "quantity" | "price" | "date" | "destination" | "spec"
+
+export type ChangeStatus = "awaiting-approval" | "approved" | "rejected" | "withdrawn"
+
+/** The trade fields a change can move. Applied to the trade only when the
+ *  request is approved — until then the contract stands as signed. */
+export type ChangePatch = Partial<
+  Pick<Trade, "qtyContractedMt" | "priceUsdPerMt" | "deliveryWindow" | "portOfDischarge" | "destination" | "spec">
+>
+
+/** The four assessments chain E runs before anyone decides. */
+export type ChangeImpact = {
+  inventory: string
+  logistics: string
+  /** Extra cost to AMAMA in USD; negative is a saving. */
+  costUsd: number
+  /** Change in contract value in USD. */
+  revenueUsd: number
+  marginBeforePct: number
+  marginAfterPct: number
+  /** Documents that must be amended or reissued if this is approved. */
+  documents: string[]
+}
+
+export type ChangeRequest = {
+  id: string
+  tradeId: string
+  kind: ChangeKind
+  raisedBy: { party: PartyKind; id: string }
+  raisedAt: string
+  /** Where the trade stood when the change landed — the later, the dearer. */
+  stage: StageNo
+  from: string
+  to: string
+  patch: ChangePatch
+  reason: string
+  impact: ChangeImpact
+  approverRole: InternalRoleId
+  status: ChangeStatus
+  decidedBy: string | null
+  decidedAt: string | null
+  decisionNote: string | null
+  /** Set on approval: the revised trade plan the change produced. */
+  revisedPlan: string | null
+}
+
+export const CHANGE_REQUESTS: ChangeRequest[] = [
+  {
+    id: "CR-2026-0011", tradeId: "AMT-2026-00505", kind: "quantity",
+    raisedBy: { party: "buyer", id: "b-gulfstar" }, raisedAt: "2026-08-19T11:00:00+05:30", stage: 1,
+    from: "26 MT", to: "24 MT", patch: { qtyContractedMt: 24 },
+    reason: "Trim two tonnes in exchange for a firmer per-carton price — Gulf Star's October promotion was cut back.",
+    impact: { inventory: "Jalgaon co-op not yet briefed — allocation simply re-cut before it was issued.", logistics: "Still one 40ft reefer; two fewer pallet rows.", costUsd: 0, revenueUsd: -990, marginBeforePct: 10.8, marginAfterPct: 11.2, documents: ["Sales Contract", "Purchase Order"] },
+    approverRole: "master-admin", status: "approved", decidedBy: "u-vikram", decidedAt: "2026-08-19T17:30:00+05:30",
+    decisionNote: "Approved before signature — the cheapest moment a change can arrive.", revisedPlan: "Rev 2 · 19 Aug",
+  },
+  {
+    id: "CR-2026-0013", tradeId: "AMT-2026-00505", kind: "spec",
+    raisedBy: { party: "buyer", id: "b-gulfstar" }, raisedAt: "2026-09-04T16:00:00+05:30", stage: 3,
+    from: "Green-life ≥ 18 days", to: "Green-life ≥ 21 days", patch: {},
+    reason: "Longer retail shelf requested after a slow-moving August consignment from another origin.",
+    impact: { inventory: "Field QC already booked — re-sample against the revised band on the same visit.", logistics: "Ripening-room set point down 0.5 °C for this lot.", costUsd: 220, revenueUsd: 0, marginBeforePct: 11.2, marginAfterPct: 10.4, documents: ["Product & Quality Spec", "Field QC Report"] },
+    approverRole: "master-kam", status: "approved", decidedBy: "u-ananya", decidedAt: "2026-09-04T19:10:00+05:30",
+    decisionNote: "Approved — cost absorbed, inspector re-briefed for tomorrow's visit.", revisedPlan: "Rev 3 · 4 Sep",
+  },
+  {
+    id: "CR-2026-0014", tradeId: "AMT-2026-00505", kind: "date",
+    raisedBy: { party: "buyer", id: "b-gulfstar" }, raisedAt: "2026-09-05T09:00:00+05:30", stage: 5,
+    from: "15 – 28 Sep", to: "12 – 25 Sep", patch: { deliveryWindow: ["2026-09-12", "2026-09-25"] },
+    reason: "Catch the earlier CMA CGM vessel so the fruit lands before Gulf Star's mid-month restock.",
+    impact: { inventory: "Pickup truck re-planned a day earlier; packing compressed into one shift.", logistics: "Booking moved to CMA CGM Narmada 0FD6W; fast-track inbound bay.", costUsd: 410, revenueUsd: 0, marginBeforePct: 10.4, marginAfterPct: 9.2, documents: ["Booking Confirmation", "Insurance Certificate"] },
+    approverRole: "master-kam", status: "approved", decidedBy: "u-ananya", decidedAt: "2026-09-05T11:30:00+05:30",
+    decisionNote: "Approved at a modest margin cost — earlier sailing had reefer space.", revisedPlan: "Rev 4 · 5 Sep",
+  },
+  {
+    id: "CR-2026-0016", tradeId: "AMT-2026-00505", kind: "date",
+    raisedBy: { party: "buyer", id: "b-gulfstar" }, raisedAt: "2026-09-15T13:00:00+05:30", stage: 13,
+    from: "12 – 25 Sep", to: "12 – 26 Sep", patch: { deliveryWindow: ["2026-09-12", "2026-09-26"] },
+    reason: "One more day of delivery slack for Gulf Star's warehouse rota.",
+    impact: { inventory: "None — cargo already inside the terminal.", logistics: "Container gated in; the sailing is fixed.", costUsd: 0, revenueUsd: 0, marginBeforePct: 9.2, marginAfterPct: 9.2, documents: ["Sales Contract"] },
+    approverRole: "master-kam", status: "rejected", decidedBy: "u-ananya", decidedAt: "2026-09-15T14:00:00+05:30",
+    decisionNote: "Logged, not actioned — changes are frozen once the container is inside the gate. Delivery slack handled with the buyer's haulier directly.", revisedPlan: null,
+  },
+  {
+    id: "CR-2026-0017", tradeId: "AMT-2026-00505", kind: "destination",
+    raisedBy: { party: "buyer", id: "b-gulfstar" }, raisedAt: "2026-09-18T10:00:00+05:30", stage: 14,
+    from: "Jebel Ali Free Zone clearance", to: "Mainland Dubai clearance", patch: { destination: "Deira, Dubai (mainland)" },
+    reason: "Gulf Star's broker moved the entry to mainland Dubai to avoid a free-zone transfer.",
+    impact: { inventory: "None — at sea.", logistics: "Destination haulage re-routed to Deira.", costUsd: 0, revenueUsd: 0, marginBeforePct: 9.2, marginAfterPct: 9.2, documents: ["Commercial Invoice", "Certificate of Origin", "Bill of Lading (final)"] },
+    approverRole: "master-kam", status: "approved", decidedBy: "u-ananya", decidedAt: "2026-09-18T15:00:00+05:30",
+    decisionNote: "Destination-side documents amended only; nothing upstream touched.", revisedPlan: "Rev 5 · 18 Sep",
+  },
+  {
+    id: "CR-2026-0018", tradeId: "AMT-2026-00431", kind: "spec",
+    raisedBy: { party: "buyer", id: "b-vanderveen" }, raisedAt: "2026-08-22T10:00:00+05:30", stage: 1,
+    from: "ASTA 80+", to: "ASTA 90+", patch: { spec: "Guntur Sannam S4, ASTA 90+, stem-removed, moisture ≤ 12%, aflatoxin within EU limit." },
+    reason: "Vanderveen's own retail spec lifted colour for the 2027 range.",
+    impact: { inventory: "Fewer eligible Tadikonda lots — 54 MT still available at the higher colour.", logistics: "No change.", costUsd: 2700, revenueUsd: 4320, marginBeforePct: 12.0, marginAfterPct: 12.6, documents: ["Product & Quality Spec", "Sales Contract"] },
+    approverRole: "master-admin", status: "approved", decidedBy: "u-vikram", decidedAt: "2026-08-22T18:00:00+05:30",
+    decisionNote: "Approved with a USD 80/MT price step — repriced in revision 3 of the RFQ.", revisedPlan: "Rev 3 · 22 Aug",
+  },
+  {
+    id: "CR-2026-0019", tradeId: "AMT-2026-00445", kind: "destination",
+    raisedBy: { party: "buyer", id: "b-moskva" }, raisedAt: "2026-09-24T11:10:00+05:30", stage: 9,
+    from: "RUNVS — Novorossiysk", to: "RULED — St Petersburg", patch: { portOfDischarge: "RULED — St Petersburg" },
+    reason: "St Petersburg sits closer to Moskva's Moscow DC; Novorossiysk inland haulage had doubled.",
+    impact: { inventory: "None — tea in the factory store.", logistics: "Transit +6 days via Jebel Ali; booking moved to Hapag Mumbai Express 120W.", costUsd: 410, revenueUsd: 0, marginBeforePct: 13.5, marginAfterPct: 12.8, documents: ["Booking Confirmation", "Certificate of Origin", "Insurance Certificate", "Shipping Bill"] },
+    approverRole: "master-kam", status: "approved", decidedBy: "u-ananya", decidedAt: "2026-09-26T15:00:00+05:30",
+    decisionNote: "Approved — freight delta absorbed, tea has the shelf life for the longer routing.", revisedPlan: "Rev 2 · 26 Sep",
+  },
+  {
+    id: "CR-2026-0020", tradeId: "AMT-2026-00423", kind: "spec",
+    raisedBy: { party: "buyer", id: "b-vanderveen" }, raisedAt: "2026-09-26T12:00:00+05:30", stage: 2,
+    from: "Co-op residue certificate", to: "Block-level residue reports", patch: {},
+    reason: "After last season's claim Vanderveen wants residue evidence per block, not per co-op.",
+    impact: { inventory: "Allocation re-cut to the four Dindori blocks with clean spray records.", logistics: "No change.", costUsd: 360, revenueUsd: 0, marginBeforePct: 11.8, marginAfterPct: 10.3, documents: ["Product & Quality Spec", "Pesticide / Residue Test"] },
+    approverRole: "master-kam", status: "approved", decidedBy: "u-ananya", decidedAt: "2026-09-28T16:30:00+05:30",
+    decisionNote: "Approved — lab cost absorbed as the price of keeping the account.", revisedPlan: "Rev 2 · 28 Sep",
+  },
+  {
+    id: "CR-2026-0022", tradeId: "AMT-2026-00439", kind: "quantity",
+    raisedBy: { party: "buyer", id: "b-alnoor" }, raisedAt: "2026-08-29T10:00:00+05:30", stage: 6,
+    from: "48 MT", to: "52 MT", patch: { qtyContractedMt: 52 },
+    reason: "A Ramadan pre-order from a hypermarket chain.",
+    impact: { inventory: "4 MT more from Krishna Valley's curing yards — available, but a second picking day.", logistics: "Over one 40ft reefer — a third box at part load.", costUsd: 1850, revenueUsd: 1420, marginBeforePct: 8.6, marginAfterPct: 7.4, documents: ["Sales Contract", "Booking Confirmation", "Packing List (draft)"] },
+    approverRole: "master-admin", status: "withdrawn", decidedBy: null, decidedAt: "2026-08-30T09:00:00+05:30",
+    decisionNote: "Withdrawn by Al Noor once the third-box freight was quoted.", revisedPlan: null,
+  },
+  {
+    id: "CR-2026-0026", tradeId: "AMT-2026-00437", kind: "date",
+    raisedBy: { party: "internal", id: "u-rohit" }, raisedAt: "2026-10-07T07:40:00+05:30", stage: 14,
+    from: "10 – 22 Oct", to: "10 – 25 Oct", patch: { deliveryWindow: ["2026-10-10", "2026-10-25"] },
+    reason: "Weather has pushed the ETA 14 hours; three days of window slack protects the LC presentation.",
+    impact: { inventory: "None — at sea.", logistics: "No re-routing; window cover only.", costUsd: 0, revenueUsd: 0, marginBeforePct: 10.9, marginAfterPct: 10.9, documents: ["Sales Contract"] },
+    approverRole: "master-kam", status: "approved", decidedBy: "u-ananya", decidedAt: "2026-10-07T08:15:00+05:30",
+    decisionNote: "Approved — Reef agreed by email; LC unaffected.", revisedPlan: "Rev 2 · 7 Oct",
+  },
+  {
+    id: "CR-2026-0027", tradeId: "AMT-2026-00441", kind: "quantity",
+    raisedBy: { party: "buyer", id: "b-gulfstar" }, raisedAt: "2026-10-07T09:20:00+05:30", stage: 4,
+    from: "14 MT", to: "16 MT", patch: { qtyContractedMt: 16 },
+    reason: "The first Himachal box sold through faster than planned; Gulf Star wants two more tonnes on the same sailing.",
+    impact: { inventory: "Lots cover 13.95 MT. Two more tonnes means a third pick on Suresh Chauhan's Jubbal block — QC and a new lot before tomorrow's pickup.", logistics: "Still one 40ft HC reefer — 16 MT fits at 20 pallets.", costUsd: 420, revenueUsd: 2330, marginBeforePct: 11.4, marginAfterPct: 12.1, documents: ["Sales Contract", "Purchase Order", "Grade & Quantity Declaration"] },
+    approverRole: "master-admin", status: "awaiting-approval", decidedBy: null, decidedAt: null, decisionNote: null, revisedPlan: null,
+  },
+  {
+    id: "CR-2026-0028", tradeId: "AMT-2026-00443", kind: "price",
+    raisedBy: { party: "internal", id: "u-rohit" }, raisedAt: "2026-10-07T13:40:00+05:30", stage: 8,
+    from: "USD 362 / MT", to: "USD 380 / MT", patch: { priceUsdPerMt: 380 },
+    reason: "Lasalgaon mandi is up 9% since signature on a short kharif arrival; the contract has a price-review clause above 7%.",
+    impact: { inventory: "No change — cargo packed.", logistics: "No change.", costUsd: 0, revenueUsd: 504, marginBeforePct: 4.1, marginAfterPct: 8.7, documents: ["Sales Contract", "Commercial Invoice"] },
+    approverRole: "master-admin", status: "awaiting-approval", decidedBy: null, decidedAt: null, decisionNote: null, revisedPlan: null,
+  },
+  {
+    id: "CR-2026-0029", tradeId: "AMT-2026-00419", kind: "spec",
+    raisedBy: { party: "buyer", id: "b-britannia" }, raisedAt: "2026-10-07T14:15:00+05:30", stage: 1,
+    from: "250–300 g", to: "280–320 g", patch: { spec: "Alphonso, Grade A, 280–320 g, brix ≥ 18, zero spongy tissue tolerance." },
+    reason: "Britannia's premium gift-box line wants a heavier fruit band.",
+    impact: { inventory: "About 70% of Devgad's projected pack-out sits in the heavier band — 12 MT still covered.", logistics: "No change.", costUsd: 640, revenueUsd: 960, marginBeforePct: 12.2, marginAfterPct: 12.4, documents: ["Product & Quality Spec", "Packaging Spec", "Sales Contract"] },
+    approverRole: "master-kam", status: "awaiting-approval", decidedBy: null, decidedAt: null, decisionNote: null, revisedPlan: null,
+  },
+]
+
+export const changeRequestById = (id: string): ChangeRequest | undefined =>
+  CHANGE_REQUESTS.find((request) => request.id === id)
+export const changeRequestsForTrade = (tradeId: string): ChangeRequest[] =>
+  CHANGE_REQUESTS.filter((request) => request.tradeId === tradeId).sort((a, b) => b.raisedAt.localeCompare(a.raisedAt))
+
+/* ════════════════════════════════════════════════════════════════════
+   CLAIMS  (stage 15, chain C)
+   ════════════════════════════════════════════════════════════════════ */
+
+export type ClaimReason = "quality" | "quantity" | "temperature" | "damage" | "documents"
+
+export type ClaimStatus = "open" | "under-review" | "settled" | "rejected"
+
+export type Claim = {
+  id: string
+  tradeId: string
+  raisedBy: string
+  raisedAt: string
+  reason: ClaimReason
+  detail: string
+  affectedMt: number
+  claimedUsd: number
+  photos: number
+  /** Where the traceability chain says it went wrong, once traced. */
+  rootCause: string | null
+  resolution: "credit" | "replacement" | "rejected" | null
+  settledUsd: number | null
+  settledAt: string | null
+  status: ClaimStatus
+}
+
+export const CLAIMS: Claim[] = [
+  {
+    id: "CL-2026-0004", tradeId: "AMT-2026-00503", raisedBy: "b-vanderveen", raisedAt: "2026-09-11T16:00:00+05:30",
+    reason: "quality", detail: "Arrival survey found 4% aril breakdown on two pallets — above the 1% sunscald tolerance.",
+    affectedMt: 1.8, claimedUsd: 2380, photos: 26,
+    rootCause: "Traced through the QR chain to the lot quarantined at stage 07 after the chamber excursion.",
+    resolution: "credit", settledUsd: 1960, settledAt: "2026-09-17T12:00:00+05:30", status: "settled",
+  },
+  {
+    id: "CL-2026-0006", tradeId: "AMT-2026-00505", raisedBy: "b-gulfstar", raisedAt: "2026-09-25T12:00:00+04:00",
+    reason: "quantity", detail: "Delivered count came in at 23.6 MT against the revised 24 MT contract.",
+    affectedMt: 0.4, claimedUsd: 198, photos: 4,
+    rootCause: "Packing-run shrink on the foam-netted hands after the stage-08 packaging change.",
+    resolution: "credit", settledUsd: 198, settledAt: "2026-09-28T11:00:00+05:30", status: "settled",
+  },
+]
+
+export const claimsForTrade = (tradeId: string): Claim[] =>
+  CLAIMS.filter((claim) => claim.tradeId === tradeId).sort((a, b) => b.raisedAt.localeCompare(a.raisedAt))
 
 
 /* ════════════════════════════════════════════════════════════════════

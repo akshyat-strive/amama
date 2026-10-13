@@ -4,6 +4,7 @@ import * as React from "react"
 import { AlertTriangleIcon, PackageIcon, SendIcon, ShieldCheckIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { ContractStickyBar } from "@/features/contracts/contract-sticky-bar"
 import { ChatCard } from "@/features/marketplace/chat-cards"
 import { ChatComposerPopover, type ComposerParty } from "@/features/marketplace/chat-composer-popover"
 import {
@@ -122,6 +123,7 @@ function ConversationThread({
         <div className="shrink-0 border-b border-border px-4 py-3">{header}</div>
       ) : null}
 
+      {conversationId ? <ContractStickyBar conversationId={conversationId} viewer={viewer} /> : null}
       {messages ? (
         <>
           <div ref={scrollRef} className="flex flex-1 flex-col gap-2 overflow-y-auto px-5 py-4">

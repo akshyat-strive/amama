@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { CheckIcon, ClipboardListIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetCloseButton } from "@/components/ui/sheet"
+import { DetailPage, useDetailRoute } from "@/components/ui/detail-page"
 import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
 import { formatInr } from "@/features/marketplace/currency"
 import { sellerIdentity } from "@/features/marketplace/identity"
@@ -101,8 +101,8 @@ function SellerRfqsWorkspace() {
 
   const tab: SellerRfqTab = searchParams.get("tab") === "sent" ? "sent" : "open"
   const visible = tab === "open" ? discoverable : mine
-  const selectedId = searchParams.get("rfq")
-  const selected = [...mine, ...discoverable].find((rfq) => rfq.id === selectedId) ?? null
+  const detail = useDetailRoute({ segment: "rfqId", query: "rfq" })
+  const selected = [...mine, ...discoverable].find((rfq) => rfq.id === detail.selectedId) ?? null
 
   const setParams = (next: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -114,8 +114,7 @@ function SellerRfqsWorkspace() {
   }
 
   const setTab = (next: SellerRfqTab) => setParams({ tab: next === "open" ? null : next, rfq: null })
-  const openRfq = (rfq: Rfq) => setParams({ rfq: rfq.id })
-  const closeSheet = () => setParams({ rfq: null })
+  const openRfq = (rfq: Rfq) => detail.open(rfq.id)
 
   const startQuoting = (rfq: Rfq) => {
     const alreadyIn = rfq.sellers.some((entry) => entry.sellerId === seller.id)
@@ -131,6 +130,19 @@ function SellerRfqsWorkspace() {
     const candidate = myListings.find((listing) => listing.cropId === rfq.productCategory) ?? myListings[0] ?? null
     if (!candidate) return
     setQuoting({ rfq, joinListingId: candidate.id })
+  }
+
+  const quotingDialog = quoting ? (
+    <QuotingDialog quoting={quoting} onOpenChange={(open) => !open && setQuoting(null)} sellerId={seller.id} sellerName={seller.name} />
+  ) : null
+
+  if (selected) {
+    return (
+      <DetailPage backLabel="RFQs" onBack={detail.close} trail={["RFQs", selected.title]}>
+        <RfqDetail rfq={selected} sellerId={seller.id} onQuote={() => startQuoting(selected)} />
+        {quotingDialog}
+      </DetailPage>
+    )
   }
 
   if (mine.length === 0 && discoverable.length === 0) {
@@ -183,21 +195,7 @@ function SellerRfqsWorkspace() {
         </ul>
       )}
 
-      <RfqDetailSheet
-        rfq={selected}
-        sellerId={seller.id}
-        onOpenChange={(open) => !open && closeSheet()}
-        onQuote={() => selected && startQuoting(selected)}
-      />
-
-      {quoting ? (
-        <QuotingDialog
-          quoting={quoting}
-          onOpenChange={(open) => !open && setQuoting(null)}
-          sellerId={seller.id}
-          sellerName={seller.name}
-        />
-      ) : null}
+      {quotingDialog}
     </div>
   )
 }
@@ -257,29 +255,13 @@ function RfqListRow({
   )
 }
 
-/** The detail drawer a row opens into — every spec field a seller needs
- *  to decide whether to quote, plus the one action that matters. Bottom
- *  sheet on a phone, side sheet from `sm` up (`SheetContent`'s own
- *  `side="responsive"`), so this is one drawer, not two screens to build. */
-function RfqDetailSheet({
-  rfq,
-  sellerId,
-  onOpenChange,
-  onQuote,
-}: {
-  rfq: Rfq | null
-  sellerId: string
-  onOpenChange: (open: boolean) => void
-  onQuote: () => void
-}) {
-  const quote = rfq ? quoteFromSeller(rfq, sellerId) : null
-  const canQuote = !!rfq && rfq.status === "open" && (!quote || quote.status === "withdrawn")
+/** The RFQ's own page — every spec field a seller needs to decide
+ *  whether to quote, plus the one action that matters. */
+function RfqDetail({ rfq, sellerId, onQuote }: { rfq: Rfq; sellerId: string; onQuote: () => void }) {
+  const quote = quoteFromSeller(rfq, sellerId)
+  const canQuote = rfq.status === "open" && (!quote || quote.status === "withdrawn")
 
   return (
-    <Sheet open={rfq !== null} onOpenChange={onOpenChange}>
-      <SheetContent side="responsive" className="overflow-y-auto">
-        <SheetCloseButton />
-        {rfq ? (
           <div className="flex flex-col gap-4 pb-2">
             <div>
               <h2 className="text-[17px] font-semibold tracking-tight text-foreground">{rfq.title}</h2>
@@ -331,9 +313,6 @@ function RfqDetailSheet({
               ) : null}
             </div>
           </div>
-        ) : null}
-      </SheetContent>
-    </Sheet>
   )
 }
 

@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { CheckIcon, ClipboardListIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -14,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Sheet, SheetContent, SheetCloseButton } from "@/components/ui/sheet"
+import { DetailPage, useDetailRoute } from "@/components/ui/detail-page"
 import { formatInr } from "@/features/marketplace/currency"
 import { buyerIdentity } from "@/features/marketplace/identity"
 import { acceptQuote, rfqsForBuyer, useRfqs, type Rfq, type RfqQuote } from "@/features/marketplace/rfq-store"
@@ -45,27 +44,22 @@ function RfqsSkeleton() {
  *  persistent rail-and-detail split: a phone has no room to show a list
  *  next to a detail pane, so this is one drawer, not two screens. */
 function BuyerRfqsWorkspace() {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
   const { draft } = useOnboarding()
   const buyer = buyerIdentity(draft.buyer)
   const rfqs = useRfqs()
+  const detail = useDetailRoute({ segment: "rfqId", query: "rfq" })
 
   const mine = React.useMemo(() => rfqsForBuyer(rfqs, buyer.id), [rfqs, buyer.id])
-  const selectedId = searchParams.get("rfq")
-  const selected = mine.find((entry) => entry.id === selectedId) ?? null
+  const selected = mine.find((entry) => entry.id === detail.selectedId) ?? null
+  const openRfq = detail.open
 
-  const setParams = (next: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams.toString())
-    for (const [key, value] of Object.entries(next)) {
-      if (value === null) params.delete(key)
-      else params.set(key, value)
-    }
-    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  if (selected) {
+    return (
+      <DetailPage backLabel="RFQs" onBack={detail.close} trail={["RFQs", selected.title]}>
+        <RfqComparison key={selected.id} rfq={selected} myName={buyer.name} />
+      </DetailPage>
+    )
   }
-  const openRfq = (id: string) => setParams({ rfq: id })
-  const closeSheet = () => setParams({ rfq: null })
 
   return (
     <div>
@@ -89,13 +83,6 @@ function BuyerRfqsWorkspace() {
           ))}
         </ul>
       )}
-
-      <Sheet open={selected !== null} onOpenChange={(open) => !open && closeSheet()}>
-        <SheetContent side="responsive" className="overflow-y-auto">
-          <SheetCloseButton />
-          {selected ? <RfqComparison key={selected.id} rfq={selected} myName={buyer.name} /> : null}
-        </SheetContent>
-      </Sheet>
     </div>
   )
 }

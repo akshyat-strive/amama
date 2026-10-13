@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { DetailPage, useDetailRoute } from "@/components/ui/detail-page"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -37,7 +38,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Sheet, SheetContent, SheetCloseButton } from "@/components/ui/sheet"
 import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import {
@@ -163,7 +163,8 @@ function ContractsWorkspace({
   )
 
   const tab: ContractsTab = searchParams.get("tab") === "prepared" ? "prepared" : "requests"
-  const selectedId = searchParams.get("contract")
+  const detail = useDetailRoute({ segment: "contractId", query: "contract" })
+  const selectedId = detail.selectedId
   const selected = selectedId ? (prepared.find((entry) => entry.id === selectedId) ?? null) : null
 
   const setParams = (next: Record<string, string | null>) => {
@@ -175,8 +176,15 @@ function ContractsWorkspace({
     router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
   const setTab = (next: ContractsTab) => setParams({ tab: next === "requests" ? null : next, contract: null })
-  const openContract = (id: string) => setParams({ contract: id })
-  const closeSheet = () => setParams({ contract: null })
+  const openContract = detail.open
+
+  if (selected) {
+    return (
+      <DetailPage backLabel="Contracts" onBack={detail.close} trail={["Contracts", selected.id]}>
+        <ContractDetail contract={selected} viewer={viewer} identity={identity} />
+      </DetailPage>
+    )
+  }
 
   return (
     <div className={PAGE_TABS_SPACE}>
@@ -234,12 +242,6 @@ function ContractsWorkspace({
         </ReviewGroup>
       )}
 
-      <Sheet open={selected !== null} onOpenChange={(open) => !open && closeSheet()}>
-        <SheetContent side="responsive" className="overflow-y-auto">
-          {/* <SheetCloseButton /> */}
-          {selected ? <ContractDetail contract={selected} viewer={viewer} identity={identity} /> : null}
-        </SheetContent>
-      </Sheet>
     </div>
   )
 }

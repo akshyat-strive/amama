@@ -7,7 +7,7 @@ import { AlertTriangleIcon, CheckIcon, ShipIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Sheet, SheetContent, SheetCloseButton } from "@/components/ui/sheet"
+import { DetailPage } from "@/components/ui/detail-page"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import { buyerIdentity } from "@/features/marketplace/identity"
 import { raiseClaim, useDeals, type Deal, type Shipment } from "@/features/marketplace/deal-store"
@@ -94,20 +94,9 @@ function ArrivalConfirmation({ deal, shipment }: { deal: Deal; shipment: Shipmen
 /** The tracker's own detail, opened from a list row into a sheet — a
  *  bottom sheet on a phone, a side sheet from `sm` up — rather than shown
  *  full-size inline in the list. */
-function ShipmentDetailSheet({
-  pair,
-  onOpenChange,
-}: {
-  pair: { deal: Deal; shipment: Shipment } | null
-  onOpenChange: (open: boolean) => void
-}) {
+function ShipmentDetail({ pair }: { pair: { deal: Deal; shipment: Shipment } }) {
   return (
-    <Sheet open={pair !== null} onOpenChange={onOpenChange}>
-      <SheetContent side="responsive" className="overflow-y-auto">
-        <SheetCloseButton />
-        {pair ? <ShipmentTracker shipment={pair.shipment} /> : null}
-      </SheetContent>
-    </Sheet>
+    <ShipmentTracker shipment={pair.shipment} />
   )
 }
 
@@ -160,6 +149,14 @@ function ShipmentsWorkspace() {
   const openShipment = (id: string) => setParams({ shipment: id })
   const closeSheet = () => setParams({ shipment: null })
 
+  if (selectedPair) {
+    return (
+      <DetailPage backLabel="Shipments" onBack={closeSheet} trail={["Shipments", selectedPair.shipment.id]}>
+        <ShipmentDetail pair={selectedPair} />
+      </DetailPage>
+    )
+  }
+
   return (
     <div>
       <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Shipments</h1>
@@ -200,7 +197,6 @@ function ShipmentsWorkspace() {
         </>
       )}
 
-      <ShipmentDetailSheet pair={selectedPair} onOpenChange={(open) => !open && closeSheet()} />
     </div>
   )
 }

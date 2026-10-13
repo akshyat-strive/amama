@@ -55,7 +55,7 @@ function contractsHref(viewer: ChatParty, contractId: string) {
       : viewer === "buyer"
         ? "/buyer/dashboard/contracts"
         : "/seller/dashboard/contracts"
-  return `${base}?contract=${contractId}`
+  return `${base}/${contractId}`
 }
 
 function formatDate(iso: string) {

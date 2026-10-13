@@ -4,7 +4,7 @@ import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { cn } from "@/lib/utils"
-import { Sheet, SheetContent, SheetCloseButton } from "@/components/ui/sheet"
+import { DetailPage } from "@/components/ui/detail-page"
 import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
 import { StatusPill, type TradeStatus } from "@/features/dashboard/dashboard-ui"
 import { buildOrderBook, TOTAL_GATES, type DemoOrder } from "@/features/dashboard/demo-data"
@@ -100,6 +100,14 @@ function OrdersWorkspace({ role }: { role: OnboardingRole }) {
   const openOrder = (id: string) => setParams({ order: id })
   const closeSheet = () => setParams({ order: null })
 
+  if (selectedLive || selectedEta) {
+    return (
+      <DetailPage backLabel="Orders" onBack={closeSheet} trail={["Orders", (selectedLive ?? selectedEta)!.id]}>
+        {selectedLive ? <LiveOrderDetail deal={selectedLive} role={role} /> : selectedEta ? <EtaOrderDetail order={selectedEta} /> : null}
+      </DetailPage>
+    )
+  }
+
   return (
     <div className={PAGE_TABS_SPACE}>
       <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Orders</h1>
@@ -138,20 +146,6 @@ function OrdersWorkspace({ role }: { role: OnboardingRole }) {
           ))}
         </ul>
       )}
-
-      <Sheet open={selectedLive !== null} onOpenChange={(open) => !open && closeSheet()}>
-        <SheetContent side="responsive" className="overflow-y-auto">
-          <SheetCloseButton />
-          {selectedLive ? <LiveOrderDetail deal={selectedLive} role={role} /> : null}
-        </SheetContent>
-      </Sheet>
-
-      <Sheet open={selectedEta !== null} onOpenChange={(open) => !open && closeSheet()}>
-        <SheetContent side="responsive" className="overflow-y-auto">
-          <SheetCloseButton />
-          {selectedEta ? <EtaOrderDetail order={selectedEta} /> : null}
-        </SheetContent>
-      </Sheet>
     </div>
   )
 }

@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { Input } from "@/components/ui/input"
-import { Sheet, SheetCloseButton, SheetContent } from "@/components/ui/sheet"
+import { DetailPage, useDetailRoute } from "@/components/ui/detail-page"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { AdminEmptyState, AdminListSkeleton } from "@/features/admin/admin-ui"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
@@ -110,7 +110,7 @@ function TicketsWorkspace() {
 
   const filter = (searchParams.get("status") as Filter | null) ?? "open"
   const view: View = searchParams.get("view") === "board" ? "board" : "list"
-  const [sheetId, setSheetId] = React.useState<string | null>(null)
+  const detail = useDetailRoute({ query: "ticket" })
   const activeTags = searchParams.get("tag")?.split(",").filter(Boolean) ?? []
   const [query, setQuery] = React.useState("")
   const [openId, setOpenId] = React.useState<string | null>(null)
@@ -158,7 +158,7 @@ function TicketsWorkspace() {
   )
   const visible = filter === "all" ? tagged : tagged.filter((ticket) => ticket.state === filter)
   const count = (state: Filter) => (state === "all" ? tagged.length : tagged.filter((ticket) => ticket.state === state).length)
-  const sheetTicket = sheetId ? (tickets.find((ticket) => ticket.id === sheetId) ?? null) : null
+  const sheetTicket = detail.selectedId ? (tickets.find((ticket) => ticket.id === detail.selectedId) ?? null) : null
 
   /** Moving a card is a decision: Resolved approves the application,
    *  Waiting opens the ticket so the reviewer can say what to fix. A
@@ -175,14 +175,14 @@ function TicketsWorkspace() {
         (document) => document.reviewStatus === "rejected" || (document.required && document.reviewStatus === "missing")
       )
       if (blocked) {
-        setSheetId(ticket.id)
+        detail.open(ticket.id)
         toast("This one is still waiting on the applicant")
         return
       }
       approveApplication(ticket.submission.role, ticket.submission.userId, { id: admin.user.id, name: admin.user.name, title: admin.role.name })
       toast.success(`${ticket.id} approved`)
     } else if (to === "waiting") {
-      setSheetId(ticket.id)
+      detail.open(ticket.id)
       toast("Say what needs fixing, then send it back")
     } else {
       toast("A ticket reopens when the applicant resubmits")
@@ -190,6 +190,15 @@ function TicketsWorkspace() {
   }
 
   if (!admin) return null
+  if (sheetTicket) {
+    return (
+      <DetailPage backLabel="Tickets" onBack={detail.close} trail={["Tickets", sheetTicket.id]}>
+        <TooltipProvider delay={300}>
+          <SubmissionCard submission={sheetTicket.submission} />
+        </TooltipProvider>
+      </DetailPage>
+    )
+  }
   // KYC is SaleOps' queue; raised tickets and catalog requests are open to
   // every role, scoped by level inside `RequestsPanel`.
   const canKyc = admin.can("onboarding.review") || seesAll
@@ -299,7 +308,7 @@ function TicketsWorkspace() {
           <AdminListSkeleton rows={4} />
         </div>
       ) : view === "board" ? (
-        <TicketBoard tickets={tagged} onOpen={setSheetId} onMove={moveTicket} ownerName={ownerName} />
+        <TicketBoard tickets={tagged} onOpen={detail.open} onMove={moveTicket} ownerName={ownerName} />
       ) : visible.length === 0 ? (
         <AdminEmptyState
           icon={Inbox}
@@ -358,18 +367,6 @@ function TicketsWorkspace() {
           </ul>
         </TooltipProvider>
       )}
-
-      <Sheet open={sheetTicket !== null} onOpenChange={(open) => !open && setSheetId(null)}>
-        <SheetContent side="responsive" className="overflow-y-auto sm:max-w-xl">
-          <SheetCloseButton />
-          {sheetTicket ? (
-            <TooltipProvider delay={300}>
-              <p className="mb-3 font-mono text-[12px] text-muted-foreground">{sheetTicket.id}</p>
-              <SubmissionCard submission={sheetTicket.submission} />
-            </TooltipProvider>
-          ) : null}
-        </SheetContent>
-      </Sheet>
     </div>
   )
 }

@@ -6,7 +6,7 @@ import { ArrowRightIcon, ShipIcon, ThermometerIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Sheet, SheetContent, SheetCloseButton } from "@/components/ui/sheet"
+import { DetailPage } from "@/components/ui/detail-page"
 import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import { sellerIdentity } from "@/features/marketplace/identity"
@@ -154,18 +154,12 @@ function DispatchChecklist({ deal, shipment }: { deal: Deal; shipment: Shipment 
  *  next-step `DispatchChecklist` already offers), when the shipment's
  *  still at a seller-owned stage; the temperature-logging sub-flow stays
  *  on the Dispatch tab's own checklist card rather than duplicated here. */
-function ShipmentDetailSheet({
-  pair,
-  onOpenChange,
-}: {
-  pair: { deal: Deal; shipment: Shipment } | null
-  onOpenChange: (open: boolean) => void
-}) {
-  const next = pair ? NEXT_STEP[pair.shipment.stage] : undefined
-  const isSellersToMove = pair ? LOGISTICS_STAGE_OWNER[pair.shipment.stage] === "seller" : false
+function ShipmentDetail({ pair }: { pair: { deal: Deal; shipment: Shipment } }) {
+  const next = NEXT_STEP[pair.shipment.stage]
+  const isSellersToMove = LOGISTICS_STAGE_OWNER[pair.shipment.stage] === "seller"
 
   const advance = () => {
-    if (!pair || !next) return
+    if (!next) return
     addShipmentEvent(pair.deal.id, pair.shipment.id, {
       type: next.type,
       label: LOGISTICS_STAGE_LABELS[next.entersStage],
@@ -175,11 +169,7 @@ function ShipmentDetailSheet({
   }
 
   return (
-    <Sheet open={pair !== null} onOpenChange={onOpenChange}>
-      <SheetContent side="responsive" className="overflow-y-auto">
-        {/* <SheetCloseButton /> */}
-        {pair ? (
-          <ShipmentTracker
+    <ShipmentTracker
             shipment={pair.shipment}
             actions={
               isSellersToMove && next ? (
@@ -189,9 +179,6 @@ function ShipmentDetailSheet({
               ) : undefined
             }
           />
-        ) : null}
-      </SheetContent>
-    </Sheet>
   )
 }
 
@@ -256,6 +243,14 @@ function SellerShipmentsWorkspace() {
   const openShipment = (id: string) => setParams({ shipment: id })
   const closeSheet = () => setParams({ shipment: null })
 
+  if (selectedPair) {
+    return (
+      <DetailPage backLabel="Shipments" onBack={closeSheet} trail={["Shipments", selectedPair.shipment.id]}>
+        <ShipmentDetail pair={selectedPair} />
+      </DetailPage>
+    )
+  }
+
   if (trackedShipments.length === 0) {
     return (
       <div>
@@ -308,7 +303,6 @@ function SellerShipmentsWorkspace() {
         </ul>
       )}
 
-      <ShipmentDetailSheet pair={selectedPair} onOpenChange={(open) => !open && closeSheet()} />
     </div>
   )
 }

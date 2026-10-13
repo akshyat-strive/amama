@@ -306,7 +306,7 @@ function DealContractAction({ deal, me }: { deal: Deal; me: { id: string; name: 
   if (contract) {
     return (
       <Link
-        href={`/internal/contracts?contract=${contract.id}`}
+        href={`/internal/contracts/${contract.id}`}
         className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted"
       >
         <FileSignatureIcon className="size-3.5" />

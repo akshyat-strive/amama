@@ -12,7 +12,14 @@ import * as Wd from "@/features/tradechain/demo-world"
 import { partyIdsFor } from "@/features/trades/trade-access"
 import { TradePage, TradesPage } from "@/features/trades/trade-pages"
 import { useInbound, WAREHOUSES } from "@/features/warehouse/warehouse-store"
-import { FarmToWarehouseMap, QcCard } from "@/features/warehouse/warehouse-ui"
+import dynamic from "next/dynamic"
+import { QcCard } from "@/features/warehouse/warehouse-ui"
+
+// MapLibre needs the browser (WebGL), so it loads client-side only.
+const RouteMap = dynamic(() => import("@/features/logistics/route-map").then((module) => module.RouteMap), {
+  ssr: false,
+  loading: () => <div className="h-[340px] animate-pulse rounded-[16px] bg-background" />,
+})
 
 type View = "orders" | "shipments" | "consignments"
 
@@ -77,11 +84,17 @@ function SellerOrderPage({ tradeId }: { tradeId: string }) {
 
       {trade && seller ? (
         <>
-          <FarmToWarehouseMap
-            farm={{ name: seller.entity, place: `${seller.village}, ${seller.district}, ${seller.state}`, gps: seller.gps }}
-            warehouse={warehouse}
-            progress={progress}
-          />
+          <section aria-label="Farm to warehouse" className="rounded-[24px] bg-card p-2">
+            <header className="px-3 pt-2 pb-3">
+              <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Farm to warehouse</h2>
+              <p className="text-[13px] text-muted-foreground">Road route from your farm to {warehouse.name}, with alternatives.</p>
+            </header>
+            <RouteMap
+              from={{ name: seller.entity, detail: `${seller.village}, ${seller.district}, ${seller.state}`, gps: seller.gps }}
+              to={{ name: warehouse.name, detail: warehouse.address, gps: warehouse.gps }}
+              progress={progress}
+            />
+          </section>
 
           <section aria-label="Quality checks" className="rounded-[24px] bg-card p-2">
             <header className="px-3 pt-2 pb-3">

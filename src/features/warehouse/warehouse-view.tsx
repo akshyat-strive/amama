@@ -19,6 +19,12 @@ import {
   type Inbound,
 } from "@/features/warehouse/warehouse-store"
 import { QcCard, VERDICT } from "@/features/warehouse/warehouse-ui"
+import dynamic from "next/dynamic"
+
+const FleetMap = dynamic(() => import("@/features/logistics/fleet-map").then((module) => module.FleetMap), {
+  ssr: false,
+  loading: () => <div className="h-[380px] animate-pulse rounded-[16px] bg-background" />,
+})
 
 const when = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en", { day: "numeric", month: "short" }) : "—")
 
@@ -91,6 +97,28 @@ function WarehouseView() {
           </div>
         ))}
       </div>
+
+      <section aria-label="Inbound trucks" className="mt-6 rounded-[24px] bg-card p-2">
+        <header className="flex flex-wrap items-baseline justify-between gap-2 px-3 pt-2 pb-3">
+          <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Trucks on the way</h2>
+          <p className="text-[13px] text-muted-foreground">Road routes from each farm to {warehouse.city}</p>
+        </header>
+        <FleetMap
+          warehouse={{ name: warehouse.name, gps: warehouse.gps }}
+          trucks={inHere
+            .filter((row) => row.status === "in-transit")
+            .map((row, index) => {
+              const seller = Wd.sellerById(row.sellerId)
+              return {
+                id: row.id,
+                label: `${row.vehicle} · ${seller?.entity ?? row.sellerId}`,
+                detail: `${row.lot} · ${row.expectedMt} MT · ETA ${when(row.eta)}`,
+                from: seller?.gps ?? warehouse.gps,
+                progress: 0.25 + ((index * 17) % 50) / 100,
+              }
+            })}
+        />
+      </section>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <ButtonGroup

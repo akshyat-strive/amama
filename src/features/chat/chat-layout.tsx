@@ -78,28 +78,30 @@ function ChatLayout({
       <section
         aria-label={title}
         className={cn(
-          "flex min-w-0 flex-col overflow-hidden rounded-[24px] bg-card transition-[width] duration-300 ease-out",
+          "flex min-w-0 flex-col overflow-hidden rounded-[24px] bg-card p-2 transition-[width] duration-300 ease-out",
           open ? "hidden md:flex md:w-[300px] md:shrink-0 lg:w-[340px]" : "w-full flex-1"
         )}
       >
-        <header className="flex shrink-0 items-center justify-between gap-3 px-4 pt-4 pb-2">
-          <h1 className="text-[22px] font-bold tracking-tight">{title}</h1>
+        <header className="flex shrink-0 items-center justify-between gap-3 px-3 pt-2 pb-3">
+          <h1 className="text-[24px] font-semibold tracking-[-0.025em]">{title}</h1>
           {listAction}
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">{list}</div>
+        {/* The list scrolls inside a white panel, so rows read on white
+            and the mist column keeps the same 8px margin all round. */}
+        <div className="min-h-0 flex-1 overflow-y-auto rounded-[16px] bg-background p-1.5">{list}</div>
       </section>
 
       {open ? (
         <section
           aria-label="Conversation"
-          className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-[24px] bg-card animate-in fade-in slide-in-from-right-3 duration-300"
+          className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-[24px] bg-card p-2 animate-in fade-in slide-in-from-right-3 duration-300"
         >
-          <header className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2.5 md:px-4">
+          <header className="flex shrink-0 items-center gap-2 px-2 pt-1 pb-2.5">
             <button
               type="button"
               onClick={onClose}
               aria-label="Back to chats"
-              className="-ms-1 grid size-9 shrink-0 place-items-center rounded-full text-foreground/75 hover:bg-muted md:hidden"
+              className="-ms-1 grid size-9 shrink-0 place-items-center rounded-xl text-foreground/75 hover:bg-muted md:hidden"
             >
               <ChevronLeftIcon className="size-5 rtl:-scale-x-100" />
             </button>
@@ -109,12 +111,12 @@ function ChatLayout({
               type="button"
               onClick={onClose}
               aria-label="Close conversation"
-              className="hidden size-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground md:grid"
+              className="hidden size-9 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground md:grid"
             >
               <XIcon className="size-4" />
             </button>
           </header>
-          <div className="flex min-h-0 flex-1 flex-col">{windowBody}</div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[16px] bg-background">{windowBody}</div>
         </section>
       ) : null}
     </div>
@@ -145,7 +147,7 @@ function ChatListRow({
       aria-current={active ? "true" : undefined}
       className={cn(
         "flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-start transition-colors",
-        active ? "bg-amama text-white" : "text-foreground hover:bg-muted"
+        active ? "bg-amama text-white" : "text-foreground hover:bg-card"
       )}
     >
       {avatar}

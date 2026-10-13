@@ -10,13 +10,12 @@ import {
   buildLotMeta,
   buildLotTrace,
   buildOrderBook,
-  buildStatusBreakdown,
-  buildVolumeSeries,
   TOTAL_GATES,
   type DemoOrder,
 } from "@/features/dashboard/demo-data"
 import { LotInspector } from "@/features/dashboard/lot-inspector"
-import { STATUS_META, SeasonVolumeChart, StatusDonut } from "@/features/dashboard/overview-charts"
+import { STATUS_META } from "@/features/dashboard/overview-charts"
+import { KpiWidgets } from "@/features/dashboard/kpi-widgets"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
 
@@ -58,7 +57,7 @@ function Steps({ cleared, status }: { cleared: number; status: TradeStatus }) {
 /* ── the metrics row ───────────────────────────────────────────────────── */
 
 function Tile({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn("flex min-w-0 flex-col rounded-[20px] border border-border bg-card px-4 py-3.5", className)}>{children}</div>
+  return <div className={cn("flex min-w-0 flex-col rounded-[20px] bg-card px-4 py-3.5", className)}>{children}</div>
 }
 
 function TileLabel({ children }: { children: React.ReactNode }) {
@@ -326,16 +325,12 @@ function DashboardOverview({ role }: { role: OnboardingRole }) {
     [role, draft.buyer.sourcing, draft.seller.produce, person.country, draft.buyer.companyName, draft.seller.farmName]
   )
 
-  const volumeSeries = React.useMemo(() => buildVolumeSeries(orders), [orders])
-  const statusBreakdown = React.useMemo(() => buildStatusBreakdown(orders), [orders])
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
   const selected = orders.find((order) => order.id === selectedId) ?? orders[0]
   const grower = draft.seller.farmName || "Sanjay Patil"
 
   const booked = orders.reduce((sum, order) => sum + order.tonnes, 0)
   const moving = orders.filter((order) => order.gatesCleared >= 4).reduce((sum, order) => sum + order.tonnes, 0)
-  const latest = volumeSeries[volumeSeries.length - 1]
-  const delta = latest && latest.lastSeason > 0 ? Math.round(((latest.volume - latest.lastSeason) / latest.lastSeason) * 100) : 0
 
   return (
     <div>
@@ -344,7 +339,7 @@ function DashboardOverview({ role }: { role: OnboardingRole }) {
           <p className="text-[12px] text-muted-foreground">
             Dashboard <span aria-hidden>/</span> <span className="text-foreground/80">Overview</span>
           </p>
-          <h1 className="text-[22px] leading-tight font-bold tracking-tight">Overview</h1>
+          <h1 className="text-[34px] leading-tight font-semibold tracking-[-0.03em]">Overview</h1>
         </div>
         <p className="text-[12.5px] text-muted-foreground">{firstName ? `Welcome back, ${firstName}` : "Welcome back"}</p>
       </div>
@@ -356,35 +351,8 @@ function DashboardOverview({ role }: { role: OnboardingRole }) {
         <AttentionTile orders={orders} href={`/${role}/dashboard/orders?tab=eta`} />
       </div>
 
-      <div className="mt-3 grid gap-3 lg:grid-cols-12">
-        <section className="overflow-hidden rounded-[20px] border border-border bg-card lg:col-span-8">
-          <header className="flex flex-wrap items-center justify-between gap-2 px-5 pt-4 pb-1">
-            <h2 className="text-[14px] font-semibold text-foreground">
-              Season volume <span className="font-normal text-muted-foreground">· MT</span>
-            </h2>
-            <div className="flex items-center gap-3 text-[12px] text-muted-foreground tabular-nums">
-              <span>
-                <span className="font-semibold text-foreground">{latest?.volume ?? 0} MT</span> to date
-              </span>
-              <span className={cn("rounded-full px-2 py-0.5 font-semibold", delta >= 0 ? "bg-amama-subtle text-amama-deep" : "bg-destructive/10 text-destructive")}>
-                {delta >= 0 ? "+" : ""}
-                {delta}% vs last season
-              </span>
-            </div>
-          </header>
-          <div className="px-3 pb-3">
-            <SeasonVolumeChart points={volumeSeries} />
-          </div>
-        </section>
-
-        <section className="flex flex-col overflow-hidden rounded-[20px] border border-border bg-card lg:col-span-4">
-          <header className="px-5 pt-4 pb-2">
-            <h2 className="text-[14px] font-semibold text-foreground">Shipment status</h2>
-          </header>
-          <div className="flex flex-1 items-center px-5 pb-5">
-            <StatusDonut breakdown={statusBreakdown} />
-          </div>
-        </section>
+      <div className="mt-3">
+        <KpiWidgets role={role} orders={orders} />
       </div>
 
       <div className="mt-3 grid gap-3 lg:grid-cols-12 lg:items-start">

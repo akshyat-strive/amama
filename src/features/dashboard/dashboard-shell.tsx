@@ -56,7 +56,7 @@ const TOPBAR_OFFSET = "pt-20"
  * the label visibility there have to move together or the rail would clip
  * text instead of hiding it.
  */
-const RAIL_WIDTH_MD = "md:w-16"
+const RAIL_WIDTH_MD = "md:w-[68px]"
 
 /** What stays open while KYC is in review: the KYC ticket, support
  *  tickets and settings. Everything else waits for approval. */
@@ -175,7 +175,7 @@ function DashboardShell({
           (card to card) instead of a bigger, unrelated margin. The sidebar
           card's own end-side padding is dropped in favour of this shared
           gap so the two don't stack into a bigger gap than either alone. */}
-      <div className="relative flex h-full overflow-hidden md:gap-4">
+      <div className="relative flex h-full overflow-hidden md:gap-3">
         {/* Mobile backdrop — only meaningful once the sidebar is an overlay
             (below `md`), so it's invisible and non-interactive above that
             breakpoint even while `sidebarOpen` is true. */}
@@ -200,7 +200,7 @@ function DashboardShell({
           className={cn(
             "fixed inset-y-0 start-0 z-40 min-w-0 overflow-hidden md:static md:inset-auto md:z-auto md:shrink-0",
             "transition-[width] duration-300 ease-out",
-            sidebarOpen ? "w-60" : cn("w-0", RAIL_WIDTH_MD)
+            sidebarOpen ? "w-64" : cn("w-0", RAIL_WIDTH_MD)
           )}
         >
           {/* Inner panel: matches the outer wrapper's width exactly — a
@@ -212,7 +212,7 @@ function DashboardShell({
             className={cn(
               "h-full p-3 transition-[width,transform] duration-300 ease-out md:pe-0",
               TOPBAR_OFFSET,
-              sidebarOpen ? "w-60" : cn("w-60", RAIL_WIDTH_MD),
+              sidebarOpen ? "w-64" : cn("w-64", RAIL_WIDTH_MD),
               sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 rtl:translate-x-full md:rtl:translate-x-0"
             )}
           >
@@ -243,7 +243,7 @@ function DashboardShell({
               extra room the sidebar doesn't get. */}
           <div
             className={cn(
-              "mx-auto w-full max-w-6xl px-2 pb-0 sm:px-6 sm:pb-3 md:ps-0",
+              "w-full px-2 pb-0 sm:px-3 sm:pb-3 md:ps-0",
               TOPBAR_OFFSET
             )}
           >

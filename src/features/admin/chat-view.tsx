@@ -3,8 +3,8 @@
 import * as React from "react"
 import { MessageCircleIcon, PinIcon, UsersIcon, type LucideIcon } from "lucide-react"
 
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { ButtonGroup } from "@/components/ui/button-group"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -66,35 +66,16 @@ type Tab = "external" | "internal"
  */
 function ChatTabSwitch({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {
   return (
-    <div className="relative flex w-[180px] shrink-0 rounded-full bg-muted p-0.5">
-      <span
-        aria-hidden
-        className={cn(
-          "absolute inset-y-0.5 w-[calc(50%-2px)] rounded-full bg-amama transition-all duration-200 ease-out",
-          tab === "external" ? "left-0.5" : "left-1/2"
-        )}
-      />
-      <button
-        type="button"
-        onClick={() => onChange("external")}
-        className={cn(
-          "relative z-10 flex-1 rounded-full py-1 text-center text-[12.5px] font-medium transition-colors",
-          tab === "external" ? "text-white" : "text-muted-foreground hover:text-foreground"
-        )}
-      >
-        External
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange("internal")}
-        className={cn(
-          "relative z-10 flex-1 rounded-full py-1 text-center text-[12.5px] font-medium transition-colors",
-          tab === "internal" ? "text-white" : "text-muted-foreground hover:text-foreground"
-        )}
-      >
-        Internal
-      </button>
-    </div>
+    <ButtonGroup
+      label="Chats shown"
+      size="sm"
+      value={tab}
+      onChange={onChange}
+      options={[
+        { value: "external", label: "External" },
+        { value: "internal", label: "Internal" },
+      ]}
+    />
   )
 }
 

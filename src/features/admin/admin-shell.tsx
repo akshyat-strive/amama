@@ -21,7 +21,7 @@ import { TopbarSearch } from "@/features/trades/topbar-search"
 /** Same rail-width constant and rationale as `DashboardShell` — see there
  *  for why one `sidebarOpen` boolean resolves to three different visual
  *  states across the two breakpoints. */
-const RAIL_WIDTH_MD = "md:w-16"
+const RAIL_WIDTH_MD = "md:w-[68px]"
 
 /**
  * The admin module's own shell — same popover-sidebar-over-flat-canvas shape
@@ -100,7 +100,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         </TopbarActions>
       </header>
 
-      <div className="relative flex h-full overflow-hidden md:gap-4">
+      <div className="relative flex h-full overflow-hidden md:gap-3">
         <button
           type="button"
           aria-hidden={!sidebarOpen}
@@ -116,13 +116,13 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           className={cn(
             "fixed inset-y-0 start-0 z-40 min-w-0 overflow-hidden md:static md:inset-auto md:z-auto md:shrink-0",
             "transition-[width] duration-300 ease-out",
-            sidebarOpen ? "w-60" : cn("w-0", RAIL_WIDTH_MD)
+            sidebarOpen ? "w-64" : cn("w-0", RAIL_WIDTH_MD)
           )}
         >
           <div
             className={cn(
               "h-full p-3 pt-20 transition-[width,transform] duration-300 ease-out md:pe-0",
-              sidebarOpen ? "w-60" : cn("w-60", RAIL_WIDTH_MD),
+              sidebarOpen ? "w-64" : cn("w-64", RAIL_WIDTH_MD),
               sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 rtl:translate-x-full md:rtl:translate-x-0"
             )}
           >
@@ -139,7 +139,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <main className="min-w-0 flex-1 overflow-y-auto">
-          <div className="mx-auto w-full px-2 pt-20 pb-0 sm:px-6 sm:pb-3 md:ps-0">{children}</div>
+          <div className="w-full px-2 pt-20 pb-0 sm:px-3 sm:pb-3 md:ps-0">{children}</div>
         </main>
       </div>
     </div>

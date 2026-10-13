@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils"
 const buttonVariants = cva(
   [
     "group/button relative inline-flex shrink-0 select-none items-center justify-center",
-    "rounded-full border border-transparent bg-clip-padding font-medium tracking-[-0.016em] whitespace-nowrap",
+    "rounded-xl border border-transparent bg-clip-padding font-medium tracking-[-0.016em] whitespace-nowrap",
     "outline-none transition-[background-color,color,box-shadow,transform,opacity] duration-150 ease-out",
     "focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
     "motion-reduce:transition-none",
@@ -46,13 +46,13 @@ const buttonVariants = cva(
       size: {
         /** 44px — the smallest comfortable touch target (Apple HIG). */
         default: "h-11 gap-2 px-5 text-[15px]",
-        sm: "h-9 gap-1.5 px-4 text-sm [&_svg:not([class*='size-'])]:size-4",
+        sm: "h-9 gap-1.5 rounded-[10px] px-3.5 text-sm [&_svg:not([class*='size-'])]:size-4",
         /** 48px — Material's touch minimum; the standard onboarding CTA. */
         lg: "h-12 gap-2 px-6 text-base",
         /** 56px — hero / full-width primary action. */
-        xl: "h-14 gap-2.5 px-8 text-[17px] [&_svg:not([class*='size-'])]:size-6",
+        xl: "h-14 gap-2.5 rounded-2xl px-8 text-[17px] [&_svg:not([class*='size-'])]:size-6",
         icon: "size-11",
-        "icon-xs": "size-6 [&_svg:not([class*='size-'])]:size-3.5",
+        "icon-xs": "size-6 rounded-lg [&_svg:not([class*='size-'])]:size-3.5",
         "icon-sm": "size-9 [&_svg:not([class*='size-'])]:size-4",
         "icon-lg": "size-12",
       },

@@ -14,11 +14,11 @@ import {
 } from "@/features/dashboard/nav-config"
 
 /**
- * The sidebar: one white card floating on the mist page, and inside it
- * plain groups — a quiet label, then tight rows that sit flush against
- * each other so a group reads as one list, not scattered buttons. Only the
- * selected row carries colour, the macOS way: a green fill with a white
- * label and a yellow icon. Account items pin to the bottom.
+ * The sidebar: one charcoal card, and inside it plain groups — a quiet
+ * label, then rows. Radii are concentric: the 20px card with 8px padding
+ * holds 12px rows, so every corner lines up. Only the selected row
+ * carries colour: lime, with charcoal text. Account items pin to the
+ * bottom.
  *
  * Collapsed, it's an icon rail: groups split by hairlines, labels in
  * tooltips.
@@ -83,21 +83,21 @@ function NavList({
 
   return (
     <TooltipProvider>
-      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[24px] bg-card">
-        <nav aria-label="Main" className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 py-2 scrollbar-none">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[20px] bg-charcoal text-white">
+        <nav aria-label="Main" className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-2 scrollbar-none">
           {regularGroups.map(({ group, items: groupItems }, index) => (
-            <div key={group} className={cn(index > 0 && (expanded ? "mt-2.5" : "mt-1.5 border-t border-border pt-1.5"))}>
+            <div key={group} className={cn(index > 0 && (expanded ? "mt-3" : "mt-2 border-t border-white/10 pt-2"))}>
               {expanded && dashboardNavGroupLabels[group] ? (
-                <p className="px-2.5 pt-0.5 pb-1 text-[11px] font-medium text-muted-foreground">{dashboardNavGroupLabels[group]}</p>
+                <p className="px-3 pb-1 text-[11px] font-medium text-white/45">{dashboardNavGroupLabels[group]}</p>
               ) : null}
-              <div className={cn("flex flex-col", !expanded && "items-center")}>{groupItems.map(renderItem)}</div>
+              <div className={cn("flex flex-col gap-0.5", !expanded && "items-center")}>{groupItems.map(renderItem)}</div>
             </div>
           ))}
         </nav>
 
         {footerGroup ? (
-          <div className="shrink-0 border-t border-border px-2 py-1.5">
-            <div className={cn("flex flex-col", !expanded && "items-center")}>{footerGroup.items.map(renderItem)}</div>
+          <div className="shrink-0 border-t border-white/10 p-2">
+            <div className={cn("flex flex-col gap-0.5", !expanded && "items-center")}>{footerGroup.items.map(renderItem)}</div>
           </div>
         ) : null}
       </div>
@@ -121,18 +121,18 @@ function NavItemLink({
   onNavigate?: () => void
 }) {
   const className = cn(
-    "group/nav relative flex shrink-0 items-center text-[13px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-amama-deep/40",
-    expanded ? "h-8 w-full gap-2.5 rounded-lg px-2.5" : "size-9 justify-center rounded-lg",
+    "group/nav relative flex shrink-0 items-center text-[14px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-lime/60",
+    expanded ? "h-10 w-full gap-3 rounded-xl px-3" : "size-10 justify-center rounded-xl",
     locked
-      ? "cursor-not-allowed text-muted-foreground/60"
+      ? "cursor-not-allowed text-white/30"
       : active
-        ? "bg-amama font-medium text-white"
-        : "text-foreground/80 hover:bg-muted hover:text-foreground"
+        ? "bg-lime font-semibold text-lime-foreground"
+        : "text-white/75 hover:bg-white/[0.08] hover:text-white"
   )
 
   const body = (
     <>
-      <item.icon aria-hidden className={cn("size-4 shrink-0", active && !locked && "text-sun")} strokeWidth={2.1} />
+      <item.icon aria-hidden className="size-[18px] shrink-0" strokeWidth={2} />
       {expanded ? <span className="min-w-0 flex-1 truncate">{item.label}</span> : null}
       {locked && expanded ? <LockIcon aria-hidden className="size-3.5 shrink-0" /> : null}
       {attention && !locked ? (

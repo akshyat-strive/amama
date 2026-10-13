@@ -25,8 +25,8 @@ function Panel({
   action?: React.ReactNode
 }) {
   return (
-    <section className={cn("overflow-hidden rounded-[24px] bg-card", className)}>
-      <header className="flex items-start justify-between gap-3 px-6 pt-5 pb-4">
+    <section className={cn("overflow-hidden rounded-[24px] bg-card p-2", className)}>
+      <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-3.5">
         <div className="min-w-0">
           <h2 className="text-[17px] font-semibold tracking-[-0.02em] text-foreground">{title}</h2>
           {subtitle ? (
@@ -35,7 +35,7 @@ function Panel({
         </div>
         {action}
       </header>
-      <div className="border-t border-border">{children}</div>
+      <div className="overflow-hidden rounded-[16px] bg-background">{children}</div>
     </section>
   )
 }

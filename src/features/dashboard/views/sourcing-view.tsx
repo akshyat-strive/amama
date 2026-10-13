@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AnimatePresence, motion } from "motion/react"
 import { StoreIcon, XIcon } from "lucide-react"
 
-import { cn } from "@/lib/utils"
+import { ButtonGroup } from "@/components/ui/button-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CATALOG_CATEGORIES, productLabel, slugify, gradeSlug } from "@/features/marketplace/catalog"
 import { CategoryTabs } from "@/features/marketplace/marketplace-ui"
@@ -177,23 +177,15 @@ function SourcingWorkspace() {
         <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Marketplace</h1>
         <div className="flex items-center gap-2">
           {canScope && !flatMode ? (
-            <div role="radiogroup" aria-label="Products shown" className="flex rounded-full border border-border bg-card p-0.5">
-              {(["all", "mine"] as const).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  role="radio"
-                  aria-checked={scope === value}
-                  onClick={() => setScope(value)}
-                  className={cn(
-                    "h-8 rounded-full px-3.5 text-[12.5px] font-medium transition-colors",
-                    scope === value ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {value === "all" ? "All products" : "My interests"}
-                </button>
-              ))}
-            </div>
+            <ButtonGroup
+              label="Products shown"
+              value={scope}
+              onChange={setScope}
+              options={[
+                { value: "all", label: "All products" },
+                { value: "mine", label: "My interests" },
+              ]}
+            />
           ) : null}
           <WishlistSwitch checked={wishlistOnly} onCheckedChange={setWishlistOnly} />
         </div>

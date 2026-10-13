@@ -6,6 +6,7 @@ import { ChevronDownIcon, Columns3Icon, Inbox, ListIcon, SearchIcon } from "luci
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
+import { ButtonGroup } from "@/components/ui/button-group"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetCloseButton, SheetContent } from "@/components/ui/sheet"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -194,28 +195,15 @@ function TicketsWorkspace() {
   const canKyc = admin.can("onboarding.review") || seesAll
   const type: "kyc" | "requests" = searchParams.get("type") === "requests" || !canKyc ? "requests" : "kyc"
   const typeSwitch = canKyc ? (
-    <div role="radiogroup" aria-label="Ticket type" className="flex rounded-full bg-card p-1">
-      {(
-        [
-          ["kyc", "KYC"],
-          ["requests", "Requests"],
-        ] as const
-      ).map(([value, label]) => (
-        <button
-          key={value}
-          type="button"
-          role="radio"
-          aria-checked={type === value}
-          onClick={() => setParams({ type: value === "kyc" ? null : value, status: null, tag: null, view: null })}
-          className={cn(
-            "h-8 rounded-full px-4 text-[13px] font-medium transition-colors",
-            type === value ? "bg-amama text-white" : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
+    <ButtonGroup
+      label="Ticket type"
+      value={type}
+      onChange={(value) => setParams({ type: value === "kyc" ? null : value, status: null, tag: null, view: null })}
+      options={[
+        { value: "kyc", label: "KYC" },
+        { value: "requests", label: "Requests" },
+      ]}
+    />
   ) : null
 
   if (type === "requests") {
@@ -238,24 +226,12 @@ function TicketsWorkspace() {
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="me-auto text-[34px] font-semibold tracking-[-0.03em]">Tickets</h1>
         {typeSwitch}
-        <div role="radiogroup" aria-label="View" className="flex rounded-full bg-card p-1">
-          {VIEWS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={view === option.value}
-              onClick={() => setParams({ view: option.value === "list" ? null : option.value })}
-              className={cn(
-                "inline-flex h-8 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-medium transition-colors",
-                view === option.value ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <option.icon aria-hidden className="size-3.5" />
-              {option.label}
-            </button>
-          ))}
-        </div>
+        <ButtonGroup
+          label="View"
+          value={view}
+          onChange={(value) => setParams({ view: value === "list" ? null : value })}
+          options={VIEWS.map((option) => ({ value: option.value, label: option.label, icon: option.icon }))}
+        />
       </div>
 
       {view === "list" ? (

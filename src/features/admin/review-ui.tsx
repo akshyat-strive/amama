@@ -22,9 +22,9 @@ function ReviewGroup({
   className?: string
 }) {
   return (
-    <section className={cn("rounded-[24px] bg-card p-1.5", className)}>
-      {header ? <div className="px-3.5 pt-2.5 pb-3 sm:px-4">{header}</div> : null}
-      <div className="divide-y divide-border overflow-hidden rounded-[20px] bg-background">{children}</div>
+    <section className={cn("rounded-[24px] bg-card p-2", className)}>
+      {header ? <div className="px-3 pt-2 pb-3 sm:px-4">{header}</div> : null}
+      <div className="divide-y divide-border overflow-hidden rounded-[16px] bg-background">{children}</div>
     </section>
   )
 }

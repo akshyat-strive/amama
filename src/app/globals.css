@@ -20,6 +20,9 @@
   --color-sun-hover: var(--sun-hover);
   --color-sun-foreground: var(--sun-foreground);
   --color-graphite: var(--graphite);
+  --color-lime: var(--lime);
+  --color-lime-foreground: var(--lime-foreground);
+  --color-charcoal: var(--charcoal);
   --color-surface-base: var(--surface-base);
   --color-surface-card: var(--surface-card);
   --color-surface-elevated: var(--surface-elevated);
@@ -91,6 +94,11 @@
   --sun-hover: #f5c800;
   --sun-foreground: #1d1d1f;
   --graphite: #1d1d1f;
+  /* The sidebar: a charcoal rail whose selected row is lime, with
+     charcoal text on it (white on lime fails contrast). */
+  --charcoal: #1f2023;
+  --lime: #25d366;
+  --lime-foreground: #0b1f12;
   --surface-base: #ffffff;
   --surface-card: #f5f5f7;
   /* Apple's tonal fill — a chip or hover inside a mist tile. */
@@ -152,6 +160,9 @@
   --sun-hover: #ffe04a;
   --sun-foreground: #1d1d1f;
   --graphite: #f5f5f7;
+  --charcoal: #1c1c1e;
+  --lime: #25d366;
+  --lime-foreground: #0b1f12;
   --surface-base: #000000;
   --surface-card: #1c1c1e;
   --surface-elevated: #2c2c2e;

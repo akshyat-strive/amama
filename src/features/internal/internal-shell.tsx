@@ -134,11 +134,11 @@ function InternalShell({ children }: { children: React.ReactNode }) {
             {/* One floating sidebar: the icon rail, and beside it (on wide
                 screens, while open) the section's own list — two columns
                 of the same card, split by a hairline. */}
-            <div className="hidden shrink-0 overflow-hidden rounded-[20px] bg-card md:flex">
+            <div className="hidden shrink-0 overflow-hidden rounded-[20px] bg-charcoal p-0 text-white md:flex">
               <PrimaryRail activeId={section.id} />
               <div
                 className={cn(
-                  "hidden min-w-0 shrink-0 border-s border-border transition-[width] duration-200 lg:block",
+                  "hidden min-w-0 shrink-0 border-s border-white/10 transition-[width] duration-200 lg:block",
                   railOpen ? "w-[248px]" : "w-0 overflow-hidden border-s-0"
                 )}
               >

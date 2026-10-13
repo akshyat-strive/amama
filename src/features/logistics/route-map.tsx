@@ -9,20 +9,20 @@ import "@/features/logistics/maplibre-setup"
 import { cn } from "@/lib/utils"
 import { getRoutes, pointAlong, ROUTING, type RouteOption } from "@/features/logistics/routing"
 
-/** Light raster basemap (CARTO Positron) — plain images, so it needs no
- *  glyphs, sprites or vector decoding to show up. No key, no per-tile fees. */
+/** OpenStreetMap's own raster tiles — open data, no key, no fees — toned
+ *  down so the route reads first. Plain images, so nothing else to load. */
 export const MAP_STYLE: StyleSpecification = {
   version: 8,
   sources: {
     basemap: {
       type: "raster",
-      tiles: ["a", "b", "c", "d"].map((sub) => `https://${sub}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png`),
+      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
       tileSize: 256,
       maxzoom: 19,
-      attribution: "© OpenStreetMap contributors © CARTO",
+      attribution: "© OpenStreetMap contributors",
     },
   },
-  layers: [{ id: "basemap", type: "raster", source: "basemap" }],
+  layers: [{ id: "basemap", type: "raster", source: "basemap", paint: { "raster-saturation": -0.7, "raster-contrast": -0.1 } }],
 }
 
 type Place = { name: string; detail: string; gps: [number, number] }

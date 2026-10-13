@@ -142,7 +142,7 @@ function ApplicantKycTicket({ role }: { role: OnboardingRole }) {
             </section>
           ) : null}
 
-          <section aria-label="Your documents" className="overflow-hidden rounded-[20px] border border-border bg-card">
+          <section aria-label="Your documents" className="overflow-hidden rounded-[20px] border border-border bg-background">
             <h2 className="border-b border-border px-4 py-3 text-[14px] font-semibold">Your documents</h2>
             <ul className="divide-y divide-border">
               {application.documents.map((document) => {
@@ -181,7 +181,7 @@ function ApplicantKycTicket({ role }: { role: OnboardingRole }) {
           </section>
         </div>
 
-        <section aria-label="Conversation with amama" className="overflow-hidden rounded-[20px] border border-border bg-card lg:sticky lg:top-20">
+        <section aria-label="Conversation with amama" className="overflow-hidden rounded-[20px] border border-border bg-background lg:sticky lg:top-20">
           <h2 className="border-b border-border px-4 py-3 text-[14px] font-semibold">Conversation</h2>
           <div className="max-h-[480px] overflow-y-auto">
             <Timeline comments={application.comments} labelFor={labelForId} viewer="applicant" />
@@ -234,7 +234,7 @@ function StatusHeader({
  *  can quote. */
 function KycProgress({ ticket, stage, labels, needsAction }: { ticket: string; stage: number; labels: string[]; needsAction: boolean }) {
   return (
-    <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-border bg-card px-4 py-3">
+    <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-border bg-background px-4 py-3">
       <p className="text-[12.5px] text-muted-foreground">
         Ticket <span className="font-mono font-medium text-foreground">{ticket}</span>
       </p>

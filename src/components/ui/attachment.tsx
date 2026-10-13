@@ -17,7 +17,7 @@ function Attachment({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="attachment"
       className={cn(
-        "flex items-center gap-2.5 rounded-2xl border border-border bg-card p-1.5 pe-3 text-start transition-colors",
+        "flex items-center gap-2.5 rounded-2xl border border-border bg-background p-1.5 pe-3 text-start transition-colors",
         className
       )}
       {...props}

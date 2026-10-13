@@ -77,7 +77,7 @@ function KpiWidgets({ role, orders }: { role: OnboardingRole; orders: DemoOrder[
         const change = Math.round(((kpi.trend[kpi.trend.length - 1] - first) / first) * 100)
         const Icon = kpi.icon
         return (
-          <Link key={kpi.label} href={kpi.href} className="group flex flex-col rounded-[20px] bg-card p-2 transition-colors hover:bg-[#ededf1] dark:hover:bg-muted">
+          <Link key={kpi.label} href={kpi.href} className="group flex flex-col rounded-[20px] bg-background p-2 transition-colors hover:bg-muted/60">
             <div className="flex items-center gap-2 px-2 pt-1.5 pb-2 text-[13px] font-medium text-foreground/80">
               <Icon aria-hidden className="size-4 text-amama-deep" />
               {kpi.label}

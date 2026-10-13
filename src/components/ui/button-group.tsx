@@ -42,7 +42,7 @@ function ButtonGroup<T extends string>({
               "rounded-[6px]",
               index === 0 && (size === "sm" ? "rounded-s-[10px]" : "rounded-s-xl"),
               index === options.length - 1 && (size === "sm" ? "rounded-e-[10px]" : "rounded-e-xl"),
-              on ? "bg-amama text-white" : "bg-card text-foreground hover:bg-muted"
+              on ? "bg-amama text-white" : "bg-background text-foreground hover:bg-muted"
             )}
           >
             {Icon ? <Icon aria-hidden className="size-4" /> : null}

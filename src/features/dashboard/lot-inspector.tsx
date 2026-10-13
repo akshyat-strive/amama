@@ -54,7 +54,7 @@ function LotInspector({ order, meta, trace }: { order: DemoOrder; meta: LotMeta;
   const current = trace.find((step) => !step.done)
 
   return (
-    <section className="flex flex-col overflow-hidden rounded-[20px] border border-border bg-card">
+    <section className="flex flex-col overflow-hidden rounded-[20px] border border-border bg-background">
       <header className="flex items-center justify-between gap-2 px-5 pt-4 pb-3">
         <h2 className="text-[14px] font-semibold text-foreground">Lot inspector</h2>
         <span className="font-mono text-[11px] text-muted-foreground">{order.id}</span>

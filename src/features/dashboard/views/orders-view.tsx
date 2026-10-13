@@ -127,7 +127,7 @@ function OrdersWorkspace({ role }: { role: OnboardingRole }) {
         liveOrders.length === 0 ? (
           <EmptyRow text="No agreed deals are being run as orders yet." />
         ) : (
-          <ul className="mt-4 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+          <ul className="mt-4 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-background">
             {liveOrders.map((deal) => (
               <li key={deal.id}>
                 <LiveOrderRow deal={deal} role={role} onSelect={() => openOrder(deal.id)} />
@@ -138,7 +138,7 @@ function OrdersWorkspace({ role }: { role: OnboardingRole }) {
       ) : orders.length === 0 ? (
         <EmptyRow text="No orders yet." />
       ) : (
-        <ul className="mt-4 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+        <ul className="mt-4 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-background">
           {orders.map((order) => (
             <li key={order.id}>
               <EtaOrderRow order={order} onSelect={() => openOrder(order.id)} />

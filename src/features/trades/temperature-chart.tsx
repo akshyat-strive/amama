@@ -180,7 +180,7 @@ function TemperatureChart({ points }: { points: TempPoint[] }) {
 
       {point ? (
         <div
-          className="pointer-events-none absolute top-6 z-10 w-44 rounded-xl border border-border bg-card px-3 py-2 shadow-lg"
+          className="pointer-events-none absolute top-6 z-10 w-44 rounded-xl border border-border bg-background px-3 py-2 shadow-lg"
           style={{
             left: `${tooltipLeft}%`,
             transform: tooltipLeft > 60 ? "translateX(calc(-100% - 10px))" : "translateX(10px)",

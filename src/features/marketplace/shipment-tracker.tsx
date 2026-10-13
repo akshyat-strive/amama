@@ -306,7 +306,7 @@ function ShipmentTracker({ shipment, actions }: { shipment: Shipment; actions?: 
   const arrivalLabel = arrivedEvent ? formatShortDate(arrivedEvent.at) : shipment.eta ? formatShortDate(shipment.eta) : "—"
 
   return (
-    <div className="w-full rounded-2xl border border-border bg-card p-4 sm:p-5">
+    <div className="w-full rounded-2xl border border-border bg-background p-4 sm:p-5">
       {/* Header — the shipment's own reference number as the title, its
           live status (and delay flag) at the end. */}
       <div className="space-y-3">

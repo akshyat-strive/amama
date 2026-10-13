@@ -105,7 +105,7 @@ function StaffChatThread({
           className="relative shrink-0 p-3"
         >
           {mentionQuery !== null && filteredCandidates.length > 0 ? (
-            <div className="absolute inset-x-3 bottom-full mb-2 max-h-40 overflow-y-auto rounded-[16px] border border-border bg-card p-1.5 shadow-lg">
+            <div className="absolute inset-x-3 bottom-full mb-2 max-h-40 overflow-y-auto rounded-[16px] border border-border bg-background p-1.5 shadow-lg">
               {filteredCandidates.map((candidate) => (
                 <button
                   key={candidate.id}

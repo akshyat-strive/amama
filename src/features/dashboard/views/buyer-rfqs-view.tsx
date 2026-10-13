@@ -75,7 +75,7 @@ function BuyerRfqsWorkspace() {
           </p>
         </div>
       ) : (
-        <ul className="mt-4 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+        <ul className="mt-4 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-background">
           {mine.map((rfq) => (
             <li key={rfq.id}>
               <BuyerRfqListRow rfq={rfq} onSelect={() => openRfq(rfq.id)} />
@@ -174,7 +174,7 @@ function RfqComparison({ rfq, myName }: { rfq: Rfq; myName: string }) {
           <div
             role={decidable ? "radiogroup" : "list"}
             aria-label="Quotes"
-            className="mt-2 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card"
+            className="mt-2 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-background"
           >
             {sorted.map((quote, index) => (
               <QuoteRow

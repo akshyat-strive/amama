@@ -116,7 +116,7 @@ function Island({
   return (
     <div
       className={cn(
-        "rounded-[24px] bg-card",
+        "rounded-[24px] bg-background",
         pad === "tight" && "p-1",
         pad === "normal" && "p-4 sm:p-5",
         className
@@ -301,7 +301,7 @@ function Metric({
 /** The metric strip — one island, hairline-divided inside. */
 function Metrics({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("flex flex-wrap divide-x divide-border rounded-[24px] bg-card", className)}>{children}</div>
+    <div className={cn("flex flex-wrap divide-x divide-border rounded-[24px] bg-background", className)}>{children}</div>
   )
 }
 

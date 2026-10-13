@@ -651,7 +651,7 @@ function ContractDetail({
 
       {/* Where things stand, and what was actually agreed — one card,
           since the stage rail and the terms it produced are one story. */}
-      <section className="rounded-2xl border border-border bg-card p-5">
+      <section className="rounded-2xl border border-border bg-background p-5">
         <StageRail stage={contract.stage} />
         <dl className="mt-4 grid grid-cols-1 gap-x-4 gap-y-3 border-t border-border pt-4 sm:grid-cols-1">
           <Term label="Price" value={`${formatInr(contract.terms.pricePerTonneUsd)}/t`} />
@@ -702,7 +702,7 @@ function ContractDetail({
       ) : null}
 
       {contract.shipmentDates ? (
-        <section className="rounded-2xl border border-border bg-card p-5">
+        <section className="rounded-2xl border border-border bg-background p-5">
           <h3 className="flex items-center gap-2 text-[15px] font-semibold">
             <CalendarDaysIcon className="size-4 text-muted-foreground" />
             Shipping date
@@ -791,7 +791,7 @@ function PaperworkSection({
   const needsSellerConfirm = po?.status === "pending-seller-confirmation" && !cancelled
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-5">
+    <section className="rounded-2xl border border-border bg-background p-5">
       {contract.clauses.length > 0 ? (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1097,7 +1097,7 @@ function RequestRow({
             "inline-flex h-8 shrink-0 items-center rounded-full px-3.5 text-[12.5px] font-semibold transition-colors",
             isRecipient && !isSubmitted
               ? "bg-foreground text-background hover:bg-foreground/85"
-              : "border border-border bg-card text-foreground hover:bg-muted"
+              : "border border-border bg-background text-foreground hover:bg-muted"
           )}
         >
           {isRecipient && !isSubmitted ? "Fill in" : "View"}

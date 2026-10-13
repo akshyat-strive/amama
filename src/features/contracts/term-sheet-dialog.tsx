@@ -169,7 +169,7 @@ function RequestFields({
                     ) : null}
                   </div>
                   {locked ? null : (
-                    <label className="shrink-0 cursor-pointer rounded-full border border-border bg-card px-3 py-1.5 text-[12px] font-semibold text-foreground transition-colors hover:bg-muted">
+                    <label className="shrink-0 cursor-pointer rounded-full border border-border bg-background px-3 py-1.5 text-[12px] font-semibold text-foreground transition-colors hover:bg-muted">
                       <PaperclipIcon className="me-1 inline size-3.5" />
                       Add file
                       <input

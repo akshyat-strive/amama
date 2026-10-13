@@ -65,7 +65,7 @@ function CardShell({
   return (
     <div
       className={cn(
-        "w-full max-w-[92%] overflow-hidden rounded-[20px] border border-border bg-card sm:max-w-[420px]",
+        "w-full max-w-[92%] overflow-hidden rounded-[20px] border border-border bg-background sm:max-w-[420px]",
         cancelled && "opacity-60"
       )}
     >

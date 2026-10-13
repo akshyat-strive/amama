@@ -189,7 +189,7 @@ function SubmissionCard({ submission }: { submission: KycApplication }) {
             <button
               type="button"
               onClick={() => assignTicket(submission.role, submission.userId, { id: me.id, name: me.name }, me)}
-              className="rounded-full border border-border bg-card px-2.5 py-0.5 font-medium hover:bg-muted"
+              className="rounded-full border border-border bg-background px-2.5 py-0.5 font-medium hover:bg-muted"
             >
               Take ticket
             </button>
@@ -253,7 +253,7 @@ function SubmissionCard({ submission }: { submission: KycApplication }) {
         ) : null}
       </ReviewGroup>
 
-      <section ref={conversationRef} aria-label="Conversation" className="overflow-hidden rounded-[18px] border border-border bg-card">
+      <section ref={conversationRef} aria-label="Conversation" className="overflow-hidden rounded-[18px] border border-border bg-background">
         <h3 className="flex items-center gap-1.5 border-b border-border px-4 py-2.5 text-[13px] font-semibold">
           <MessageSquareIcon aria-hidden className="size-3.5 text-muted-foreground" />
           Conversation

@@ -287,14 +287,14 @@ function SellerShipmentsWorkspace() {
             Nothing needs your attention right now — every tracked shipment&apos;s already past your own leg of it.
           </p>
         ) : (
-          <div className="mt-4 flex flex-col divide-y divide-border rounded-2xl border border-border bg-card overflow-hidden">
+          <div className="mt-4 flex flex-col divide-y divide-border rounded-2xl border border-border bg-background overflow-hidden">
             {dispatchQueue.map(({ deal, shipment }) => (
               <DispatchChecklist key={shipment.id} deal={deal} shipment={shipment} />
             ))}
           </div>
         )
       ) : (
-        <ul className="mt-4 flex flex-col divide-y divide-border rounded-2xl border border-border bg-card overflow-hidden">
+        <ul className="mt-4 flex flex-col divide-y divide-border rounded-2xl border border-border bg-background overflow-hidden">
           {trackedShipments.map(({ shipment }) => (
             <li key={shipment.id}>
               <ShipmentRow shipment={shipment} onSelect={() => openShipment(shipment.id)} />

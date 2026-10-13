@@ -249,7 +249,7 @@ function ClaimRow({ deal, shipment, onOpen }: { deal: Deal; shipment: Shipment; 
     <button
       type="button"
       onClick={onOpen}
-      className="flex w-full flex-wrap items-start justify-between gap-3 rounded-[20px] border border-border bg-card p-4 text-start transition-colors hover:bg-muted"
+      className="flex w-full flex-wrap items-start justify-between gap-3 rounded-[20px] border border-border bg-background p-4 text-start transition-colors hover:bg-muted"
     >
       <div className="min-w-0">
         <p className="text-[13px] font-bold text-destructive">{formatInr(claim.amountUsd)}</p>

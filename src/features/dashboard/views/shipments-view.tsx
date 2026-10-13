@@ -27,7 +27,7 @@ function ArrivalConfirmation({ deal, shipment }: { deal: Deal; shipment: Shipmen
 
   if (confirmed) {
     return (
-      <p className="flex items-center gap-1.5 rounded-2xl border border-border bg-card px-4 py-3 text-[13px] font-medium text-amama-deep">
+      <p className="flex items-center gap-1.5 rounded-2xl border border-border bg-background px-4 py-3 text-[13px] font-medium text-amama-deep">
         <CheckIcon className="size-4 shrink-0" />
         Delivery confirmed for {deal.listingTitle}
       </p>
@@ -36,7 +36,7 @@ function ArrivalConfirmation({ deal, shipment }: { deal: Deal; shipment: Shipmen
 
   if (raising) {
     return (
-      <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
+      <div className="flex flex-col gap-2 rounded-2xl border border-border bg-background p-4">
         <p className="text-[13px] font-bold text-foreground">Raise a claim — {deal.listingTitle}</p>
         <Textarea
           placeholder="What's wrong with the delivered cargo?"
@@ -72,7 +72,7 @@ function ArrivalConfirmation({ deal, shipment }: { deal: Deal; shipment: Shipmen
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background p-4">
       <div className="min-w-0">
         <p className="truncate text-[13px] font-bold text-foreground">{deal.listingTitle}</p>
         <p className="mt-0.5 text-[12px] text-muted-foreground">Delivered — confirm it arrived as expected.</p>
@@ -186,7 +186,7 @@ function ShipmentsWorkspace() {
           <section className={arrived.length > 0 ? "mt-8" : "mt-6"}>
             <h2 className="text-[15px] font-semibold text-foreground">Your tracked shipments</h2>
             <p className="mt-0.5 text-[13px] text-muted-foreground">Real-time updates from the team handling your deal.</p>
-            <ul className="mt-3 flex flex-col divide-y divide-border rounded-2xl border border-border bg-card px-3">
+            <ul className="mt-3 flex flex-col divide-y divide-border rounded-2xl border border-border bg-background px-3">
               {trackedShipments.map(({ shipment }) => (
                 <li key={shipment.id}>
                   <ShipmentRow shipment={shipment} onSelect={() => openShipment(shipment.id)} />

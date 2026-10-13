@@ -149,7 +149,7 @@ function TopbarSearch({ perspective, email, basePath }: { perspective: TradePers
         aria-autocomplete="list"
         aria-activedescendant={hits[cursor] ? `${listId}-${cursor}` : undefined}
         placeholder={perspective === "internal" ? "Search trades, lots, vessels…" : "Search products, orders, lots, vessels…"}
-        className="h-11 w-full rounded-full border border-transparent bg-card ps-10 pe-14 text-[13px] outline-none placeholder:text-muted-foreground focus:border-input"
+        className="h-11 w-full rounded-full border border-transparent bg-background ps-10 pe-14 text-[13px] outline-none placeholder:text-muted-foreground focus:border-input"
       />
       <kbd className="pointer-events-none absolute end-3.5 top-1/2 -translate-y-1/2 rounded-md border border-border bg-muted px-1.5 py-0.5 font-sans text-[10.5px] text-muted-foreground">
         ⌘K

@@ -84,7 +84,7 @@ function InternalShell({ children }: { children: React.ReactNode }) {
   return (
     <TooltipProvider>
       <PeekProvider>
-        <div className="flex h-dvh flex-col gap-2 bg-background p-2 sm:p-3">
+        <div className="flex h-dvh flex-col gap-2 bg-card p-2 sm:p-3">
           <header className="flex h-12 shrink-0 items-center gap-3">
             <Button
               variant="ghost"

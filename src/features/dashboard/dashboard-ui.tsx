@@ -25,7 +25,7 @@ function Panel({
   action?: React.ReactNode
 }) {
   return (
-    <section className={cn("overflow-hidden rounded-[24px] bg-card p-2", className)}>
+    <section className={cn("overflow-hidden rounded-[24px] bg-background p-2", className)}>
       <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-3.5">
         <div className="min-w-0">
           <h2 className="text-[17px] font-semibold tracking-[-0.02em] text-foreground">{title}</h2>
@@ -89,7 +89,7 @@ function StatCard({
   tone?: "brand" | "warning" | "plain"
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card px-4 py-4">
+    <div className="rounded-2xl border border-border bg-background px-4 py-4">
       <p className="text-[13px] font-medium text-muted-foreground">{label}</p>
       <p
         className={cn(

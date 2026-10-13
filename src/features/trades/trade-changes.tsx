@@ -421,7 +421,7 @@ function ChangeCard({
   const trade = W.tradeById(request.tradeId)
 
   return (
-    <section className="overflow-hidden rounded-[20px] border border-border bg-card">
+    <section className="overflow-hidden rounded-[20px] border border-border bg-background">
       <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 px-5 pt-4">
         <div className="min-w-0">
           <p className="flex flex-wrap items-center gap-x-2 text-[12px] text-muted-foreground">

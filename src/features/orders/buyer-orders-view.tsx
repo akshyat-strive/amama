@@ -108,7 +108,7 @@ function OrderCard({ trade }: { trade: W.Trade }) {
   const needsYou = trade.currentStage === 15 && trade.status !== "closed"
 
   return (
-    <article className="overflow-hidden rounded-[20px] border border-border bg-card">
+    <article className="overflow-hidden rounded-[20px] border border-border bg-background">
       <header className="grid grid-cols-2 gap-x-6 gap-y-2 border-b border-border bg-muted/50 px-5 py-3 text-[12px] sm:grid-cols-[auto_auto_minmax(0,1fr)_auto]">
         <div>
           <p className="text-muted-foreground">Order placed</p>
@@ -149,7 +149,7 @@ function OrderCard({ trade }: { trade: W.Trade }) {
             href={href}
             className={cn(
               "inline-flex h-9 items-center justify-center rounded-full px-4 text-[13px] font-semibold transition-colors",
-              needsYou ? "bg-primary text-primary-foreground hover:bg-amama-deep-hover" : "border border-border bg-card text-foreground hover:bg-muted"
+              needsYou ? "bg-primary text-primary-foreground hover:bg-amama-deep-hover" : "border border-border bg-background text-foreground hover:bg-muted"
             )}
           >
             {needsYou ? "Confirm delivery" : shipments.some((entry) => entry.shipment) ? "Track shipments" : "View order"}
@@ -246,7 +246,7 @@ function OrderDetail({ trade, partyIds }: { trade: W.Trade; partyIds: string[] }
         </div>
       </div>
 
-      <section className="mt-5 rounded-[20px] border border-border bg-card px-5 py-4" aria-label="Order progress">
+      <section className="mt-5 rounded-[20px] border border-border bg-background px-5 py-4" aria-label="Order progress">
         <p className={cn("text-[18px] font-semibold tracking-tight", TEXT_TONE[headline.tone])}>{headline.text}</p>
         <p className="text-[13px] text-muted-foreground">{headline.detail}</p>
         <OrderProgress index={orderStepIndex(trade)} />

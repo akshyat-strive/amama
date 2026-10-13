@@ -271,7 +271,7 @@ function DocumentsControlTower() {
  *  Suspense boundary rather than depending on the route to supply one. */
 function DocumentsView() {
   return (
-    <React.Suspense fallback={<div className="h-64 animate-pulse rounded-[24px] bg-card" />}>
+    <React.Suspense fallback={<div className="h-64 animate-pulse rounded-[24px] bg-background" />}>
       <DocumentsControlTower />
     </React.Suspense>
   )

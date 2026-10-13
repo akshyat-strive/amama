@@ -44,7 +44,7 @@ function TabButtons<T extends string>({
       role="tablist"
       aria-label={label}
       className={cn(
-        "flex items-stretch gap-0.5 border border-border bg-card p-1",
+        "flex items-stretch gap-0.5 border border-border bg-background p-1",
         variant === "pill"
           ? "w-fit rounded-full"
           : "w-full rounded-[22px]"

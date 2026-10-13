@@ -304,7 +304,7 @@ function TicketsWorkspace() {
       </div>
 
       {!loaded ? (
-        <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-background">
           <AdminListSkeleton rows={4} />
         </div>
       ) : view === "board" ? (
@@ -317,7 +317,7 @@ function TicketsWorkspace() {
         />
       ) : (
         <TooltipProvider delay={300}>
-          <ul className="mt-4 flex flex-col overflow-hidden rounded-2xl border border-border bg-card">
+          <ul className="mt-4 flex flex-col overflow-hidden rounded-2xl border border-border bg-background">
             {visible.map((ticket) => {
               const open = openId === ticket.id
               const state = STATE_LABEL[ticket.state]
@@ -439,7 +439,7 @@ function TicketBoard({
                       }}
                       onClick={() => onOpen(ticket.id)}
                       className={cn(
-                        "w-full cursor-grab rounded-2xl border border-border bg-card p-3 text-start transition-shadow hover:shadow-md active:cursor-grabbing",
+                        "w-full cursor-grab rounded-2xl border border-border bg-background p-3 text-start transition-shadow hover:shadow-md active:cursor-grabbing",
                         dragging === ticket.id && "opacity-50"
                       )}
                     >

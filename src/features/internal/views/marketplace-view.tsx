@@ -304,7 +304,7 @@ function MarketplaceBrowser() {
  */
 function MarketplaceView() {
   return (
-    <React.Suspense fallback={<div className="h-64 animate-pulse rounded-[24px] bg-card" />}>
+    <React.Suspense fallback={<div className="h-64 animate-pulse rounded-[24px] bg-background" />}>
       <MarketplaceBrowser />
     </React.Suspense>
   )

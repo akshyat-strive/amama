@@ -179,7 +179,7 @@ function SellerProductView({ listingId }: { listingId: string }) {
 
   return (
     <div className={cn("flex flex-col gap-4 pb-20 lg:flex-row lg:overflow-hidden lg:pb-0", FULL_HEIGHT)}>
-      <aside className="flex flex-col overflow-hidden rounded-[24px] border border-border bg-card lg:w-[380px] lg:shrink-0">
+      <aside className="flex flex-col overflow-hidden rounded-[24px] border border-border bg-background lg:w-[380px] lg:shrink-0">
         <header className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-4 py-3">
           <Link
             href="/seller/dashboard/listings"
@@ -258,7 +258,7 @@ function SellerProductView({ listingId }: { listingId: string }) {
       {/* Desktop: inline, side by side. */}
       <div
         className={cn(
-          "relative hidden overflow-hidden rounded-3xl border border-border bg-card lg:block lg:flex-1",
+          "relative hidden overflow-hidden rounded-3xl border border-border bg-background lg:block lg:flex-1",
           FULL_HEIGHT
         )}
       >
@@ -277,7 +277,7 @@ function SellerProductView({ listingId }: { listingId: string }) {
             type="button"
             onClick={() => setMobileChatOpen(true)}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
-            className="fixed inset-x-4 bottom-4 z-20 flex items-center gap-3 rounded-3xl border border-border bg-card px-4 py-3 text-start shadow-lg lg:hidden"
+            className="fixed inset-x-4 bottom-4 z-20 flex items-center gap-3 rounded-3xl border border-border bg-background px-4 py-3 text-start shadow-lg lg:hidden"
           >
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-[13px] font-bold text-foreground/70">
               {selected ? selected.buyerName.charAt(0) : <UsersIcon className="size-4" />}

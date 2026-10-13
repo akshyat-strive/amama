@@ -210,7 +210,7 @@ function BuyerProductView({ listingId }: { listingId: string }) {
       {/* Desktop: inline, side by side. */}
       <div
         className={cn(
-          "hidden overflow-hidden rounded-3xl border border-border bg-card lg:block lg:flex-1",
+          "hidden overflow-hidden rounded-3xl border border-border bg-background lg:block lg:flex-1",
           FULL_HEIGHT
         )}
       >
@@ -242,7 +242,7 @@ function BuyerProductView({ listingId }: { listingId: string }) {
             type="button"
             onClick={() => setMobileChatOpen(true)}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
-            className="fixed inset-x-4 bottom-4 z-20 flex items-center gap-3 rounded-3xl border border-border bg-card px-4 py-3 text-start shadow-lg lg:hidden"
+            className="fixed inset-x-4 bottom-4 z-20 flex items-center gap-3 rounded-3xl border border-border bg-background px-4 py-3 text-start shadow-lg lg:hidden"
           >
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-amama-deep text-[13px] font-semibold text-white">
               {listing.sellerName.charAt(0)}

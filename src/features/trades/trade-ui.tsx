@@ -75,7 +75,7 @@ function Panel({
   flush?: boolean
 }) {
   return (
-    <section className={cn("overflow-hidden rounded-[20px] border border-border bg-card", className)}>
+    <section className={cn("overflow-hidden rounded-[20px] border border-border bg-background", className)}>
       <header className="flex min-h-12 items-center justify-between gap-3 px-5 pt-3.5 pb-3">
         <h2 className="flex min-w-0 items-center gap-1 text-[14px] font-semibold text-foreground">
           <span className="truncate">{title}</span>
@@ -131,7 +131,7 @@ function StatTile({
   tone?: "brand" | "warning" | "critical" | "plain"
 }) {
   return (
-    <div className="rounded-[20px] border border-border bg-card px-4 py-3.5">
+    <div className="rounded-[20px] border border-border bg-background px-4 py-3.5">
       <p className="flex items-center gap-0.5 text-[12.5px] text-muted-foreground">
         {label}
         {info}

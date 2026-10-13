@@ -126,7 +126,7 @@ function PersonCard({
   const manager = users.find((entry) => entry.id === user.reportsTo)
 
   return (
-    <div className={cn("rounded-[14px] border border-border bg-card px-3 py-2.5", emphasis && "min-w-[260px]")}>
+    <div className={cn("rounded-[14px] border border-border bg-background px-3 py-2.5", emphasis && "min-w-[260px]")}>
       <div className="flex items-center gap-2.5">
         <span className="grid size-8 shrink-0 place-items-center rounded-full bg-foreground/[0.07] text-[12px] font-semibold">
           {user.name.trim().charAt(0).toUpperCase() || "?"}
@@ -176,7 +176,7 @@ function PlainSelect({ label, value, onChange, options }: { label: string; value
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-7 max-w-[170px] truncate rounded-lg border border-border bg-card px-1.5 text-[12px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/30"
+        className="h-7 max-w-[170px] truncate rounded-lg border border-border bg-background px-1.5 text-[12px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/30"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

@@ -118,7 +118,7 @@ function TradeCard({ trade, perspective, href }: { trade: W.Trade; perspective: 
   return (
     <Link
       href={href}
-      className="group block rounded-[16px] border border-border bg-card transition-[border-color,box-shadow] hover:border-foreground/20"
+      className="group block rounded-[16px] border border-border bg-background transition-[border-color,box-shadow] hover:border-foreground/20"
     >
       <span className="block px-3.5 pt-3">
         <span className="flex items-start justify-between gap-2">
@@ -322,7 +322,7 @@ function Board({ trades, perspective, basePath }: { trades: W.Trade[]; perspecti
         {perspective === "internal" ? (
           <Link
             href={`${basePath}/changes`}
-            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-card px-4 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-background px-4 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted"
           >
             <GitPullRequestArrowIcon aria-hidden className="size-4" />
             Change requests
@@ -451,7 +451,7 @@ function Board({ trades, perspective, basePath }: { trades: W.Trade[]; perspecti
           )}
         </BleedScroller>
       ) : (
-        <div className="mt-4 overflow-hidden rounded-[20px] border border-border bg-card">
+        <div className="mt-4 overflow-hidden rounded-[20px] border border-border bg-background">
           <div className="hidden grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_9rem_8rem_7rem_1rem] gap-4 border-b border-border px-5 py-2.5 text-[11.5px] text-muted-foreground lg:grid">
             <span>Trade</span>
             <span>Stage</span>
@@ -537,7 +537,7 @@ function BookBlockers({ trades, hrefFor }: { trades: W.Trade[]; hrefFor: (trade:
   return (
     <div className="mt-6 grid gap-4 lg:grid-cols-2 lg:items-start">
       {gates.length > 0 ? (
-        <section className="overflow-hidden rounded-[20px] border border-border bg-card">
+        <section className="overflow-hidden rounded-[20px] border border-border bg-background">
           <header className="flex items-center justify-between px-5 pt-3.5 pb-3">
             <h2 className="text-[14px] font-semibold text-foreground">Open gates</h2>
             <span className="text-[12px] text-muted-foreground tabular-nums">{gates.length}</span>
@@ -562,7 +562,7 @@ function BookBlockers({ trades, hrefFor }: { trades: W.Trade[]; hrefFor: (trade:
       ) : null}
 
       {excursions.length > 0 ? (
-        <section className="overflow-hidden rounded-[20px] border border-border bg-card">
+        <section className="overflow-hidden rounded-[20px] border border-border bg-background">
           <header className="flex items-center justify-between px-5 pt-3.5 pb-3">
             <h2 className="text-[14px] font-semibold text-foreground">Excursions</h2>
             <span className="text-[12px] text-muted-foreground tabular-nums">{excursions.length}</span>

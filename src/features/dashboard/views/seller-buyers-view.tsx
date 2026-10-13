@@ -132,7 +132,7 @@ function BuyerMatchCard({ match }: { match: Match }) {
   const country = match.country ? countries.find((entry) => entry.code === match.country) : null
 
   return (
-    <div className="group relative rounded-2xl border border-border bg-card p-2 transition-colors sm:rounded-[28px] sm:p-3">
+    <div className="group relative rounded-2xl border border-border bg-background p-2 transition-colors sm:rounded-[28px] sm:p-3">
       <Link href={match.href} className="contents">
         <div className="relative aspect-4/3 w-full overflow-hidden rounded-xl sm:rounded-2xl">
           <CropImage

@@ -92,7 +92,7 @@ function DealStatusFooter({
   // `active` — the pipeline itself is admin-only (KAM/Master Admin), this
   // is just a status line so both sides can see where things stand.
   return (
-    <div className={cn("flex shrink-0 items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3", className)}>
+    <div className={cn("flex shrink-0 items-center justify-between gap-3 rounded-2xl border border-border bg-background px-4 py-3", className)}>
       <div className="min-w-0">
         <p className="text-[13px] font-semibold text-foreground">Deal agreed</p>
         <p className="text-[12px] text-muted-foreground">

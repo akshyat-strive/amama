@@ -71,7 +71,7 @@ function DetailPage({
           </ol>
         </nav>
       </div>
-      <div className="mt-4 rounded-[24px] bg-card p-2">
+      <div className="mt-4 rounded-[24px] bg-background p-2">
         <div className="rounded-[16px] bg-background p-4 sm:p-6">{children}</div>
       </div>
     </div>

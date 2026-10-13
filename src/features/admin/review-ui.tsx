@@ -22,7 +22,7 @@ function ReviewGroup({
   className?: string
 }) {
   return (
-    <section className={cn("rounded-[24px] bg-card p-2", className)}>
+    <section className={cn("rounded-[24px] bg-background p-2", className)}>
       {header ? <div className="px-3 pt-2 pb-3 sm:px-4">{header}</div> : null}
       <div className="divide-y divide-border overflow-hidden rounded-[16px] bg-background">{children}</div>
     </section>
@@ -215,7 +215,7 @@ function Initials({ name, className }: { name: string; className?: string }) {
     <span
       aria-hidden
       className={cn(
-        "grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card text-[12px] font-bold text-foreground/75",
+        "grid size-9 shrink-0 place-items-center rounded-full border border-border bg-background text-[12px] font-bold text-foreground/75",
         className
       )}
     >

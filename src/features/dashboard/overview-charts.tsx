@@ -121,7 +121,7 @@ function SeasonVolumeChart({ points }: { points: VolumePoint[] }) {
 
       {point ? (
         <div
-          className="pointer-events-none absolute top-2 z-10 w-40 rounded-xl border border-border bg-card px-3 py-2 shadow-lg"
+          className="pointer-events-none absolute top-2 z-10 w-40 rounded-xl border border-border bg-background px-3 py-2 shadow-lg"
           style={{ left: `${left}%`, transform: left > 60 ? "translateX(calc(-100% - 10px))" : "translateX(10px)" }}
         >
           <p className="text-[11px] font-medium text-muted-foreground">{point.month}</p>

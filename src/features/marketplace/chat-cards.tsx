@@ -254,7 +254,7 @@ function RoundComments({
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           placeholder="Ask about these terms…"
-          className="h-8 min-w-0 flex-1 rounded-full border border-border bg-card px-3 text-[12px] outline-none placeholder:text-muted-foreground focus-visible:border-ring"
+          className="h-8 min-w-0 flex-1 rounded-full border border-border bg-background px-3 text-[12px] outline-none placeholder:text-muted-foreground focus-visible:border-ring"
         />
         <button
           type="submit"

@@ -137,7 +137,7 @@ function ContractAuthoring({ contract, kamName }: { contract: Contract; kamName:
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-[18px] border border-border bg-card p-4">
+    <section className="rounded-[18px] border border-border bg-background p-4">
       <h4 className="text-[13px] font-bold text-foreground">{title}</h4>
       <div className="mt-3">{children}</div>
     </section>

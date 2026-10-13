@@ -181,7 +181,7 @@ function SellerRfqsWorkspace() {
           {tab === "open" ? "Nothing else open on the marketplace right now." : "No buyer has sent you an RFQ directly yet."}
         </p>
       ) : (
-        <ul className="mt-4 flex flex-col divide-y divide-border rounded-2xl border border-border bg-card">
+        <ul className="mt-4 flex flex-col divide-y divide-border rounded-2xl border border-border bg-background">
           {visible.map((rfq) => (
             <li key={rfq.id}>
               <RfqListRow

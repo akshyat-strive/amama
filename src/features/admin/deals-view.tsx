@@ -244,7 +244,7 @@ function EveryDealSection({
       <div
         role="tablist"
         aria-label="Filter deals"
-        className="mt-6 flex w-fit max-w-full gap-0.5 overflow-x-auto rounded-full border border-border bg-card p-1 [scrollbar-width:none]"
+        className="mt-6 flex w-fit max-w-full gap-0.5 overflow-x-auto rounded-full border border-border bg-background p-1 [scrollbar-width:none]"
       >
         {filters.map(({ id, label }) => (
           <button
@@ -307,7 +307,7 @@ function DealContractAction({ deal, me }: { deal: Deal; me: { id: string; name: 
     return (
       <Link
         href={`/internal/contracts/${contract.id}`}
-        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted"
+        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted"
       >
         <FileSignatureIcon className="size-3.5" />
         Open {contract.reference}
@@ -351,7 +351,7 @@ function DealCard({
     <ReviewGroup
       header={
         <div className="flex items-start gap-3">
-          <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card text-muted-foreground">
+          <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-background text-muted-foreground">
             <HandshakeIcon className="size-4" />
           </span>
           <div className="min-w-0 flex-1">
@@ -434,7 +434,7 @@ function DealCard({
               <button
                 type="button"
                 onClick={() => assignKam(deal.id, me, me.name)}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-[12.5px] font-semibold text-foreground transition-colors hover:bg-muted"
+                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-[12.5px] font-semibold text-foreground transition-colors hover:bg-muted"
               >
                 <HandIcon aria-hidden className="size-3.5" />
                 {deal.assignedKamId ? "Take over" : "Assign to me"}
@@ -698,7 +698,7 @@ function DealDetail({ deal, myUserName }: { deal: Deal; myUserName: string }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-[20px] border border-border bg-card p-5">
+      <div className="rounded-[20px] border border-border bg-background p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="truncate text-[16px] font-semibold tracking-tight">{deal.listingTitle}</h2>

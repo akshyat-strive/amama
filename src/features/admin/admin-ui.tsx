@@ -30,7 +30,7 @@ function AdminPanel({
   action?: React.ReactNode
 }) {
   return (
-    <section className={cn("overflow-hidden rounded-[24px] bg-card p-2", className)}>
+    <section className={cn("overflow-hidden rounded-[24px] bg-background p-2", className)}>
       <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-3.5">
         <div className="min-w-0">
           <h2 className="text-[17px] font-semibold tracking-[-0.02em] text-foreground">{title}</h2>
@@ -59,7 +59,7 @@ function AdminStatCard({
   tone?: "brand" | "warning" | "plain"
 }) {
   return (
-    <div className="rounded-[20px] border border-border bg-card px-4 py-4">
+    <div className="rounded-[20px] border border-border bg-background px-4 py-4">
       <p className="text-[13px] font-medium text-muted-foreground">{label}</p>
       <p
         className={cn(
@@ -84,7 +84,7 @@ function AdminStatCard({
  *  number lands. */
 function AdminStatCardSkeleton() {
   return (
-    <div className="rounded-[20px] border border-border bg-card px-4 py-4">
+    <div className="rounded-[20px] border border-border bg-background px-4 py-4">
       <div className="h-[13px] w-16 animate-pulse rounded bg-muted" />
       <div className="mt-2.5 h-[28px] w-10 animate-pulse rounded bg-muted" />
       <div className="mt-2.5 h-[12px] w-24 animate-pulse rounded bg-muted" />
@@ -114,7 +114,7 @@ function AdminListSkeleton({ rows = 3 }: { rows?: number }) {
  *  application) that don't need a distinct header band — just the shared
  *  hardcoded radius so every admin surface nests consistently. */
 function AdminCard({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <article className={cn("rounded-[20px] border border-border bg-card p-5", className)}>{children}</article>
+  return <article className={cn("rounded-[20px] border border-border bg-background p-5", className)}>{children}</article>
 }
 
 /** The empty-state shape used across every admin queue/list. */

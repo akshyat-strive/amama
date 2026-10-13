@@ -314,7 +314,7 @@ function WheelPickerGroup({
   return (
     <div
       className={cn(
-        "relative isolate w-full rounded-3xl border border-border bg-card px-2 py-1",
+        "relative isolate w-full rounded-3xl border border-border bg-background px-2 py-1",
         className
       )}
       {...props}

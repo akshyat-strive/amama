@@ -50,7 +50,7 @@ export default function Home() {
             <Link
               key={role.href}
               href={role.href}
-              className="group flex flex-col items-start gap-3 rounded-2xl border border-border bg-card p-6 text-start transition-colors hover:border-amama-deep/40 hover:bg-muted"
+              className="group flex flex-col items-start gap-3 rounded-2xl border border-border bg-background p-6 text-start transition-colors hover:border-amama-deep/40 hover:bg-muted"
             >
               <span className="grid size-11 place-items-center rounded-full bg-amama-subtle text-amama-deep">
                 <role.icon className="size-5" />

@@ -81,7 +81,7 @@ function ChatLayout({
       <section
         aria-label={title}
         className={cn(
-          "flex min-w-0 flex-col overflow-hidden rounded-[24px] bg-card p-2 transition-[width] duration-300 ease-out",
+          "flex min-w-0 flex-col overflow-hidden rounded-[24px] bg-background p-2 transition-[width] duration-300 ease-out",
           open ? "hidden md:flex md:w-[300px] md:shrink-0 lg:w-[340px]" : "w-full flex-1"
         )}
       >
@@ -97,7 +97,7 @@ function ChatLayout({
       {open ? (
         <section
           aria-label="Conversation"
-          className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-[24px] bg-card p-2 animate-in fade-in slide-in-from-right-3 duration-300"
+          className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-[24px] bg-background p-2 animate-in fade-in slide-in-from-right-3 duration-300"
         >
           <header className="flex shrink-0 items-center gap-2 px-2 pt-1 pb-2.5">
             <button

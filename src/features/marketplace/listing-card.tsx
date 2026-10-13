@@ -34,7 +34,7 @@ function ListingCard({
   const status = ownerView ? listing.moderationStatus : "verified"
 
   return (
-    <div className="group relative rounded-[22px] border border-border bg-card p-1.5 transition-[box-shadow,border-color] duration-200 hover:border-foreground/15">
+    <div className="group relative rounded-[22px] border border-border bg-background p-1.5 transition-[box-shadow,border-color] duration-200 hover:border-foreground/15">
       <Link href={href} className="block outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/40 rounded-[18px]">
         <div className="relative aspect-4/3 w-full overflow-hidden rounded-[16px] bg-muted">
           <CropImage

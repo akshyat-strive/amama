@@ -212,7 +212,7 @@ function UploadVersionButton({
         onClick={() => inputRef.current?.click()}
         className={cn(
           "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold transition-colors disabled:opacity-50",
-          variant === "primary" ? "bg-amama-deep text-white hover:bg-amama-deep/90" : "border border-border bg-card text-foreground hover:bg-muted"
+          variant === "primary" ? "bg-amama-deep text-white hover:bg-amama-deep/90" : "border border-border bg-background text-foreground hover:bg-muted"
         )}
       >
         {busy ? <Loader2Icon aria-hidden className="size-3.5 animate-spin" /> : <UploadIcon aria-hidden className="size-3.5" />}
@@ -327,7 +327,7 @@ function Composer({
           <select
             value={docId ?? ""}
             onChange={(event) => onDocChange(event.target.value || null)}
-            className="h-8 max-w-[220px] truncate rounded-full border border-border bg-card px-2.5 text-[12.5px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/30"
+            className="h-8 max-w-[220px] truncate rounded-full border border-border bg-background px-2.5 text-[12.5px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/30"
           >
             <option value="">The whole application</option>
             {documents.map((document) => (

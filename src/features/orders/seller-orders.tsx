@@ -84,7 +84,7 @@ function SellerOrderPage({ tradeId }: { tradeId: string }) {
 
       {trade && seller ? (
         <>
-          <section aria-label="Farm to warehouse" className="rounded-[24px] bg-card p-2">
+          <section aria-label="Farm to warehouse" className="rounded-[24px] bg-background p-2">
             <header className="px-3 pt-2 pb-3">
               <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Farm to warehouse</h2>
               <p className="text-[13px] text-muted-foreground">Road route from your farm to {warehouse.name}, with alternatives.</p>
@@ -96,7 +96,7 @@ function SellerOrderPage({ tradeId }: { tradeId: string }) {
             />
           </section>
 
-          <section aria-label="Quality checks" className="rounded-[24px] bg-card p-2">
+          <section aria-label="Quality checks" className="rounded-[24px] bg-background p-2">
             <header className="px-3 pt-2 pb-3">
               <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Quality checks</h2>
               <p className="text-[13px] text-muted-foreground">Your QC at the farm, and ours when each lot reaches {warehouse.city}.</p>

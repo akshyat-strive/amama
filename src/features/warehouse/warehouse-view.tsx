@@ -98,7 +98,7 @@ function WarehouseView() {
         ))}
       </div>
 
-      <section aria-label="Inbound trucks" className="mt-6 rounded-[24px] bg-card p-2">
+      <section aria-label="Inbound trucks" className="mt-6 rounded-[24px] bg-background p-2">
         <header className="flex flex-wrap items-baseline justify-between gap-2 px-3 pt-2 pb-3">
           <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Trucks on the way</h2>
           <p className="text-[13px] text-muted-foreground">Road routes from each farm to {warehouse.city}</p>
@@ -148,7 +148,7 @@ function WarehouseView() {
       </div>
 
       {tab === "inbound" ? (
-        <div className="mt-4 overflow-hidden rounded-[24px] bg-card p-2">
+        <div className="mt-4 overflow-hidden rounded-[24px] bg-background p-2">
           <ul className="overflow-hidden rounded-[16px] bg-background">
             {shown.map((row) => {
               const open = openId === row.id
@@ -227,7 +227,7 @@ function WarehouseView() {
           </ul>
         </div>
       ) : (
-        <div className="mt-4 overflow-hidden rounded-[24px] bg-card p-2">
+        <div className="mt-4 overflow-hidden rounded-[24px] bg-background p-2">
           <ul className="overflow-hidden rounded-[16px] bg-background">
             {outHere.map((row) => {
               const buyer = Wd.buyerById(row.buyerId)

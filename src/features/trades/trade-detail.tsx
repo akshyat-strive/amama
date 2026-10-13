@@ -89,7 +89,7 @@ const BAR_TONE: Record<Clock["tone"], string> = {
 
 function ClockTile({ clock }: { clock: Clock }) {
   return (
-    <div className="min-w-0 rounded-[18px] border border-border bg-card px-3 py-3 sm:rounded-[20px] sm:px-4 sm:py-3.5">
+    <div className="min-w-0 rounded-[18px] border border-border bg-background px-3 py-3 sm:rounded-[20px] sm:px-4 sm:py-3.5">
       <p className="flex items-center gap-0.5 truncate text-[11.5px] text-muted-foreground sm:text-[12.5px]">
         {clock.label}
         <ClockInfo label={clock.label} />
@@ -355,7 +355,7 @@ const MILESTONE_TONE: Record<W.ShipmentMilestone["state"], "ok" | "warn" | "crit
 function Disclosure({ label, count, children }: { label: string; count?: number; children: React.ReactNode }) {
   const [open, setOpen] = React.useState(false)
   return (
-    <section className="overflow-hidden rounded-[20px] border border-border bg-card">
+    <section className="overflow-hidden rounded-[20px] border border-border bg-background">
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -402,7 +402,7 @@ function CutoffTiles({ trade }: { trade: W.Trade }) {
                 : `${Math.round(hours / 24)} d`
         const tone = metAt ? "ok" : hours < 2 ? "crit" : hours < 24 ? "warn" : "brand"
         return (
-          <div key={cutoff.label} className="rounded-[16px] border border-border bg-card px-3.5 py-3">
+          <div key={cutoff.label} className="rounded-[16px] border border-border bg-background px-3.5 py-3">
             <p className="truncate text-[12px] text-muted-foreground">{cutoff.label === "Shipping instructions" ? "SI cut-off" : `${cutoff.label} cut-off`}</p>
             <p className={cn("text-[15px] font-semibold tabular-nums", TEXT_TONE[tone])}>{value}</p>
             <p className="truncate text-[11.5px] text-muted-foreground tabular-nums">

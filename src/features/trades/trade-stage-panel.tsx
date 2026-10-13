@@ -39,7 +39,7 @@ function StageRail({
   onSelect: (stage: W.StageNo) => void
 }) {
   return (
-    <nav aria-label="Stages" className="overflow-hidden rounded-[20px] border border-border bg-card py-1.5">
+    <nav aria-label="Stages" className="overflow-hidden rounded-[20px] border border-border bg-background py-1.5">
       {W.PHASES.map((phase) => (
         <div key={phase.id} className="px-1.5 pb-1">
           <p className="px-2.5 pt-2 pb-1 text-[11px] font-medium text-muted-foreground">{phase.label}</p>

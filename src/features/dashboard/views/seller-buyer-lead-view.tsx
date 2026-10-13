@@ -146,7 +146,7 @@ function SellerBuyerLeadView({ leadId }: { leadId: string }) {
       </div>
 
       <div
-        className={cn("overflow-hidden rounded-3xl border border-border bg-card lg:flex-1", FULL_HEIGHT)}
+        className={cn("overflow-hidden rounded-3xl border border-border bg-background lg:flex-1", FULL_HEIGHT)}
       >
         <ConversationThread
           header={conversationHeader}

@@ -211,7 +211,7 @@ function OrderBook({
   role: OnboardingRole
 }) {
   return (
-    <section className="overflow-hidden rounded-[20px] border border-border bg-card">
+    <section className="overflow-hidden rounded-[20px] border border-border bg-background">
       <header className="flex items-center justify-between gap-2 px-5 pt-4 pb-3">
         <h2 className="text-[14px] font-semibold text-foreground">{title}</h2>
         <span className="text-[12px] text-muted-foreground tabular-nums">{orders.length}</span>

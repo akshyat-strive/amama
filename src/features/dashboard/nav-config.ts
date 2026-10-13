@@ -6,6 +6,7 @@ import {
   MessageCircleIcon,
   PackageIcon,
   SettingsIcon,
+  ShieldCheckIcon,
   ShipIcon,
   StoreIcon,
   SproutIcon,
@@ -17,7 +18,15 @@ import {
 
 import type { OnboardingRole } from "@/features/onboarding/types"
 
-export type DashboardNavGroup = "activity" | "menu" | "logistics" | "finance" | "general"
+export type DashboardNavGroup =
+  | "overview"
+  | "buying"
+  | "selling"
+  | "fulfilment"
+  | "work"
+  | "operations"
+  | "team"
+  | "general"
 
 export type DashboardNavItem = {
   label: string
@@ -26,16 +35,16 @@ export type DashboardNavItem = {
   group: DashboardNavGroup
 }
 
+/** "" means the group shows no label — Home needs none. */
 export const dashboardNavGroupLabels: Record<DashboardNavGroup, string> = {
-  // Wherever new listings and new messages actually show up — the two
-  // pages whose content changes without the person doing anything, so
-  // they lead the sidebar instead of sitting alphabetically among the
-  // static ones.
-  activity: "Activity",
-  menu: "Menu",
-  logistics: "Logistics",
-  finance: "Finance",
-  general: "General",
+  overview: "",
+  buying: "Buying",
+  selling: "Selling",
+  fulfilment: "Fulfilment",
+  work: "Work",
+  operations: "Operations",
+  team: "Team",
+  general: "Account",
 }
 
 /** `NavList` pins this one group to the very bottom of the sidebar — its
@@ -52,47 +61,29 @@ export const dashboardNavFooterGroup: DashboardNavGroup = "general"
  */
 export const dashboardNav: Record<OnboardingRole, DashboardNavItem[]> = {
   buyer: [
-    { label: "Marketplace", href: "/buyer/dashboard/sourcing", icon: StoreIcon, group: "activity" },
-    {
-      label: "Messages",
-      href: "/buyer/dashboard/messages",
-      icon: MessageCircleIcon,
-      group: "activity",
-    },
-    { label: "Home", href: "/buyer/dashboard", icon: HouseIcon, group: "menu" },
-    { label: "RFQs", href: "/buyer/dashboard/rfqs", icon: ClipboardListIcon, group: "menu" },
-    { label: "Contracts", href: "/buyer/dashboard/contracts", icon: FileSignatureIcon, group: "menu" },
-    { label: "Orders", href: "/buyer/dashboard/orders", icon: PackageIcon, group: "menu" },
+    { label: "Home", href: "/buyer/dashboard", icon: HouseIcon, group: "overview" },
+    { label: "Messages", href: "/buyer/dashboard/messages", icon: MessageCircleIcon, group: "overview" },
+    { label: "Marketplace", href: "/buyer/dashboard/sourcing", icon: StoreIcon, group: "buying" },
+    { label: "RFQs", href: "/buyer/dashboard/rfqs", icon: ClipboardListIcon, group: "buying" },
+    { label: "Contracts", href: "/buyer/dashboard/contracts", icon: FileSignatureIcon, group: "buying" },
+    { label: "Orders", href: "/buyer/dashboard/orders", icon: PackageIcon, group: "buying" },
+    { label: "Verification", href: "/buyer/dashboard/verification", icon: ShieldCheckIcon, group: "general" },
     { label: "Profile", href: "/buyer/dashboard/profile", icon: UserRoundIcon, group: "general" },
-    {
-      label: "Settings",
-      href: "/buyer/dashboard/settings",
-      icon: SettingsIcon,
-      group: "general",
-    },
+    { label: "Settings", href: "/buyer/dashboard/settings", icon: SettingsIcon, group: "general" },
   ],
   seller: [
-    { label: "My listings", href: "/seller/dashboard/listings", icon: SproutIcon, group: "activity" },
-    { label: "Buyers", href: "/seller/dashboard/buyers", icon: UsersIcon, group: "activity" },
-    {
-      label: "Messages",
-      href: "/seller/dashboard/messages",
-      icon: MessageCircleIcon,
-      group: "activity",
-    },
-    { label: "Home", href: "/seller/dashboard", icon: HouseIcon, group: "menu" },
-    { label: "RFQs", href: "/seller/dashboard/rfqs", icon: ClipboardListIcon, group: "menu" },
-    { label: "Contracts", href: "/seller/dashboard/contracts", icon: FileSignatureIcon, group: "menu" },
-    { label: "Trades", href: "/seller/dashboard/trades", icon: WaypointsIcon, group: "menu" },
-    { label: "Orders", href: "/seller/dashboard/orders", icon: PackageIcon, group: "menu" },
-    { label: "Shipments", href: "/seller/dashboard/shipments", icon: ShipIcon, group: "menu" },
-    { label: "Payments", href: "/seller/dashboard/payments", icon: WalletIcon, group: "menu" },
+    { label: "Home", href: "/seller/dashboard", icon: HouseIcon, group: "overview" },
+    { label: "Messages", href: "/seller/dashboard/messages", icon: MessageCircleIcon, group: "overview" },
+    { label: "My listings", href: "/seller/dashboard/listings", icon: SproutIcon, group: "selling" },
+    { label: "Buyers", href: "/seller/dashboard/buyers", icon: UsersIcon, group: "selling" },
+    { label: "RFQs", href: "/seller/dashboard/rfqs", icon: ClipboardListIcon, group: "selling" },
+    { label: "Contracts", href: "/seller/dashboard/contracts", icon: FileSignatureIcon, group: "selling" },
+    { label: "Trades", href: "/seller/dashboard/trades", icon: WaypointsIcon, group: "fulfilment" },
+    { label: "Orders", href: "/seller/dashboard/orders", icon: PackageIcon, group: "fulfilment" },
+    { label: "Shipments", href: "/seller/dashboard/shipments", icon: ShipIcon, group: "fulfilment" },
+    { label: "Payments", href: "/seller/dashboard/payments", icon: WalletIcon, group: "fulfilment" },
+    { label: "Verification", href: "/seller/dashboard/verification", icon: ShieldCheckIcon, group: "general" },
     { label: "Profile", href: "/seller/dashboard/profile", icon: UserRoundIcon, group: "general" },
-    {
-      label: "Settings",
-      href: "/seller/dashboard/settings",
-      icon: SettingsIcon,
-      group: "general",
-    },
+    { label: "Settings", href: "/seller/dashboard/settings", icon: SettingsIcon, group: "general" },
   ],
 }

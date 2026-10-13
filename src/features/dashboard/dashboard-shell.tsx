@@ -1,8 +1,11 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 
 import { cn } from "@/lib/utils"
+import { FullPageLoader } from "@/components/ui/full-page-loader"
+import { useSession, useSessionLoaded } from "@/features/auth/local-auth"
 import { AccountMenu } from "@/features/dashboard/account-menu"
 import { useSignOut } from "@/features/auth/use-sign-out"
 import { LanguageSwitcher } from "@/features/i18n/components/language-switcher"
@@ -13,7 +16,9 @@ import { seedAdminDemoData } from "@/features/admin/seed-data"
 import { upsertBuyerProfile } from "@/features/marketplace/buyer-directory"
 import { buyerIdentity } from "@/features/marketplace/identity"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
-import type { OnboardingRole } from "@/features/onboarding/types"
+import { loadProfile } from "@/features/onboarding/profile-store"
+import { emptyBuyer, emptySeller, type OnboardingRole } from "@/features/onboarding/types"
+import { useVerification } from "@/features/verification/verification-context"
 import { SidebarToggle, TopbarActions, TopbarBrand } from "@/features/dashboard/topbar-parts"
 import { TopbarNotifications } from "@/features/trades/topbar-notifications"
 import { TopbarSearch } from "@/features/trades/topbar-search"
@@ -50,7 +55,11 @@ const TOPBAR_OFFSET = "pt-20"
  * the label visibility there have to move together or the rail would clip
  * text instead of hiding it.
  */
-const RAIL_WIDTH_MD = "md:w-[66px]"
+const RAIL_WIDTH_MD = "md:w-[68px]"
+
+/** What stays open while KYC is in review: the ticket itself, and
+ *  settings. Everything else waits for approval. */
+const OPEN_BEFORE_APPROVAL = ["verification", "settings"]
 
 function DashboardShell({
   role,
@@ -59,10 +68,42 @@ function DashboardShell({
   role: OnboardingRole
   children: React.ReactNode
 }) {
-  const { draft } = useOnboarding()
+  const router = useRouter()
+  const { draft, loadDraft } = useOnboarding()
+  const session = useSession()
+  const sessionLoaded = useSessionLoaded()
+  const { statusFor, isLoaded } = useVerification()
   const [sidebarOpen, setSidebarOpen] = useSidebarOpen(SIDEBAR_STORAGE_KEY)
   const nav = dashboardNav[role]
   const signOut = useSignOut(role)
+  const signedIn = !!session && session.kind === role
+
+  // No server is guarding these routes: without a session for this role,
+  // go to its login.
+  React.useEffect(() => {
+    if (sessionLoaded && !signedIn) router.replace(`/${role}/login`)
+  }, [sessionLoaded, signedIn, role, router])
+
+  // The onboarding draft (which every screen reads identity from) is per
+  // tab; a new tab or a reload in another one starts it empty. Restore it
+  // from the signed-in account's saved profile.
+  const draftEmail = role === "buyer" ? draft.buyer.email : draft.seller.email
+  React.useEffect(() => {
+    if (!signedIn || draftEmail === session.accountId) return
+    if (role === "buyer") loadDraft({ role, buyer: loadProfile("buyer", session.accountId), seller: emptySeller })
+    else loadDraft({ role, buyer: emptyBuyer, seller: loadProfile("seller", session.accountId) })
+  }, [signedIn, session, draftEmail, role, loadDraft])
+
+  const status = statusFor(role)
+  const approved = status === "approved"
+  const locked = React.useMemo(
+    () => new Set(approved ? [] : nav.filter((item) => !OPEN_BEFORE_APPROVAL.some((slug) => item.href.endsWith(`/${slug}`))).map((item) => item.href)),
+    [approved, nav]
+  )
+  const attention = React.useMemo(
+    () => new Set(status === "changes-requested" ? [`/${role}/dashboard/verification`] : []),
+    [status, role]
+  )
 
   const toggleSidebar = () => {
     setSidebarOpen((open) => !open)
@@ -100,6 +141,8 @@ function DashboardShell({
   // Buyers follow trades as orders; sellers still have the trades board.
   const tradeBase = role === "buyer" ? "/buyer/dashboard/orders" : `/${role}/dashboard/trades`
   const displayName = person.fullName.trim() || "Your account"
+
+  if (!sessionLoaded || !signedIn || !isLoaded()) return <FullPageLoader />
 
   return (
     <div className="h-dvh bg-card">
@@ -155,7 +198,7 @@ function DashboardShell({
           className={cn(
             "fixed inset-y-0 start-0 z-40 min-w-0 overflow-hidden md:static md:inset-auto md:z-auto md:shrink-0",
             "transition-[width] duration-300 ease-out",
-            sidebarOpen ? "w-72" : cn("w-0", RAIL_WIDTH_MD)
+            sidebarOpen ? "w-64" : cn("w-0", RAIL_WIDTH_MD)
           )}
         >
           {/* Inner panel: matches the outer wrapper's width exactly — a
@@ -167,12 +210,14 @@ function DashboardShell({
             className={cn(
               "h-full p-3 transition-[width,transform] duration-300 ease-out md:pe-0",
               TOPBAR_OFFSET,
-              sidebarOpen ? "w-72" : cn("w-72", RAIL_WIDTH_MD),
+              sidebarOpen ? "w-64" : cn("w-64", RAIL_WIDTH_MD),
               sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 rtl:translate-x-full md:rtl:translate-x-0"
             )}
           >
             <NavList
               items={nav}
+              locked={locked}
+              attention={attention}
               expanded={sidebarOpen}
               onNavigate={() => {
                 if (window.matchMedia("(max-width: 767px)").matches) {

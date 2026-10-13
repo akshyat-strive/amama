@@ -14,10 +14,10 @@ import {
 import { Button } from "@/components/ui/button"
 import { EditorialImage } from "@/components/ui/editorial-image"
 import { adminLoginContent } from "@/features/auth/admin-login-content"
-import { authClient } from "@/lib/auth/client"
-import { invalidateCurrentAdmin } from "@/features/admin/current-admin"
-import { useDemoDirectory } from "@/features/admin/demo-directory"
-import { DEMO_PASSWORD } from "@/features/admin/user-store"
+import { signIn } from "@/features/auth/local-auth"
+import { useDemoDirectory, type DemoDirectoryEntry } from "@/features/admin/demo-directory"
+import { DOMAINS } from "@/features/admin/permissions"
+import { DEMO_PASSWORD } from "@/features/admin/staff-seed"
 import { AmamaWordmark } from "@/components/brand/amama-wordmark"
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
@@ -26,8 +26,8 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
  * The admin module's own sign-in — deliberately plainer than the buyer/
  * seller `LoginScreen`: no social providers, no "new here? get started"
  * (there's no public sign-up for staff accounts), no forgot-password link
- * yet. One door for every business-side role now, checked against a real
- * Managed Better Auth credential — no more typing whatever name you want.
+ * yet. One door for every business-side role, checked against the staff
+ * accounts kept in this browser.
  */
 function AdminLoginScreen() {
   const router = useRouter()
@@ -46,21 +46,26 @@ function AdminLoginScreen() {
 
   const enterConsole = () => router.push(content.homeHref)
 
-  const attemptSignIn = async (attemptEmail: string, attemptPassword: string) => {
+  const attemptSignIn = (attemptEmail: string, attemptPassword: string) => {
     setSubmitting(true)
     setError(null)
-    // Some failures throw rather than resolve `{ data, error }` — either
-    // shape means the same thing here.
-    try {
-      const { error: signInError } = await authClient.signIn.email({ email: attemptEmail, password: attemptPassword })
-      if (signInError) throw signInError
-      await invalidateCurrentAdmin()
-      enterConsole()
-    } catch (error) {
+    const result = signIn(attemptEmail, attemptPassword, "admin")
+    if (!result.ok) {
       setSubmitting(false)
-      setError(error instanceof Error ? error.message : "That email or password isn't right.")
+      setError(result.error)
+      return
     }
+    enterConsole()
   }
+
+  // Quick login follows the org: executives first, then each domain.
+  const groups: { label: string; people: DemoDirectoryEntry[] }[] = [
+    { label: "Executives", people: directory.filter((user) => user.level === "executive") },
+    ...DOMAINS.map((domain) => ({
+      label: domain.label,
+      people: directory.filter((user) => user.level !== "executive" && user.domain === domain.id),
+    })),
+  ].filter((group) => group.people.length > 0)
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
@@ -157,37 +162,38 @@ function AdminLoginScreen() {
               </button>
 
               {quickLoginOpen ? (
-                <div className="mt-2 flex flex-col gap-1 rounded-[16px] border border-border bg-card p-1.5">
-                  {directory.map((user) => {
-                    return (
-                      <button
-                        key={user.id}
-                        type="button"
-                        disabled={submitting}
-                        onClick={() => {
-                          setActiveAction(user.id)
-                          attemptSignIn(user.email, DEMO_PASSWORD)
-                        }}
-                        className="flex items-center gap-3 rounded-[12px] px-3 py-2 text-start transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
-                      >
-                        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-amama-deep text-[12px] font-semibold text-white">
-                          {submitting && activeAction === user.id ? (
-                            <Loader2Icon className="size-3.5 animate-spin" />
-                          ) : (
-                            user.name.trim().charAt(0).toUpperCase() || "?"
-                          )}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[13px] font-semibold text-foreground">
-                            {user.name}
+                <div className="mt-2 flex max-h-[360px] flex-col gap-2 overflow-y-auto rounded-[16px] border border-border bg-card p-1.5">
+                  {groups.map((group) => (
+                    <div key={group.label}>
+                      <p className="px-3 pt-1.5 pb-1 text-[11.5px] font-semibold text-muted-foreground">{group.label}</p>
+                      {group.people.map((user) => (
+                        <button
+                          key={user.id}
+                          type="button"
+                          disabled={submitting}
+                          onClick={() => {
+                            setActiveAction(user.id)
+                            attemptSignIn(user.email, DEMO_PASSWORD)
+                          }}
+                          className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2 text-start transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+                        >
+                          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-amama-deep text-[12px] font-semibold text-white">
+                            {submitting && activeAction === user.id ? (
+                              <Loader2Icon className="size-3.5 animate-spin" />
+                            ) : (
+                              user.name.trim().charAt(0).toUpperCase() || "?"
+                            )}
                           </span>
-                          <span className="block truncate text-[12px] text-muted-foreground">
-                            {user.roleName} · {user.email}
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[13px] font-semibold text-foreground">{user.name}</span>
+                            <span className="block truncate text-[12px] text-muted-foreground">
+                              {user.roleName} · {user.email}
+                            </span>
                           </span>
-                        </span>
-                      </button>
-                    )
-                  })}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
                 </div>
               ) : null}
             </div>

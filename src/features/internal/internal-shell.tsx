@@ -44,10 +44,9 @@ function InternalShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
 
-  // Same tri-state identity guard as the previous console shell:
-  // `undefined` while /api/identity/me is in flight, `null` once it has
-  // genuinely come back with no session. Redirect on `null` only, or a
-  // real session gets bounced on every cold load.
+  // Same tri-state identity guard as the console shell: `undefined`
+  // until storage has been read, `null` once it's clear there's no staff
+  // session. Redirect on `null` only.
   const admin = useCurrentAdmin()
   const loading = admin === undefined
   const signedOut = admin === null
@@ -130,17 +129,19 @@ function InternalShell({ children }: { children: React.ReactNode }) {
           </header>
 
           <div className="flex min-h-0 flex-1 gap-2 sm:gap-3">
-            <div className="hidden shrink-0 md:block">
+            {/* One floating sidebar: the icon rail, and beside it (on wide
+                screens, while open) the section's own list — two columns
+                of the same card, split by a hairline. */}
+            <div className="hidden shrink-0 overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_12px_32px_-16px_rgba(16,24,20,0.22)] md:flex">
               <PrimaryRail activeId={section.id} />
-            </div>
-
-            <div
-              className={cn(
-                "hidden min-w-0 shrink-0 transition-[width] duration-200 lg:block",
-                railOpen ? "w-[264px]" : "w-0 overflow-hidden"
-              )}
-            >
-              <ContextualRail section={section} />
+              <div
+                className={cn(
+                  "hidden min-w-0 shrink-0 border-s border-border transition-[width] duration-200 lg:block",
+                  railOpen ? "w-[248px]" : "w-0 overflow-hidden border-s-0"
+                )}
+              >
+                <ContextualRail section={section} />
+              </div>
             </div>
 
             {/* Same ground as the sidebar rail — muted, faintly hatched —

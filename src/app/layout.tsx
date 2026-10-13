@@ -14,6 +14,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { I18nRoot } from "@/features/i18n/components/i18n-root";
+import { LocalDataBoot } from "@/features/local-db/local-data-boot";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -90,6 +91,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       )}
     >
       <body className="min-h-full flex flex-col">
+        <LocalDataBoot />
         <I18nRoot>
           {children}
           <Toaster />

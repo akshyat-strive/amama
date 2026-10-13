@@ -6,6 +6,7 @@ import {
 import { seedDealsIfEmpty, type Deal, type DealSeed, type Shipment } from "@/features/marketplace/deal-store"
 import { seedContractsIfEmpty, type Contract } from "@/features/contracts/contract-store"
 import { seedRfqsIfEmpty, SEED_RFQS } from "@/features/marketplace/rfq-store"
+import { ensureSeedVersion } from "@/features/local-db/seed-version"
 import {
   STAFF_ANNOUNCEMENTS_CHANNEL_ID,
   STAFF_GROUP_CHANNEL_ID,
@@ -19,12 +20,9 @@ import {
  * grows any of it (each `seed*IfEmpty` below only writes once).
  *
  * `buyer@amama.in` (Vikram Shah) and `seller@amama.in` (Ravi Kumar) are the
- * two real, database-backed accounts a client demo logs in as — seeded as
- * pre-approved KYC applications by the identity seed route (see
- * `POST /api/dev/seed`), not by this file. That backend now keys a
- * profile per account rather than one global slot per role, so the admin
- * review queue can carry other buyer/seller applications at the same time
- * without spending its one slot on these two. The rest of the seeded
+ * two accounts a client demo logs in as — seeded with approved KYC in
+ * `verification/kyc-seed.ts`, alongside the pending applications that
+ * fill the review queue. The rest of the seeded
  * deals below use throwaway buyer/seller emails that were never onboarded,
  * so only the admin console ever sees them.
  */
@@ -2598,63 +2596,21 @@ const SEED_STAFF_MESSAGES: Record<string, StaffChatMessage[]> = {
 // genuinely empty store and the version guard skips re-running the
 // clear-then-reseed step otherwise. This forces one more clean pass;
 // `seller-rfqs-view.tsx` also now seeds defensively on its own mount.
-const SEED_VERSION = "9"
-
-const DEMO_LOCAL_STORAGE_KEYS = [
-  "amama.marketplace.deals",
-  "amama.marketplace.conversations",
-  "amama.marketplace.listings",
-  "amama.admin.staffChat",
-  "amama.verification",
-  "amama.contracts",
-  "amama.marketplace.rfqs",
-] as const
-
+/**
+ * Seeds the marketplace, deal, chat, contract and RFQ stores. Each one only
+ * writes to a genuinely empty store, so running this on every shell mount
+ * is a safe no-op once seeded — and it self-heals any single store that
+ * ended up empty on its own. The version check that wipes an older
+ * generation lives in `local-db/seed-version.ts`.
+ */
 function seedAdminDemoData() {
   if (typeof window === "undefined") return
-  const seededVersion = window.localStorage.getItem("amama.admin.seedVersion")
-
-  // A version mismatch (including "ran an older generation before this
-  // constant existed") means the seed content itself changed underneath
-  // whatever this browser already has — clear it so the fresh seed can
-  // actually land instead of being silently skipped by each store's own
-  // "only if empty" guard. This is a demo-only prototype with no real
-  // backend anywhere, so a browser's accumulated demo state is always
-  // disposable; it isn't real data anyone would lose.
-  if (seededVersion !== null && seededVersion !== SEED_VERSION) {
-    for (const key of DEMO_LOCAL_STORAGE_KEYS) window.localStorage.removeItem(key)
-  }
-
-  // Deliberately *not* gated on the version check above beyond that: each
-  // of these already only writes to a genuinely empty store, so calling
-  // them again on a browser whose version already matches is always a
-  // safe no-op — except in exactly the case that matters, where one
-  // individual key (a deal, an RFQ, whatever) ended up empty on its own
-  // — a stray `localStorage.clear()` during testing, a browser extension,
-  // anything — while the version flag it sits next to didn't move. An
-  // early return keyed only on the version would leave that one store
-  // empty forever, since nothing else would ever ask it to reseed itself
-  // again. Running the full idempotent set every time is what makes an
-  // individually-empty store self-heal instead.
+  ensureSeedVersion()
   seedDealsIfEmpty(SEED_DEALS)
   seedConversationsIfEmpty(SEED_CONVERSATIONS)
   seedStaffChatIfEmpty(SEED_STAFF_MESSAGES)
   seedContractsIfEmpty(SEED_CONTRACTS)
   seedRfqsIfEmpty(SEED_RFQS)
-  window.localStorage.setItem("amama.admin.seedVersion", SEED_VERSION)
 }
 
-/** The same clear-then-reseed step `seedAdminDemoData` runs on a version
- *  bump, but on demand — for whenever a browser's own testing (assigning
- *  every deal, working through every shipment) has drained the demo
- *  queues and someone just wants a fresh set to look at again, without
- *  needing an actual code change to force it. Reloads the page afterward
- *  so every store re-reads from the freshly-seeded `localStorage`. */
-function resetAdminDemoData() {
-  if (typeof window === "undefined") return
-  for (const key of DEMO_LOCAL_STORAGE_KEYS) window.localStorage.removeItem(key)
-  window.localStorage.removeItem("amama.admin.seedVersion")
-  window.location.reload()
-}
-
-export { seedAdminDemoData, resetAdminDemoData }
+export { seedAdminDemoData }

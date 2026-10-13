@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { CheckCircle2Icon, ClockIcon } from "lucide-react"
 
 import { Panel } from "@/features/dashboard/dashboard-ui"
@@ -33,15 +34,22 @@ function SettingsView({ role }: { role: OnboardingRole }) {
           ) : (
             <span className="flex items-center gap-1.5 text-[13px] font-medium text-status-warning">
               <ClockIcon className="size-4" />
-              In review
+              {status === "changes-requested" ? "Waiting on you" : "In review"}
             </span>
           )
         }
       >
-        <div className="px-5 py-4 text-[13px] text-muted-foreground">
-          {status === "approved"
-            ? "Your key account manager has cleared this account."
-            : "Your key account manager is still reviewing the documents you submitted."}
+        <div className="flex items-center justify-between gap-4 px-5 py-4 text-[13px] text-muted-foreground">
+          <span>
+            {status === "approved"
+              ? "Your key account manager has cleared this account."
+              : status === "changes-requested"
+                ? "Your key account manager needs something from you."
+                : "Your key account manager is still reviewing the documents you submitted."}
+          </span>
+          <Link href={`/${role}/dashboard/verification`} className="shrink-0 font-medium text-amama-deep hover:underline">
+            Open ticket
+          </Link>
         </div>
       </Panel>
 

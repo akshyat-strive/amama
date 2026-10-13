@@ -35,14 +35,13 @@ import {
 } from "@/features/documents/documents"
 import { useI18n } from "@/features/i18n/i18n-context"
 import { StepShell } from "@/features/onboarding/components/step-shell"
+import { useSession, useSessionLoaded } from "@/features/auth/local-auth"
+import { putFile } from "@/features/local-db/file-store"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
-import {
-  effectiveSteps,
-  nextStep,
-  previousStep,
-  stepIndex,
-} from "@/features/onboarding/steps"
+import { saveProfile } from "@/features/onboarding/profile-store"
+import { effectiveSteps, previousStep, stepIndex } from "@/features/onboarding/steps"
 import type { OnboardingRole } from "@/features/onboarding/types"
+import { submitApplication } from "@/features/verification/kyc-store"
 import { useVerification } from "@/features/verification/verification-context"
 
 const icons: Record<string, LucideIcon> = {
@@ -67,82 +66,41 @@ const iconNameById = Object.fromEntries(
 )
 
 /**
- * The last gate before review. Which documents appear at all comes entirely
- * from `getRequiredDocuments` — the one place that knows what country +
- * entity type + seller sub-type implies. What happens on "Continue" is a
- * submission to a Key Account Manager, not an entry into the product:
- * there's deliberately no Skip here, because skipping KYC just moves the
- * rejection later.
+ * The last onboarding step. Which documents appear comes entirely from
+ * `getRequiredDocuments` — the one place that knows what country, entity
+ * type and seller sub-type imply. Submitting creates the KYC ticket and
+ * lands the applicant in their dashboard, locked to that ticket until a
+ * KAM approves it. There's no Skip: skipping KYC just moves the rejection
+ * later.
  *
- * Uploads themselves are simulated (see `DocumentUploadCard`); what's
- * recorded for the reviewer is the file metadata, which is all that would
- * survive the tab anyway without a real upload endpoint behind it.
- *
- * Two different returns land here, and each changes what this form asks
- * for:
- *  - First-time onboarding, no submission yet: every document `documents`
- *    resolves to is asked for, seeded from whatever was already saved to
- *    this browser's document draft (`useDocumentDraft`) so leaving mid-form
- *    and coming back — even in a new session — resumes instead of starting
- *    over.
- *  - A KAM sent one or more specific documents back (any `reviewStatus:
- *    "rejected"` on the existing submission): only *those* documents are
- *    shown. Everything already approved or still awaiting review stays as
- *    it was — the applicant re-uploads exactly what was flagged, not the
- *    whole application.
+ * Files go to IndexedDB as they're picked (see `DocumentUploadCard`), and
+ * the picks are saved to this browser's document draft, so leaving mid-form
+ * and coming back resumes instead of starting over. Anything after the
+ * first submission — a replacement, a document a KAM asked for — happens
+ * on the ticket itself, not here.
  */
 function DocumentsStep({ role }: { role: OnboardingRole }) {
   const router = useRouter()
   const { t } = useI18n()
   const { draft } = useOnboarding()
-  const { submissions, submit, resubmitDocuments } = useVerification()
+  const session = useSession()
+  const sessionLoaded = useSessionLoaded()
+  const { applicationFor } = useVerification()
   const current = role === "buyer" ? draft.buyer : draft.seller
+  const submitted = applicationFor(role) !== null
+  const [submitting, setSubmitting] = React.useState(false)
 
-  const submission = submissions[role]
-  const rejectedIds = React.useMemo(
-    () =>
-      new Set(
-        submission?.documents
-          .filter((document) => document.reviewStatus === "rejected")
-          .map((document) => document.id) ?? []
-      ),
-    [submission]
-  )
-  const isResubmission = !!submission && rejectedIds.size > 0
+  // Already submitted: the ticket is where documents change now.
+  React.useEffect(() => {
+    if (submitted && !submitting) router.replace(`/${role}/dashboard/verification`)
+  }, [submitted, submitting, role, router])
 
-  const { uploads: draftUploads, setUpload: setDraftUpload, clear: clearDraft } = useDocumentDraft(role)
+  // Documents belong to an account — without one, make it first.
+  React.useEffect(() => {
+    if (sessionLoaded && (!session || session.kind !== role)) router.replace(`/${role}/onboarding/account`)
+  }, [sessionLoaded, session, role, router])
 
-  // Only relevant in resubmission mode — what the applicant has picked in
-  // this visit for a flagged document, layered on top of `resubmitBase`
-  // below. There's no equivalent draft store for this path: a resubmission
-  // is one specific, usually short, follow-up rather than a form worth
-  // resuming across sessions.
-  const [resubmitChanges, setResubmitChanges] = React.useState<Record<string, UploadedFile | null>>({})
-
-  const resubmitBase = React.useMemo(() => {
-    if (!submission) return {}
-    return Object.fromEntries(
-      submission.documents
-        .filter((document) => !rejectedIds.has(document.id))
-        .map((document) => [
-          document.id,
-          { name: document.name, size: document.size, dataUrl: document.dataUrl ?? undefined },
-        ])
-    )
-  }, [submission, rejectedIds])
-
-  const resubmitUploads = React.useMemo(() => {
-    const merged: Record<string, UploadedFile> = { ...resubmitBase }
-    for (const [id, file] of Object.entries(resubmitChanges)) {
-      if (file) merged[id] = file
-      else delete merged[id]
-    }
-    return merged
-  }, [resubmitBase, resubmitChanges])
-
-  const uploads = isResubmission ? resubmitUploads : draftUploads
-
-  const target = nextStep(role, "documents", current.entityType)
+  const { uploads, setUpload, clear: clearDraft } = useDocumentDraft(role)
   const back = previousStep(role, "documents", current.entityType)
 
   const documents = getRequiredDocuments({
@@ -153,70 +111,42 @@ function DocumentsStep({ role }: { role: OnboardingRole }) {
     certifications: role === "seller" ? draft.seller.certifications : undefined,
   })
 
-  const visibleDocuments = isResubmission
-    ? documents.filter((entry) => rejectedIds.has(entry.id))
-    : documents
-
-  const requiredIds = visibleDocuments.filter((entry) => entry.required).map((entry) => entry.id)
+  const requiredIds = documents.filter((entry) => entry.required).map((entry) => entry.id)
   const doneCount = requiredIds.filter((id) => uploads[id]).length
-  const canContinue = doneCount === requiredIds.length
+  const canContinue = doneCount === requiredIds.length && !submitting
 
-  const handleChange = React.useCallback(
-    (id: DocumentId, file: UploadedFile | null) => {
-      if (isResubmission) {
-        setResubmitChanges((previous) => ({ ...previous, [id]: file }))
-        return
-      }
-      setDraftUpload(id, file)
-    },
-    [isResubmission, setDraftUpload]
-  )
+  const handleChange = React.useCallback((id: DocumentId, file: UploadedFile | null) => setUpload(id, file), [setUpload])
 
-  const handleContinue = () => {
-    if (!canContinue || !target) return
-
-    if (isResubmission) {
-      resubmitDocuments(
-        role,
-        visibleDocuments
-          .filter((entry) => uploads[entry.id])
-          .map((entry) => ({
-            id: entry.id,
-            name: uploads[entry.id].name,
-            size: uploads[entry.id].size,
-            required: entry.required,
-            reviewStatus: "pending" as const,
-            reviewNote: null,
-            dataUrl: uploads[entry.id].dataUrl ?? null,
-          }))
-      )
-      router.push(target.href)
-      return
-    }
-
-    submit(
-      role,
-      {
-        fullName: current.fullName,
-        email: current.email,
-        country: current.country,
-        entityType: current.entityType,
-        sellerSubType: role === "seller" ? draft.seller.sellerSubType : undefined,
-      },
+  const handleSubmit = async () => {
+    if (!canContinue || !session) return
+    setSubmitting(true)
+    // Drafts saved before files moved to IndexedDB carry a data URL
+    // instead — store those bytes now so the reviewer can open them.
+    const picked = await Promise.all(
       documents
         .filter((entry) => uploads[entry.id])
-        .map((entry) => ({
-          id: entry.id,
-          name: uploads[entry.id].name,
-          size: uploads[entry.id].size,
-          required: entry.required,
-          reviewStatus: "pending" as const,
-          reviewNote: null,
-          dataUrl: uploads[entry.id].dataUrl ?? null,
-        }))
+        .map(async (entry) => {
+          const upload = uploads[entry.id]
+          let fileId = upload.fileId ?? null
+          if (!fileId && upload.dataUrl) fileId = await putFile(await (await fetch(upload.dataUrl)).blob())
+          return { id: entry.id, required: entry.required, file: { name: upload.name, size: upload.size, fileId } }
+        })
     )
+    saveProfile(role, current)
+    submitApplication({
+      role,
+      applicant: {
+        email: session.accountId,
+        fullName: current.fullName,
+        companyName: role === "buyer" ? draft.buyer.companyName : draft.seller.farmName,
+        entityType: current.entityType,
+        sellerSubType: role === "seller" ? draft.seller.sellerSubType : undefined,
+        country: current.country,
+      },
+      documents: picked,
+    })
     clearDraft()
-    router.push(target.href)
+    router.push(`/${role}/dashboard`)
   }
 
   return (
@@ -227,13 +157,8 @@ function DocumentsStep({ role }: { role: OnboardingRole }) {
       title={t("onboarding.documents.title")}
       description={t("onboarding.documents.description")}
       footer={
-        <Button
-          size="xl"
-          className="w-full"
-          disabled={!canContinue}
-          onClick={handleContinue}
-        >
-          {t("common.continue")}
+        <Button size="xl" className="w-full" disabled={!canContinue} onClick={() => void handleSubmit()}>
+          Submit for review
           <ArrowRightIcon />
         </Button>
       }
@@ -249,27 +174,7 @@ function DocumentsStep({ role }: { role: OnboardingRole }) {
       }
     >
       <div className="flex flex-col gap-3">
-        {isResubmission ? (
-          <div className="rounded-2xl border border-status-warning/30 bg-status-warning/5 p-4">
-            <p className="text-[14px] font-semibold text-foreground">
-              {t("review.changesTitle")}
-            </p>
-            <ul className="mt-2 flex flex-col gap-1.5">
-              {(submission?.documents ?? [])
-                .filter((document) => rejectedIds.has(document.id))
-                .map((document) => (
-                  <li key={document.id} className="text-[13px] leading-relaxed text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {documentText(document.id, t).label}
-                    </span>
-                    {document.reviewNote ? <> — {document.reviewNote}</> : null}
-                  </li>
-                ))}
-            </ul>
-          </div>
-        ) : null}
-
-        {visibleDocuments.map(({ id, required }) => (
+        {documents.map(({ id, required }) => (
           <DocumentUploadCard
             key={id}
             documentId={id}

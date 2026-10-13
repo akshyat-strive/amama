@@ -17,10 +17,11 @@ import { EditorialImage } from "@/components/ui/editorial-image"
 import { useI18n } from "@/features/i18n/i18n-context"
 import { GoogleIcon, MicrosoftIcon, AppleIcon } from "@/features/auth/oauth-icons"
 import { loginContent } from "@/features/auth/login-content"
-import { authClient } from "@/lib/auth/client"
-import { apiRequest } from "@/lib/api/fetch-store"
+import { signIn, signUp } from "@/features/auth/local-auth"
+import { DEMO_PASSWORD } from "@/features/admin/staff-seed"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
-import { emptyBuyer, emptySeller, type BuyerDraft, type OnboardingRole, type SellerDraft } from "@/features/onboarding/types"
+import { loadProfile } from "@/features/onboarding/profile-store"
+import { emptyBuyer, emptySeller, type OnboardingRole } from "@/features/onboarding/types"
 import { AmamaWordmark } from "@/components/brand/amama-wordmark"
 
 // Provider names are brand names, not translated — only the surrounding
@@ -32,11 +33,6 @@ const oauthProviders = [
 ] as const
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
-
-/** Every demo account shares this password, same convention as the admin
- *  side's `DEMO_PASSWORD` — real Managed Better Auth credentials, seeded
- *  once by `POST /api/dev/seed`. */
-const DEMO_PASSWORD = "User@123"
 
 const DEMO_ACCOUNTS: Record<OnboardingRole, { email: string; caption: string }> = {
   buyer: { email: "buyer@amama.in", caption: "buyer@amama.in — skips onboarding, already mid-deal" },
@@ -51,44 +47,15 @@ const KASHMIR_DEMO = {
   caption: "kashmir@amama.in — the apple listing a buyer demo can message",
 }
 
-/** Marketplace/deals/conversations are still `localStorage`, keyed off
- *  `onboarding-context`'s draft email (see `buyerIdentity`/`sellerIdentity`)
- *  rather than the real signed-in account — that migration hasn't reached
- *  those features yet. Real login no longer runs the wizard, so this is
- *  the bridge: populate the draft from the real, Postgres-backed profile
- *  right after signing in, so every not-yet-migrated screen still resolves
- *  to the same identity it always did. Safe to drop once those stores
- *  move to the real backend too.
- *
- * Retries a few times on failure rather than giving up after one try: the
- * very first fetch right after `signIn.email` resolves can race the new
- * session cookie actually propagating, so `/api/onboarding/[role]` comes
- * back 401 even though sign-in genuinely succeeded. Silently swallowing
- * that (the old behavior) left the draft empty, which is what made
- * `sellerIdentity`/`buyerIdentity` fall back to a placeholder identity
- * ("you") — every RFQ/deal/listing lookup keyed on the real email then
- * came back empty too, on a real account that was actually signed in
- * fine. A short retry window covers the propagation delay in practice. */
-async function syncOnboardingDraft(
+/** Restores the account's saved profile into the onboarding draft, which
+ *  is what every dashboard screen reads its identity from. */
+function restoreDraft(
   role: OnboardingRole,
   email: string,
-  loadDraft: (next: { role: OnboardingRole; buyer: BuyerDraft; seller: SellerDraft }) => void
+  loadDraft: ReturnType<typeof useOnboarding>["loadDraft"]
 ) {
-  const attempts = 4
-  for (let attempt = 0; attempt < attempts; attempt++) {
-    try {
-      const { profile } = await apiRequest<{ profile: Record<string, unknown> | null }>(`/api/onboarding/${role}`)
-      if (role === "buyer") {
-        loadDraft({ role, buyer: { ...emptyBuyer, ...profile, email }, seller: emptySeller })
-      } else {
-        loadDraft({ role, buyer: emptyBuyer, seller: { ...emptySeller, ...profile, email } })
-      }
-      return
-    } catch {
-      if (attempt === attempts - 1) return
-      await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)))
-    }
-  }
+  if (role === "buyer") loadDraft({ role, buyer: loadProfile("buyer", email), seller: emptySeller })
+  else loadDraft({ role, buyer: emptyBuyer, seller: loadProfile("seller", email) })
 }
 
 function LoginScreen({ role }: { role: OnboardingRole }) {
@@ -114,66 +81,44 @@ function LoginScreen({ role }: { role: OnboardingRole }) {
   /**
    * One form, two outcomes: sign in if the account exists, create it if it
    * doesn't — there's no separate "sign up" screen, so this is genuinely
-   * how a brand-new buyer/seller gets an account. `ReviewGate` (wrapping
-   * both dashboard layouts) is what decides what a freshly created,
-   * nothing-submitted-yet account actually sees once it lands there.
+   * how a brand-new buyer/seller gets an account. The dashboard's KYC gate
+   * decides what a freshly created, nothing-submitted-yet account sees.
    */
-  const enterDashboard = async (attemptEmail: string, attemptPassword: string) => {
+  const enterDashboard = (attemptEmail: string, attemptPassword: string) => {
     setSubmitting(true)
     setError(null)
-
-    // The client throws on some failures (e.g. wrong password) rather
-    // than always resolving `{ data, error }` — both shapes mean "try
-    // sign-up next" here, so a failed sign-in is never itself the error
-    // shown to the user; only a failed sign-up (an account that already
-    // exists) is.
-    try {
-      const signInResult = await authClient.signIn.email({ email: attemptEmail, password: attemptPassword })
-      if (!signInResult.error) {
-        await syncOnboardingDraft(role, attemptEmail, loadDraft)
-        router.push(`/${role}/dashboard`)
-        return
-      }
-    } catch {
-      // Falls through to sign-up below.
-    }
-
-    try {
-      const signUpResult = await authClient.signUp.email({
-        email: attemptEmail,
-        password: attemptPassword,
-        name: attemptEmail.split("@")[0],
-      })
-      if (signUpResult.error) {
-        setSubmitting(false)
-        setError(signUpResult.error.message ?? "That email or password isn't right.")
-        return
-      }
-    } catch (error) {
+    const attempt = signIn(attemptEmail, attemptPassword, role)
+    if (!attempt.ok && attempt.reason !== "no-account") {
       setSubmitting(false)
-      setError(error instanceof Error ? error.message : "That email or password isn't right.")
+      setError(attempt.error)
       return
     }
-
-    await apiRequest("/api/identity/register", { method: "POST", body: JSON.stringify({ kind: role }) })
-    await syncOnboardingDraft(role, attemptEmail, loadDraft)
+    if (!attempt.ok) {
+      const created = signUp({ kind: role, email: attemptEmail, password: attemptPassword, name: attemptEmail.split("@")[0] })
+      if (!created.ok) {
+        setSubmitting(false)
+        setError(created.error)
+        return
+      }
+    }
+    restoreDraft(role, attemptEmail, loadDraft)
     router.push(`/${role}/dashboard`)
   }
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
     setActiveAction("form")
-    void enterDashboard(email.trim().toLowerCase(), password)
+    enterDashboard(email.trim().toLowerCase(), password)
   }
 
   const handleDemoLogin = () => {
     setActiveAction("demo")
-    void enterDashboard(demo.email, DEMO_PASSWORD)
+    enterDashboard(demo.email, DEMO_PASSWORD)
   }
 
   const handleKashmirLogin = () => {
     setActiveAction("kashmir")
-    void enterDashboard(KASHMIR_DEMO.email, DEMO_PASSWORD)
+    enterDashboard(KASHMIR_DEMO.email, DEMO_PASSWORD)
   }
 
   const emailValid = EMAIL_PATTERN.test(email.trim())

@@ -17,6 +17,7 @@ import {
   SelectableGroup,
   SelectableRow,
 } from "@/features/onboarding/components/selectable"
+import { signIn, signUp, useSession } from "@/features/auth/local-auth"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import {
   effectiveSteps,
@@ -34,6 +35,12 @@ function AccountStep({ role }: { role: OnboardingRole }) {
   const update = role === "buyer" ? updateBuyer : updateSeller
 
   const [touched, setTouched] = React.useState(false)
+  const [password, setPassword] = React.useState("")
+  const [accountError, setAccountError] = React.useState<string | null>(null)
+  const session = useSession()
+  // Already signed in as this role (came back from the dashboard to finish
+  // setting up): the email is that account's and there's no password to set.
+  const signedIn = !!session && session.kind === role
 
   // Land here from a shared link and the role may never have been set.
   React.useEffect(() => {
@@ -48,7 +55,8 @@ function AccountStep({ role }: { role: OnboardingRole }) {
   // just as required as the entity type itself.
   const sellerSubTypeChosen =
     role !== "seller" || draft.seller.sellerSubType.length > 0
-  const canContinue = emailValid && nameValid && entityTypeChosen && sellerSubTypeChosen
+  const passwordValid = signedIn || password.length >= 8
+  const canContinue = emailValid && nameValid && entityTypeChosen && sellerSubTypeChosen && passwordValid
 
   const target = nextStep(role, "account", current.entityType)
   const back = previousStep(role, "account", current.entityType)
@@ -57,6 +65,19 @@ function AccountStep({ role }: { role: OnboardingRole }) {
     event.preventDefault()
     setTouched(true)
     if (!canContinue || !target) return
+    update({ email: current.email.trim().toLowerCase() })
+    if (!signedIn) {
+      // A returning applicant who typed their existing password just
+      // carries on; anyone else with a taken email is sent to log in.
+      const created = signUp({ kind: role, email: current.email, password, name: current.fullName })
+      if (!created.ok) {
+        const existing = signIn(current.email, password, role)
+        if (!existing.ok) {
+          setAccountError(created.error)
+          return
+        }
+      }
+    }
     router.push(target.href)
   }
 
@@ -123,11 +144,40 @@ function AccountStep({ role }: { role: OnboardingRole }) {
               aria-invalid={showEmailError}
               aria-describedby={showEmailError ? "email-error" : undefined}
               value={current.email}
-              onChange={(event) => update({ email: event.target.value })}
+              readOnly={signedIn}
+              onChange={(event) => {
+                setAccountError(null)
+                update({ email: event.target.value })
+              }}
             />
             <FieldStatusIcon status={emailStatus} />
           </FieldGroupRow>
+          {signedIn ? null : (
+            <FieldGroupRow label="Password" htmlFor="password">
+              <FieldGroupInput
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                placeholder="At least 8 characters"
+                value={password}
+                onChange={(event) => {
+                  setAccountError(null)
+                  setPassword(event.target.value)
+                }}
+              />
+              <FieldStatusIcon status={password.length === 0 ? null : passwordValid ? "valid" : "invalid"} />
+            </FieldGroupRow>
+          )}
         </FieldGroup>
+        {accountError ? (
+          <p className="mt-2 text-[13px] text-destructive">
+            {accountError}{" "}
+            <a href={`/${role}/login`} className="font-medium underline underline-offset-2">
+              Log in
+            </a>
+          </p>
+        ) : null}
         {showEmailError ? (
           <p id="email-error" className="mt-2 text-[13px] text-destructive">
             {t("onboarding.account.emailError")}

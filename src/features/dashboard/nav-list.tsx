@@ -3,462 +3,168 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { LockIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   dashboardNavFooterGroup,
   dashboardNavGroupLabels,
-  type DashboardNavGroup,
   type DashboardNavItem,
 } from "@/features/dashboard/nav-config"
 
 /**
- * Dashboard navigation
+ * The sidebar: one floating card, and inside it plain groups — a quiet
+ * label, then compact rows. Only the active row carries colour (a soft
+ * green row with a filled green icon), so the eye finds "where am I"
+ * without the whole rail competing for attention. Account items pin to
+ * the bottom.
  *
- * UX structure:
+ * Collapsed, it's an icon rail: groups split by hairlines, labels in
+ * tooltips.
  *
- * ┌─────────────────────────────┐
- * │                             │
- * │  scrollable navigation      │
- * │                             │
- * │  ┌───────────────────────┐  │
- * │  │ GROUP                 │  │
- * │  │ item                  │  │
- * │  │ item                  │  │
- * │  └───────────────────────┘  │
- * │                             │
- * │  ┌───────────────────────┐  │
- * │  │ single item           │  │
- * │  └───────────────────────┘  │
- * │                             │
- * │  ┌───────────────────────┐  │
- * │  │ GROUP                 │  │
- * │  │ item                  │  │
- * │  │ item                  │  │
- * │  └───────────────────────┘  │
- * │                             │
- * │          spacer             │
- * │                             │
- * │  ┌───────────────────────┐  │
- * │  │       FOOTER          │  │ ← sticky
- * │  └───────────────────────┘  │
- * └─────────────────────────────┘
- *
- * The entire sidebar is one scroll container.
- *
- * The footer lives INSIDE that container and is sticky to the bottom.
- *
- * A bottom spacer is added before the footer so navigation items can
- * scroll completely above the sticky footer instead of being hidden
- * behind it.
- *
- * Scrollbars are visually hidden while scrolling remains enabled.
+ * `locked` hrefs render greyed with a lock and don't navigate — what a
+ * buyer or seller sees while their KYC is still in review.
  */
-
 function NavList({
   items,
   expanded = true,
   onNavigate,
+  locked,
+  attention,
 }: {
   items: DashboardNavItem[]
   expanded?: boolean
   onNavigate?: () => void
+  /** Hrefs that can't be opened yet. */
+  locked?: ReadonlySet<string>
+  /** Hrefs that get a small amber dot — something there needs action. */
+  attention?: ReadonlySet<string>
 }) {
   const pathname = usePathname()
 
-  /**
-   * Find the most specific active route.
-   *
-   * If both:
-   *
-   * /portal
-   * /portal/orders
-   *
-   * match the current pathname, the longer href wins.
-   */
+  // The most specific match wins: `/portal/orders` over `/portal`.
   const activeHref = React.useMemo(() => {
     let best: DashboardNavItem | null = null
-
     for (const item of items) {
-      const matches =
-        pathname === item.href ||
-        pathname.startsWith(item.href + "/")
-
-      if (matches && (!best || item.href.length > best.href.length)) {
-        best = item
-      }
+      const matches = pathname === item.href || pathname.startsWith(item.href + "/")
+      if (matches && (!best || item.href.length > best.href.length)) best = item
     }
-
     return best?.href ?? null
   }, [items, pathname])
 
-  /**
-   * Build navigation groups while preserving their original order.
-   */
   const groups = React.useMemo(() => {
     const order: DashboardNavItem["group"][] = []
-
-    const byGroup = new Map<
-      DashboardNavItem["group"],
-      DashboardNavItem[]
-    >()
-
+    const byGroup = new Map<DashboardNavItem["group"], DashboardNavItem[]>()
     for (const item of items) {
       if (!byGroup.has(item.group)) {
         byGroup.set(item.group, [])
         order.push(item.group)
       }
-
       byGroup.get(item.group)!.push(item)
     }
-
-    return order.map((group) => ({
-      group,
-      items: byGroup.get(group)!,
-    }))
+    return order.map((group) => ({ group, items: byGroup.get(group)! }))
   }, [items])
 
-  const regularGroups = groups.filter(
-    ({ group }) => group !== dashboardNavFooterGroup,
-  )
+  const regularGroups = groups.filter(({ group }) => group !== dashboardNavFooterGroup)
+  const footerGroup = groups.find(({ group }) => group === dashboardNavFooterGroup) ?? null
 
-  const footerGroup =
-    groups.find(({ group }) => group === dashboardNavFooterGroup) ?? null
+  const renderItem = (item: DashboardNavItem) => (
+    <NavItemLink
+      key={item.href}
+      item={item}
+      active={item.href === activeHref}
+      expanded={expanded}
+      locked={locked?.has(item.href) ?? false}
+      attention={attention?.has(item.href) ?? false}
+      onNavigate={onNavigate}
+    />
+  )
 
   return (
     <TooltipProvider>
-      <div
-        className={cn(
-          "h-full min-h-0",
-          "overflow-y-auto overflow-x-hidden",
-          "scrollbar-none",
-          "rounded-[24px] border border-border",
-          "bg-muted",
-          "bg-[repeating-linear-gradient(-45deg,var(--surface-border)_0px,var(--surface-border)_1px,transparent_1px,transparent_7px)]",
-          "shadow-lg",
-        )}
-      >
-        <div
-          className={cn(
-            "flex min-h-full flex-col",
-            expanded ? "gap-3.5" : "gap-3",
-          )}
-        >
-          {/* ============================================================
-              REGULAR NAVIGATION
-              ============================================================ */}
-
-          <nav className="flex flex-col">
-            <div
-              className={cn(
-                "flex flex-col",
-                expanded ? "gap-3.5" : "gap-3",
-              )}
-            >
-              {regularGroups.map(
-                ({ group, items: groupItems }) => {
-                  const isSingleItem = groupItems.length === 1
-
-                  /**
-                   * ======================================================
-                   * SINGLE ITEM GROUP
-                   * ======================================================
-                   *
-                   * The item itself becomes the island.
-                   *
-                   * No:
-                   * - group label
-                   * - three dots
-                   * - header
-                   * - additional top spacing
-                   */
-                  if (isSingleItem) {
-                    const item = groupItems[0]
-
-                    return (
-                      <div
-                        key={group}
-                        className={cn(
-                          "shrink-0",
-                          "rounded-[24px]",
-                          "bg-card",
-                          "p-1",
-                        )}
-                      >
-                        <NavItemLink
-                          item={item}
-                          active={item.href === activeHref}
-                          expanded={expanded}
-                          onNavigate={onNavigate}
-                        />
-                      </div>
-                    )
-                  }
-
-                  /**
-                   * ======================================================
-                   * MULTI ITEM GROUP
-                   * ======================================================
-                   *
-                   * Expanded:
-                   *   label + white item panel
-                   *
-                   * Collapsed:
-                   *   dots + white item panel
-                   */
-                  return (
-                    <div
-                      key={group}
-                      className={cn(
-                        "flex shrink-0 flex-col",
-                        "overflow-hidden",
-                        "rounded-[24px]",
-                        expanded ? "bg-muted" : "border border-border bg-muted",
-                      )}
-                    >
-                      <GroupHeader
-                        group={group}
-                        expanded={expanded}
-                      />
-
-                      <div
-                        className={cn(
-                          "flex flex-col gap-0.5",
-                          "rounded-[24px]",
-                          "bg-card p-1",
-                          !expanded && "items-center",
-                        )}
-                      >
-                        {groupItems.map((item) => (
-                          <NavItemLink
-                            key={item.href}
-                            item={item}
-                            active={item.href === activeHref}
-                            expanded={expanded}
-                            onNavigate={onNavigate}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )
-                },
-              )}
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_12px_32px_-16px_rgba(16,24,20,0.22)]">
+        <nav aria-label="Main" className={cn("min-h-0 flex-1 overflow-y-auto overflow-x-hidden scrollbar-none", expanded ? "px-2.5 py-3" : "px-2 py-3")}>
+          {regularGroups.map(({ group, items: groupItems }, index) => (
+            <div key={group} className={cn(index > 0 && (expanded ? "mt-4" : "mt-2.5 border-t border-border pt-2.5"))}>
+              {expanded && dashboardNavGroupLabels[group] ? (
+                <p className="px-2.5 pb-1.5 text-[11.5px] font-medium text-muted-foreground">{dashboardNavGroupLabels[group]}</p>
+              ) : null}
+              <div className={cn("flex flex-col gap-0.5", !expanded && "items-center")}>{groupItems.map(renderItem)}</div>
             </div>
-          </nav>
+          ))}
+        </nav>
 
-          {/* ============================================================
-              FOOTER SPACER
-              ============================================================
-
-              Two jobs in one element: `h-16` is scroll clearance (so the
-              last regular island can scroll fully clear of the sticky
-              footer instead of ending up hidden behind it), while
-              `mt-auto` is what actually pins the footer to the rail's
-              bottom edge whenever the nav items don't already fill the
-              rail's height — a plain fixed-height spacer only reserves
-              room *below* short content, it doesn't push anything down to
-              the bottom on its own, which is what left the footer
-              floating right under the nav items with bare striped rail
-              underneath it. `mt-auto` claims exactly that leftover space;
-              once real scrolling is happening (many nav items), there's no
-              leftover space left to claim and this collapses to just the
-              `h-16` clearance, letting `sticky bottom-0` on the footer
-              itself take over.
-
-              The footer itself is NOT outside the scroll container.
-          */}
-          {footerGroup ? (
-            <div
-              aria-hidden="true"
-              className={cn(
-                "mt-auto shrink-0",
-                expanded ? "h-16" : "h-16",
-              )}
-            />
-          ) : null}
-
-          {/* ============================================================
-              STICKY FOOTER
-              ============================================================
-
-              Footer is inside the same scroll container.
-
-              `sticky bottom-0` keeps it visually attached to the bottom
-              while the navigation behind it continues to scroll.
-          */}
-          {footerGroup ? (
-            <div
-              className={cn(
-                "sticky bottom-0 z-20 shrink-0",
-                "bg-transparent",
-              )}
-            >
-              <div
-                className={cn(
-                  "bg-card",
-                  expanded
-                    ? "rounded-[20px] p-1"
-                    : "rounded-[24px] border border-border p-1",
-                )}
-              >
-                <div
-                  className={cn(
-                    "flex flex-col gap-0.5",
-                    !expanded && "items-center",
-                  )}
-                >
-                  {footerGroup.items.map((item) => (
-                    <NavItemLink
-                      key={item.href}
-                      item={item}
-                      active={item.href === activeHref}
-                      expanded={expanded}
-                      onNavigate={onNavigate}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </div>
+        {footerGroup ? (
+          <div className={cn("shrink-0 border-t border-border", expanded ? "px-2.5 py-2.5" : "px-2 py-2.5")}>
+            <div className={cn("flex flex-col gap-0.5", !expanded && "items-center")}>{footerGroup.items.map(renderItem)}</div>
+          </div>
+        ) : null}
       </div>
     </TooltipProvider>
   )
 }
 
-/**
- * Group header
- *
- * Only rendered for groups containing more than one item.
- *
- * Expanded:
- *   Displays the group name.
- *
- * Collapsed:
- *   Displays three small dots.
- */
-function GroupHeader({
-  group,
-  expanded,
-}: {
-  group: DashboardNavGroup
-  expanded: boolean
-}) {
-  const label = dashboardNavGroupLabels[group]
-
-  if (expanded) {
-    return (
-      <div className="flex h-6 shrink-0 items-center px-3">
-        <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
-          {label}
-        </span>
-      </div>
-    )
-  }
-
-  return (
-    <Tooltip>
-      <TooltipTrigger
-        aria-label={label}
-        className="
-          flex h-6 w-full shrink-0
-          items-center justify-center
-          border-0 bg-transparent p-0
-          outline-none
-        "
-      >
-        <span
-          className="flex items-center gap-0.5"
-          aria-hidden
-        >
-          <span className="size-1 rounded-full bg-muted-foreground/40" />
-          <span className="size-1 rounded-full bg-muted-foreground/40" />
-          <span className="size-1 rounded-full bg-muted-foreground/40" />
-        </span>
-      </TooltipTrigger>
-
-      <TooltipContent side="right">
-        {label}
-      </TooltipContent>
-    </Tooltip>
-  )
-}
-
-/**
- * Individual navigation item.
- */
 function NavItemLink({
   item,
   active,
   expanded,
+  locked,
+  attention,
   onNavigate,
 }: {
   item: DashboardNavItem
   active: boolean
   expanded: boolean
+  locked: boolean
+  attention: boolean
   onNavigate?: () => void
 }) {
-  const link = (
-    <Link
-      href={item.href}
-      onClick={onNavigate}
-      aria-current={active ? "page" : undefined}
-      aria-label={item.label}
-      className={cn(
-        "flex items-center text-[14px] transition-colors cursor-pointer",
-        expanded
-          ? "h-11 gap-3 rounded-full ps-4 pe-3"
-          : "size-11 justify-center rounded-full",
-        active
-          ? "border-1 border-amama-foreground bg-amama text-amama-foreground hover:bg-amama-hover hover:text-white"
-          : "text-foreground/70 bg-muted/70 hover:bg-green-300 hover:text-foreground",
-      )}
-    >
-      <item.icon
-        className="size-[18px] shrink-0"
-        strokeWidth={2.25}
-      />
+  const className = cn(
+    "group/nav relative flex shrink-0 items-center text-[13.5px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-amama-deep/40",
+    expanded ? "h-10 w-full gap-2.5 rounded-xl ps-1.5 pe-2.5" : "size-10 justify-center rounded-xl",
+    locked
+      ? "cursor-not-allowed text-muted-foreground/60"
+      : active
+        ? "bg-amama-subtle font-semibold text-foreground"
+        : "font-medium text-foreground/75 hover:bg-muted hover:text-foreground"
+  )
 
-      {expanded ? (
-        <span
-          className={
-            active
-              ? "font-semibold"
-              : "font-medium"
-          }
-        >
-          {item.label}
-        </span>
+  const body = (
+    <>
+      <span
+        aria-hidden
+        className={cn(
+          "grid size-7 shrink-0 place-items-center rounded-lg transition-colors",
+          active && !locked ? "bg-amama text-amama-foreground" : "text-current"
+        )}
+      >
+        <item.icon className="size-[17px]" strokeWidth={2.1} />
+      </span>
+      {expanded ? <span className="min-w-0 flex-1 truncate">{item.label}</span> : null}
+      {locked && expanded ? <LockIcon aria-hidden className="size-3.5 shrink-0" /> : null}
+      {attention && !locked ? (
+        <span aria-hidden className={cn("size-2 shrink-0 rounded-full bg-status-warning", !expanded && "absolute end-1.5 top-1.5")} />
       ) : null}
+    </>
+  )
+
+  const element = locked ? (
+    <span role="link" aria-disabled="true" aria-label={`${item.label} — unlocks after KYC approval`} className={className}>
+      {body}
+    </span>
+  ) : (
+    <Link href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined} aria-label={item.label} className={className}>
+      {body}
     </Link>
   )
 
-  /**
-   * Expanded mode:
-   * Label is already visible.
-   */
-  if (expanded) {
-    return link
-  }
+  if (expanded && !locked) return element
 
-  /**
-   * Collapsed mode:
-   * Icon only, therefore show tooltip.
-   */
   return (
     <Tooltip>
-      <TooltipTrigger render={link} />
-
-      <TooltipContent side="right">
-        {item.label}
-      </TooltipContent>
+      <TooltipTrigger render={element} />
+      <TooltipContent side="right">{locked ? `${item.label} · unlocks after KYC approval` : item.label}</TooltipContent>
     </Tooltip>
   )
 }

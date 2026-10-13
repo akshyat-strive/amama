@@ -18,7 +18,6 @@ const buyerSteps: StepDefinition[] = [
   { slug: "company", href: "/buyer/onboarding/company", title: "Your company" },
   { slug: "sourcing", href: "/buyer/onboarding/sourcing", title: "What you buy" },
   { slug: "documents", href: "/buyer/onboarding/documents", title: "KYC" },
-  { slug: "done", href: "/buyer/onboarding/done", title: "All set" },
 ]
 
 const sellerSteps: StepDefinition[] = [
@@ -32,7 +31,6 @@ const sellerSteps: StepDefinition[] = [
     title: "Certifications",
   },
   { slug: "documents", href: "/seller/onboarding/documents", title: "KYC" },
-  { slug: "done", href: "/seller/onboarding/done", title: "All set" },
 ]
 
 export const stepsByRole: Record<OnboardingRole, StepDefinition[]> = {

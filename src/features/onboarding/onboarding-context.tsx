@@ -3,6 +3,8 @@
 import * as React from "react"
 
 import { DEMO_BUYER_PREFERENCES } from "@/features/auth/demo-accounts"
+import { getSession } from "@/features/auth/local-auth"
+import { saveProfile } from "@/features/onboarding/profile-store"
 import {
   emptyBuyer,
   emptyDraft,
@@ -139,6 +141,13 @@ function getServerSnapshot() {
 function write(next: OnboardingDraft) {
   snapshot = next
   savePreferences(next.buyer)
+  // Signed in as this role: the draft is that account's profile, so keep
+  // the saved copy current for the next sign-in.
+  const session = getSession()
+  if (session && session.kind === next.role) {
+    const profile = next.role === "buyer" ? next.buyer : next.seller
+    if (profile.email === session.accountId) saveProfile(next.role, profile)
+  }
   try {
     window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next))
   } catch {

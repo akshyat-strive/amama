@@ -13,6 +13,7 @@ import { AdminEmptyState, AdminListSkeleton } from "@/features/admin/admin-ui"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { StatusPill, type Tone } from "@/features/admin/review-ui"
 import { SubmissionCard } from "@/features/admin/review-queue-view"
+import { useUsers } from "@/features/admin/user-store"
 import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
 import { countries } from "@/features/onboarding/countries"
 import type { ReviewStatus } from "@/features/verification/verification-context"
@@ -25,11 +26,11 @@ import {
 import { kycTicketId } from "@/features/verification/ticket"
 
 /**
- * Every KYC application as a ticket, in one queue. Buyer and seller
- * applications used to live on two separate pages; here they are tags on
- * the same list, alongside the account type, so a reviewer can slice the
- * queue any way — "seller KYC, producers, waiting on me" — without
- * switching pages.
+ * Every KYC application as a ticket, in one queue, sliced by tags —
+ * "seller KYC, producers, waiting on the applicant" — without switching
+ * pages. What's in the queue follows the hierarchy: a KAM sees the
+ * tickets they own plus unclaimed ones; leads and executives (who hold
+ * `onboarding.viewAll`) see every ticket.
  */
 
 type TicketState = "open" | "waiting" | "resolved"
@@ -125,9 +126,15 @@ function TicketsWorkspace() {
     setParams({ tag: next.join(",") || null })
   }
 
+  const users = useUsers()
+  const seesAll = admin?.can("onboarding.viewAll") ?? false
+  const myId = admin?.user.id ?? null
+  const mineOnly = searchParams.get("owner") === "me"
+
   const tickets = React.useMemo(
     () =>
       [...buyers, ...sellers]
+        .filter((submission) => seesAll || submission.assigneeId === myId || submission.assigneeId === null)
         .map((submission) => ({
           submission,
           id: kycTicketId(submission.role, submission.email),
@@ -136,12 +143,13 @@ function TicketsWorkspace() {
         }))
         .filter((ticket): ticket is Ticket => ticket.state !== null)
         .sort((a, b) => (b.submission.submittedAt ?? "").localeCompare(a.submission.submittedAt ?? "")),
-    [buyers, sellers]
+    [buyers, sellers, seesAll, myId]
   )
 
   const needle = query.trim().toLowerCase()
   const tagged = tickets.filter(
     (ticket) =>
+      (!mineOnly || ticket.submission.assigneeId === myId) &&
       activeTags.every((tag) => ticket.tags.some((entry) => entry.id === tag)) &&
       (!needle || [ticket.id, ticket.submission.fullName, ticket.submission.email].join(" ").toLowerCase().includes(needle))
   )
@@ -154,13 +162,22 @@ function TicketsWorkspace() {
    *  ticket never moves back to Open — that only happens when the
    *  applicant resubmits. */
   const moveTicket = (ticket: Ticket, to: TicketState) => {
-    if (ticket.state === to) return
+    if (ticket.state === to || !admin) return
+    if (!admin.can("onboarding.review")) {
+      toast("Your role can see tickets but not act on them")
+      return
+    }
     if (to === "resolved") {
-      toast.promise(approveApplication(ticket.submission.role, ticket.submission.userId), {
-        loading: `Approving ${ticket.id}…`,
-        success: `${ticket.id} approved`,
-        error: `Couldn't approve ${ticket.id}`,
-      })
+      const blocked = ticket.submission.documents.some(
+        (document) => document.reviewStatus === "rejected" || (document.required && document.reviewStatus === "missing")
+      )
+      if (blocked) {
+        setSheetId(ticket.id)
+        toast("This one is still waiting on the applicant")
+        return
+      }
+      approveApplication(ticket.submission.role, ticket.submission.userId, { id: admin.user.id, name: admin.user.name, title: admin.role.name })
+      toast.success(`${ticket.id} approved`)
     } else if (to === "waiting") {
       setSheetId(ticket.id)
       toast("Say what needs fixing, then send it back")
@@ -170,18 +187,19 @@ function TicketsWorkspace() {
   }
 
   if (!admin) return null
-  if (!admin.can("onboarding.review")) {
+  if (!admin.can("onboarding.review") && !seesAll) {
     return (
       <div>
         <h1 className="text-[28px] font-bold tracking-tight">Tickets</h1>
         <AdminEmptyState
           icon={Inbox}
-          title="No review permission on your role"
-          description="Ask a Master Admin for the 'Review onboarding' permission to see tickets here."
+          title="KYC tickets aren't part of your role"
+          description="SaleOps reviews KYC. Ask your executive if you need to see these."
         />
       </div>
     )
   }
+  const ownerName = (id: string | null) => (id ? (users.find((user) => user.id === id)?.name ?? "—") : "Unassigned")
 
   return (
     <div className={PAGE_TABS_SPACE}>
@@ -234,6 +252,19 @@ function TicketsWorkspace() {
           />
         </div>
         <div role="group" aria-label="Filter by tag" className="flex flex-wrap gap-1.5">
+          {admin.can("onboarding.review") ? (
+            <button
+              type="button"
+              aria-pressed={mineOnly}
+              onClick={() => setParams({ owner: mineOnly ? null : "me" })}
+              className={cn(
+                "h-8 rounded-full border px-3 text-[12.5px] font-medium transition-colors",
+                mineOnly ? "border-amama-deep bg-amama-subtle text-amama-deep" : "border-border bg-card text-foreground hover:bg-muted"
+              )}
+            >
+              Mine
+            </button>
+          ) : null}
           {FILTER_TAGS.map((tag) => {
             const on = activeTags.includes(tag.id)
             return (
@@ -259,7 +290,7 @@ function TicketsWorkspace() {
           <AdminListSkeleton rows={4} />
         </div>
       ) : view === "board" ? (
-        <TicketBoard tickets={tagged} onOpen={setSheetId} onMove={moveTicket} />
+        <TicketBoard tickets={tagged} onOpen={setSheetId} onMove={moveTicket} ownerName={ownerName} />
       ) : visible.length === 0 ? (
         <AdminEmptyState
           icon={Inbox}
@@ -278,7 +309,7 @@ function TicketsWorkspace() {
                     type="button"
                     aria-expanded={open}
                     onClick={() => setOpenId(open ? null : ticket.id)}
-                    className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 px-4 py-3.5 text-start transition-colors hover:bg-muted/50 sm:grid-cols-[7rem_minmax(0,1.4fr)_minmax(0,1.6fr)_9rem_3rem_1rem]"
+                    className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 px-4 py-3.5 text-start transition-colors hover:bg-muted/50 sm:grid-cols-[7rem_minmax(0,1.4fr)_minmax(0,1.4fr)_7.5rem_9.5rem_3rem_1rem]"
                   >
                     <span className="font-mono text-[12px] text-muted-foreground">{ticket.id}</span>
                     <span className="min-w-0 max-sm:col-span-2 max-sm:row-start-2">
@@ -297,6 +328,9 @@ function TicketsWorkspace() {
                           {tag.label}
                         </span>
                       ))}
+                    </span>
+                    <span className="hidden truncate text-[12.5px] sm:block">
+                      <span className={ticket.submission.assigneeId ? "text-foreground" : "text-muted-foreground"}>{ownerName(ticket.submission.assigneeId)}</span>
                     </span>
                     <span className="justify-self-end sm:justify-self-start max-sm:col-start-2 max-sm:row-start-1">
                       <StatusPill tone={state.tone}>{state.label}</StatusPill>
@@ -337,10 +371,12 @@ function TicketBoard({
   tickets,
   onOpen,
   onMove,
+  ownerName,
 }: {
   tickets: Ticket[]
   onOpen: (id: string) => void
   onMove: (ticket: Ticket, to: TicketState) => void
+  ownerName: (id: string | null) => string
 }) {
   const [dragging, setDragging] = React.useState<string | null>(null)
   const [over, setOver] = React.useState<TicketState | null>(null)
@@ -409,6 +445,7 @@ function TicketBoard({
                         {ticket.submission.fullName || "Unnamed applicant"}
                       </span>
                       <span className="block truncate text-[12px] text-muted-foreground">{ticket.submission.email}</span>
+                      <span className="mt-1 block truncate text-[11.5px] text-muted-foreground">Owner · {ownerName(ticket.submission.assigneeId)}</span>
                       <span className="mt-2 flex flex-wrap gap-1">
                         {ticket.tags.map((tag) => (
                           <span

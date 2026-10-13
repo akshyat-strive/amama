@@ -20,7 +20,7 @@ import { TopbarSearch } from "@/features/trades/topbar-search"
 /** Same rail-width constant and rationale as `DashboardShell` — see there
  *  for why one `sidebarOpen` boolean resolves to three different visual
  *  states across the two breakpoints. */
-const RAIL_WIDTH_MD = "md:w-[66px]"
+const RAIL_WIDTH_MD = "md:w-[68px]"
 
 /**
  * The admin module's own shell — same popover-sidebar-over-flat-canvas shape
@@ -42,12 +42,10 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   // in has nowhere to attribute an action to. Bounce back to sign-in
   // rather than letting the console render with no identity.
   //
-  // `useCurrentAdmin` is `undefined` while its `/api/identity/me` fetch is
-  // still in flight (every fresh page load, not just a one-tick hydration
-  // race) and only settles to `null` once that call has genuinely come
-  // back with no admin session — the redirect below fires on that `null`,
-  // never on the loading state, so it doesn't bounce a real session back
-  // to `/login` just because the network round-trip hasn't finished yet.
+  // `useCurrentAdmin` is `undefined` during the server render and the
+  // hydration pass, and only settles to `null` once storage has been read
+  // and there's no staff session — the redirect below fires on that
+  // `null`, never on the loading state.
   const admin = useCurrentAdmin()
   const loading = admin === undefined
   const signedOut = admin === null
@@ -116,13 +114,13 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           className={cn(
             "fixed inset-y-0 start-0 z-40 min-w-0 overflow-hidden md:static md:inset-auto md:z-auto md:shrink-0",
             "transition-[width] duration-300 ease-out",
-            sidebarOpen ? "w-72" : cn("w-0", RAIL_WIDTH_MD)
+            sidebarOpen ? "w-64" : cn("w-0", RAIL_WIDTH_MD)
           )}
         >
           <div
             className={cn(
               "h-full p-3 pt-20 transition-[width,transform] duration-300 ease-out md:pe-0",
-              sidebarOpen ? "w-72" : cn("w-72", RAIL_WIDTH_MD),
+              sidebarOpen ? "w-64" : cn("w-64", RAIL_WIDTH_MD),
               sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 rtl:translate-x-full md:rtl:translate-x-0"
             )}
           >

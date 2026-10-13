@@ -2,9 +2,8 @@
 
 import { useRouter } from "next/navigation"
 
-import { invalidateCurrentAdmin } from "@/features/admin/current-admin"
+import { signOut } from "@/features/auth/local-auth"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
-import { authClient } from "@/lib/auth/client"
 
 type SignOutRole = "buyer" | "seller" | "admin"
 
@@ -21,21 +20,16 @@ const LOGIN_SEGMENT: Record<SignOutRole, string> = {
  * One sign-out path for every role's topbar: end the session, clear
  * whatever client-side identity cache that role keeps — the onboarding
  * draft for a buyer/seller (so the next person signed in on this device
- * never sees a stale "Welcome back, …"), or the cached `/api/identity/me`
- * read for admin (`admin-settings-view.tsx`'s own sign-out already does
- * exactly this pairing) — then land back on that role's own login screen.
+ * never sees a stale "Welcome back, …") — then land back on that role's
+ * own login screen.
  */
 function useSignOut(role: SignOutRole) {
   const router = useRouter()
   const { reset } = useOnboarding()
 
   return async () => {
-    await authClient.signOut()
-    if (role === "admin") {
-      await invalidateCurrentAdmin()
-    } else {
-      reset()
-    }
+    signOut()
+    if (role !== "admin") reset()
     router.replace(`/${LOGIN_SEGMENT[role]}/login`)
   }
 }

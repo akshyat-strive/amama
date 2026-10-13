@@ -24,26 +24,24 @@ type AdminNavItem = DashboardNavItem & {
 }
 
 /**
- * One flat list now, not one per role — which items actually show is
- * decided by `visibleAdminNav` filtering against the signed-in user's real
- * permissions, not by which URL prefix they're under. "Chat" and
- * "Announcements" fold what used to be three separate surfaces (read-only
- * buyer/seller oversight, staff DM/Team, the broadcast feed) into two;
- * neither is gated — every signed-in admin gets both, since access itself
- * isn't the thing being restricted here, posting/assigning/managing is.
+ * One flat list — which items show is decided by `visibleAdminNav`
+ * filtering against the signed-in staff member's permissions. A domain's
+ * pages need that domain's `.view` (or an action permission), so
+ * executives, who hold every `.view`, see all of them; Chat, Announcements,
+ * Profile and Settings are open to everyone.
  */
 const adminNavItems: AdminNavItem[] = [
-  { label: "Chat", href: "/internal/chat", icon: MessagesSquareIcon, group: "activity" },
-  { label: "Announcements", href: "/internal/announcements", icon: MegaphoneIcon, group: "activity" },
-  { label: "Home", href: "/internal", icon: HouseIcon, group: "menu" },
-  { label: "Tickets", href: "/internal/tickets", icon: TicketIcon, group: "menu", permission: "onboarding.review" },
-  { label: "Deals", href: "/internal/deals", icon: HandshakeIcon, group: "menu", permission: ["deals.work", "deals.viewAll"] },
-  { label: "Contracts", href: "/internal/contracts", icon: FileSignatureIcon, group: "menu", permission: "deals.work" },
-  { label: "Trades", href: "/internal/trade-desk", icon: WaypointsIcon, group: "menu", permission: ["deals.work", "deals.viewAll"] },
-  { label: "Listings", href: "/internal/listings", icon: PackageSearchIcon, group: "menu", permission: "listings.moderate" },
-  { label: "Logistics", href: "/internal/logistics", icon: ShipIcon, group: "logistics", permission: ["deals.work", "deals.viewAll"] },
-  { label: "Finance", href: "/internal/finance", icon: WalletIcon, group: "finance", permission: ["deals.work", "deals.viewAll"] },
-  { label: "Team", href: "/internal/team", icon: UsersRoundIcon, group: "general", permission: ["users.manage", "roles.manage"] },
+  { label: "Home", href: "/internal", icon: HouseIcon, group: "overview" },
+  { label: "Chat", href: "/internal/chat", icon: MessagesSquareIcon, group: "overview" },
+  { label: "Tickets", href: "/internal/tickets", icon: TicketIcon, group: "work", permission: ["onboarding.review", "onboarding.viewAll"] },
+  { label: "Deals", href: "/internal/deals", icon: HandshakeIcon, group: "work", permission: ["deals.work", "deals.viewAll"] },
+  { label: "Contracts", href: "/internal/contracts", icon: FileSignatureIcon, group: "work", permission: ["deals.work", "deals.viewAll"] },
+  { label: "Listings", href: "/internal/listings", icon: PackageSearchIcon, group: "work", permission: ["listings.moderate", "onboarding.viewAll", "deals.viewAll"] },
+  { label: "Trades", href: "/internal/trade-desk", icon: WaypointsIcon, group: "operations", permission: ["deals.work", "deals.viewAll", "logistics.view"] },
+  { label: "Logistics", href: "/internal/logistics", icon: ShipIcon, group: "operations", permission: ["logistics.view", "logistics.manage"] },
+  { label: "Finance", href: "/internal/finance", icon: WalletIcon, group: "operations", permission: ["finance.view", "finance.manage", "finops.view", "finops.manage"] },
+  { label: "Announcements", href: "/internal/announcements", icon: MegaphoneIcon, group: "team" },
+  { label: "Team", href: "/internal/team", icon: UsersRoundIcon, group: "team", permission: ["team.view", "users.manage", "roles.manage"] },
   { label: "Profile", href: "/internal/profile", icon: UserRoundIcon, group: "general" },
   { label: "Settings", href: "/internal/settings", icon: SettingsIcon, group: "general" },
 ]

@@ -1,26 +1,23 @@
 "use client"
 
-import { apiRequest, createFetchStore } from "@/lib/api/fetch-store"
-import type { AdminUser } from "@/features/admin/lib/admin-users-repository"
+import { createAccount, getSession, removeAccount, renameAccount } from "@/features/auth/local-auth"
+import { DEMO_PASSWORD, SEED_STAFF, type AdminUser } from "@/features/admin/staff-seed"
+import { createPersistentStore } from "@/features/local-db/persistent-store"
 
 export type { AdminUser }
 
-/** Every seeded/created demo account still uses this same password —
- *  purely a UI convenience constant now (the real credential lives in
- *  Managed Better Auth), same as before. */
-const DEMO_PASSWORD = "User@123"
-
-const store = createFetchStore<AdminUser[]>("/api/admin/users", [])
+/** The staff roster, in this browser. Sign-ins live in `local-auth`;
+ *  this holds who they are in the org — role, title, manager. */
+const store = createPersistentStore<AdminUser[]>("amama.admin.staff", () => SEED_STAFF, [])
 
 function useUsers(): AdminUser[] {
-  return store.useStore()
+  return store.use()
 }
 
-/** Whether the roster's own fetch has resolved — a Home-page widget reads
- *  this to show a loading skeleton instead of briefly flashing "nobody's
- *  signed in yet" before the real names arrive. */
-function useUsersLoaded(): boolean {
-  return store.useIsLoaded()
+const useUsersLoaded = store.useLoaded
+
+function getUsers() {
+  return store.get()
 }
 
 async function createUser(input: {
@@ -28,24 +25,34 @@ async function createUser(input: {
   email: string
   password: string
   roleId: string
+  reportsTo?: string | null
+  title?: string
 }): Promise<{ ok: true; user: AdminUser } | { ok: false; error: string }> {
-  try {
-    const user = await apiRequest<AdminUser>("/api/admin/users", { method: "POST", body: JSON.stringify(input) })
-    await store.invalidate()
-    return { ok: true, user }
-  } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "Couldn't create that account." }
+  const email = input.email.trim().toLowerCase()
+  const result = createAccount({ kind: "admin", email, password: input.password, name: input.name })
+  if (!result.ok) return { ok: false, error: result.error }
+  const user: AdminUser = {
+    id: email,
+    email,
+    name: input.name.trim(),
+    roleId: input.roleId,
+    reportsTo: input.reportsTo ?? null,
+    title: input.title?.trim() || "",
+    createdAt: new Date().toISOString(),
+    createdBy: getSession()?.accountId ?? null,
   }
+  store.set((users) => [...users, user])
+  return { ok: true, user }
 }
 
-async function updateUser(id: string, patch: { roleId: string }): Promise<void> {
-  await apiRequest(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(patch) })
-  await store.invalidate()
+async function updateUser(id: string, patch: Partial<Pick<AdminUser, "roleId" | "reportsTo" | "title" | "name">>): Promise<void> {
+  store.set((users) => users.map((user) => (user.id === id ? { ...user, ...patch } : user)))
+  if (patch.name) renameAccount(id, patch.name)
 }
 
 async function deleteUser(id: string): Promise<void> {
-  await apiRequest(`/api/admin/users/${id}`, { method: "DELETE" })
-  await store.invalidate()
+  store.set((users) => users.filter((user) => user.id !== id).map((user) => (user.reportsTo === id ? { ...user, reportsTo: null } : user)))
+  removeAccount(id)
 }
 
-export { useUsers, useUsersLoaded, createUser, updateUser, deleteUser, DEMO_PASSWORD }
+export { useUsers, useUsersLoaded, getUsers, createUser, updateUser, deleteUser, DEMO_PASSWORD }

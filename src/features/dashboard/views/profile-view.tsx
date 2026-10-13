@@ -8,7 +8,6 @@ import { Panel } from "@/features/dashboard/dashboard-ui"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
-import { useVerification } from "@/features/verification/verification-context"
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
@@ -34,7 +33,6 @@ function ProfileView({ role }: { role: OnboardingRole }) {
   // one — otherwise there's nothing to fix, and the button says so by
   // being unclickable rather than sending someone to re-submit documents
   // that are already fine.
-  const canReupload = useVerification().statusFor(role) === "changes-requested"
 
   return (
     <div>
@@ -98,22 +96,9 @@ function ProfileView({ role }: { role: OnboardingRole }) {
             Edit product list
           </Link>
 
-          {canReupload ? (
-            <Link
-              href={`/${role}/onboarding/documents`}
-              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-            >
-              Reupload documents
-            </Link>
-          ) : (
-            <button
-              type="button"
-              disabled
-              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-            >
-              Reupload documents
-            </button>
-          )}
+          <Link href={`/${role}/dashboard/verification`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+            KYC documents
+          </Link>
         </div>
       </Panel>
     </div>

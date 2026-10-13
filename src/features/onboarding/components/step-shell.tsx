@@ -106,6 +106,14 @@ function StepShell({
     // left column and the photo stays put beside it.
     <div className="min-h-dvh bg-card lg:grid lg:h-dvh lg:grid-cols-[4fr_3fr] lg:overflow-hidden">
       <div className="flex min-h-dvh flex-col lg:min-h-0 lg:overflow-y-auto lg:px-16 xl:px-24">
+        {/* The brand mark on every width — level with the fixed language
+            switcher on a phone, top-left of the step on a desktop. */}
+        <div className="mx-auto w-full max-w-lg shrink-0 px-5 pt-5 pb-1 lg:mx-0 lg:max-w-none lg:px-0 lg:pt-10 lg:pb-0">
+          <Link href="/" aria-label="amama home" className="inline-flex text-amama-deep">
+            <AmamaWordmark className="h-[18px] lg:h-5" />
+          </Link>
+        </div>
+
         {/* Phone header. Extra end padding reserves room for the fixed
             `[en]` language switcher pinned to the same corner on every
             screen — there's no outer gutter for it to float in otherwise.
@@ -119,12 +127,6 @@ function StepShell({
             </span>
           </div>
         </header>
-
-        <div className="hidden shrink-0 pt-10 lg:block">
-          <Link href="/" aria-label="amama home" className="inline-flex text-amama-deep">
-            <AmamaWordmark className="h-5" />
-          </Link>
-        </div>
 
         <div className="flex flex-1 flex-col lg:justify-center lg:py-14">
           <main

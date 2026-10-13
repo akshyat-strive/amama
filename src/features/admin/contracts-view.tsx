@@ -13,7 +13,7 @@ function AdminContractsView() {
   const admin = useCurrentAdmin()
   if (!admin) return null
 
-  if (!admin.can("deals.work")) {
+  if (!admin.can("deals.work") && !admin.can("deals.viewAll")) {
     return (
       <div>
         <h1 className="text-[28px] font-bold tracking-tight">Contracts</h1>

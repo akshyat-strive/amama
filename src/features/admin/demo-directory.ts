@@ -1,18 +1,41 @@
 "use client"
 
-import { createFetchStore } from "@/lib/api/fetch-store"
+import { useRoles } from "@/features/admin/role-store"
+import { useUsers } from "@/features/admin/user-store"
+import { DOMAIN_LABEL } from "@/features/admin/permissions"
+import type { Role } from "@/features/admin/staff-seed"
 
-export type DemoDirectoryEntry = { id: string; name: string; email: string; roleId: string; roleName: string }
+export type DemoDirectoryEntry = {
+  id: string
+  name: string
+  email: string
+  roleId: string
+  roleName: string
+  title: string
+  level: Role["level"]
+  domain: Role["domain"]
+  domainLabel: string
+}
 
-/** Public, pre-auth admin directory — for the two surfaces that need to
- *  list demo accounts before anyone is signed in (`/creds`, the login
- *  screen's quick-login list). `useUsers()`/`useRoles()` in
- *  `role-store.ts`/`user-store.ts` are the real, permission-gated data
- *  for use *inside* the console. */
-const store = createFetchStore<DemoDirectoryEntry[]>("/api/admin/demo-directory", [])
-
+/** Every staff account with its role, for the two places that list them
+ *  before anyone signs in: `/creds` and the login screen's quick login. */
 function useDemoDirectory(): DemoDirectoryEntry[] {
-  return store.useStore()
+  const users = useUsers()
+  const roles = useRoles()
+  return users.map((user) => {
+    const role = roles.find((entry) => entry.id === user.roleId)
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      roleId: user.roleId,
+      roleName: role?.name ?? user.roleId,
+      title: user.title,
+      level: role?.level ?? "member",
+      domain: role?.domain ?? "saleops",
+      domainLabel: DOMAIN_LABEL[role?.domain ?? "saleops"],
+    }
+  })
 }
 
 export { useDemoDirectory }

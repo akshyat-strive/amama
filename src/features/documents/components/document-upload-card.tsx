@@ -24,44 +24,24 @@ import {
   type DocumentId,
 } from "@/features/documents/documents"
 import { useI18n } from "@/features/i18n/i18n-context"
+import { putFile } from "@/features/local-db/file-store"
 
-/** ponytail: never store the raw `File` — a data URL under `PREVIEW_CAP_BYTES`
- *  instead, so a KAM reviewing from a completely different tab/session can
- *  actually see and download what was uploaded (the `File` object itself
- *  can't cross that boundary — `document-draft-store.ts`/`verification-
- *  context.tsx` are `sessionStorage`/`localStorage`, plain strings only).
- *  Above the cap, `dataUrl` is left `undefined` and review just shows name
- *  + size with no preview — a real build would swap this for actual
- *  storage (S3, a blob endpoint) with no size ceiling at all. */
-export type UploadedFile = { name: string; size: number; dataUrl?: string }
-
-/** However generous `constraintFor`'s own per-document limit is (up to
- *  10 MB), a base64 data URL runs ~33% larger than the file itself, and
- *  several of these land in the one shared `localStorage` quota every
- *  other store on the origin uses too — so the preview cap is deliberately
- *  much tighter than the upload cap. */
-const PREVIEW_CAP_BYTES = 2 * 1024 * 1024
-
-function readAsDataUrl(file: File): Promise<string | undefined> {
-  if (file.size > PREVIEW_CAP_BYTES) return Promise.resolve(undefined)
-  return new Promise((resolve) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : undefined)
-    reader.onerror = () => resolve(undefined)
-    reader.readAsDataURL(file)
-  })
-}
+/** What the parent records for one upload. The bytes go to IndexedDB
+ *  (`local-db/file-store.ts`) and only `fileId` is kept on the record, so
+ *  a KAM reviewing in another tab can open the real file. `dataUrl` is
+ *  only on drafts saved before files moved to IndexedDB. */
+export type UploadedFile = { name: string; size: number; fileId?: string; dataUrl?: string }
 
 type UploadState =
   | { status: "idle" }
   | { status: "uploading"; file: File; progress: number }
-  | { status: "uploaded"; file: File; previewUrl: string | null; dataUrl?: string }
+  | { status: "uploaded"; file: File; previewUrl: string | null; fileId?: string }
   /** Seeded from a previous visit — the applicant picked this file before
    *  (this session or an earlier one), but the real `File` couldn't survive
    *  a reload, so there's no in-page preview, only the name, size, and
    *  (if it was under the cap) the data URL that were saved alongside it.
    *  Behaves like `uploaded` everywhere it's rendered. */
-  | { status: "restored"; name: string; size: number; dataUrl?: string }
+  | { status: "restored"; name: string; size: number; fileId?: string; dataUrl?: string }
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -136,7 +116,7 @@ function DocumentUploadCard({
   const inputRef = React.useRef<HTMLInputElement>(null)
   const [state, setState] = React.useState<UploadState>(() =>
     initialFile
-      ? { status: "restored", name: initialFile.name, size: initialFile.size, dataUrl: initialFile.dataUrl }
+      ? { status: "restored", name: initialFile.name, size: initialFile.size, fileId: initialFile.fileId, dataUrl: initialFile.dataUrl }
       : { status: "idle" }
   )
   const [dragging, setDragging] = React.useState(false)
@@ -159,7 +139,7 @@ function DocumentUploadCard({
     queueMicrotask(() => {
       setState((current) =>
         current.status === "idle"
-          ? { status: "restored", name: initialFile.name, size: initialFile.size, dataUrl: initialFile.dataUrl }
+          ? { status: "restored", name: initialFile.name, size: initialFile.size, fileId: initialFile.fileId, dataUrl: initialFile.dataUrl }
           : current
       )
     })
@@ -181,10 +161,10 @@ function DocumentUploadCard({
     onChangeRef.current = onChange
   })
   React.useEffect(() => {
-    if (state.status === "uploaded") {
-      onChangeRef.current?.({ name: state.file.name, size: state.file.size, dataUrl: state.dataUrl })
+    if (state.status === "uploaded" && state.fileId) {
+      onChangeRef.current?.({ name: state.file.name, size: state.file.size, fileId: state.fileId })
     } else if (state.status === "restored") {
-      onChangeRef.current?.({ name: state.name, size: state.size, dataUrl: state.dataUrl })
+      onChangeRef.current?.({ name: state.name, size: state.size, fileId: state.fileId, dataUrl: state.dataUrl })
     }
   }, [state])
 
@@ -212,17 +192,17 @@ function DocumentUploadCard({
     return () => clearTimeout(timeout)
   }, [state])
 
-  // Reads the file into a data URL once it's actually "uploaded" — kept out
-  // of the timer above so a slow read never delays the progress bar itself.
-  // Guarded so a stale read landing after the visitor replaced or removed
-  // the file can't attach itself to the wrong one.
+  // Saves the file to IndexedDB once it's "uploaded" — kept out of the
+  // timer above so a slow write never delays the progress bar. Guarded so
+  // a write landing after the file was replaced can't attach to the wrong
+  // one.
   React.useEffect(() => {
-    if (state.status !== "uploaded" || state.dataUrl !== undefined) return
+    if (state.status !== "uploaded" || state.fileId !== undefined) return
     const { file } = state
     let cancelled = false
-    readAsDataUrl(file).then((dataUrl) => {
-      if (cancelled || !dataUrl) return
-      setState((prev) => (prev.status === "uploaded" && prev.file === file ? { ...prev, dataUrl } : prev))
+    void putFile(file).then((fileId) => {
+      if (cancelled) return
+      setState((prev) => (prev.status === "uploaded" && prev.file === file ? { ...prev, fileId } : prev))
     })
     return () => {
       cancelled = true

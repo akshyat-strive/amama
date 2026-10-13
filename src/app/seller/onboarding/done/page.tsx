@@ -1,5 +1,6 @@
-import { DoneStep } from "@/features/onboarding/components/done-step"
+import { redirect } from "next/navigation"
 
-export default function SellerDonePage() {
-  return <DoneStep role="seller" />
+/** Submitting KYC now lands straight in the dashboard, on the ticket. */
+export default function DoneRedirect() {
+  redirect("/seller/dashboard")
 }

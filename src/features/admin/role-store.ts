@@ -1,46 +1,41 @@
 "use client"
 
-import { apiRequest, createFetchStore } from "@/lib/api/fetch-store"
-import type { Role } from "@/features/admin/lib/roles-repository"
 import type { RolePermissions } from "@/features/admin/permissions"
+import { SEED_ROLES, type Role } from "@/features/admin/staff-seed"
+import { getUsers } from "@/features/admin/user-store"
+import { createPersistentStore, localId } from "@/features/local-db/persistent-store"
 
 export type { Role }
 
-/** Fetch-backed replacement for the old `localStorage` role store — same
- *  exported function names/shapes, so every consuming view kept working
- *  unchanged. The 4 system roles are seeded server-side once (see the
- *  identity seed route), not here. */
-const store = createFetchStore<Role[]>("/api/admin/roles", [])
+/** Roles in this browser — the seeded org's roles plus any created in
+ *  Team. The built-in ones can be edited but not deleted. */
+const store = createPersistentStore<Role[]>("amama.admin.roles", () => SEED_ROLES, [])
 
 function useRoles(): Role[] {
-  return store.useStore()
+  return store.use()
 }
 
-async function createRole(name: string, permissions: RolePermissions): Promise<Role> {
-  const role = await apiRequest<Role>("/api/admin/roles", {
-    method: "POST",
-    body: JSON.stringify({ name, permissions }),
-  })
-  await store.invalidate()
+function getRoles() {
+  return store.get()
+}
+
+async function createRole(name: string, permissions: RolePermissions, placement: Pick<Role, "level" | "domain"> = { level: "member", domain: "saleops" }): Promise<Role> {
+  const role: Role = { id: localId("role"), name: name.trim(), permissions, isSystem: false, createdAt: new Date().toISOString(), ...placement }
+  store.set((roles) => [...roles, role])
   return role
 }
 
-async function updateRole(id: string, patch: Partial<Pick<Role, "name" | "permissions">>): Promise<void> {
-  await apiRequest(`/api/admin/roles/${id}`, { method: "PATCH", body: JSON.stringify(patch) })
-  await store.invalidate()
+async function updateRole(id: string, patch: Partial<Pick<Role, "name" | "permissions" | "level" | "domain">>): Promise<void> {
+  store.set((roles) => roles.map((role) => (role.id === id ? { ...role, ...patch } : role)))
 }
 
-/** Same two server-side refusals as before (system role, still in use) —
- *  now enforced for real against every account, not just whatever the
- *  caller happened to pass in as `usersHoldingRole`. */
 async function deleteRole(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
-  try {
-    await apiRequest(`/api/admin/roles/${id}`, { method: "DELETE" })
-    await store.invalidate()
-    return { ok: true }
-  } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "Couldn't delete that role." }
-  }
+  const role = store.get().find((entry) => entry.id === id)
+  if (!role) return { ok: true }
+  if (role.isSystem) return { ok: false, error: "Built-in roles can't be deleted." }
+  if (getUsers().some((user) => user.roleId === id)) return { ok: false, error: "Someone still holds this role — move them first." }
+  store.set((roles) => roles.filter((entry) => entry.id !== id))
+  return { ok: true }
 }
 
-export { useRoles, createRole, updateRole, deleteRole }
+export { useRoles, getRoles, createRole, updateRole, deleteRole }

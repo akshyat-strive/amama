@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { usePeek } from "@/features/internal/peek-context"
-import { Eyebrow, Pill, severityTone } from "@/features/internal/tower-ui"
+import { Pill, severityTone } from "@/features/internal/tower-ui"
 import { railItemsFor, TOWER_SECTIONS, type NavBand, type RailItem, type TowerSection } from "@/features/internal/tower-nav"
 import * as W from "@/features/tradechain/demo-world"
 
@@ -25,22 +25,21 @@ const DOT_CLASS = {
 } as const
 
 /**
- * The workspace spine. Nine icons, always in the same order, always in the
- * same place — the one part of the product that never changes shape, so
- * it becomes muscle memory rather than something to read.
+ * The workspace spine. The icons are always in the same order and the same
+ * place — the one part of the product that never changes shape, so it
+ * becomes muscle memory rather than something to read. It's the first
+ * column of the one floating sidebar card; the contextual list beside it
+ * is the second.
  */
 function PrimaryRail({ activeId }: { activeId?: string }) {
-  // Grouped into the three jobs the business has — sell, execute, settle.
-  // The gap between bands is the only separator; a rule would be noise.
+  // Grouped into the three jobs the business has — sell, execute, settle —
+  // split by hairlines.
   const bands: NavBand[] = ["commercial", "execution", "back-office"]
 
   return (
-    <nav
-      aria-label="Sections"
-      className="flex h-full w-[68px] shrink-0 flex-col items-center gap-3 overflow-y-auto rounded-[24px] border border-border bg-muted bg-[repeating-linear-gradient(-45deg,var(--surface-border)_0px,var(--surface-border)_1px,transparent_1px,transparent_7px)] py-2 scrollbar-none"
-    >
-      {bands.map((band) => (
-        <div key={band} className="flex flex-col items-center gap-0.5 rounded-[22px] bg-card p-1">
+    <nav aria-label="Sections" className="flex h-full w-[60px] shrink-0 flex-col items-center overflow-y-auto py-2.5 scrollbar-none">
+      {bands.map((band, index) => (
+        <div key={band} className={cn("flex flex-col items-center gap-0.5", index > 0 && "mt-2.5 border-t border-border pt-2.5")}>
           {TOWER_SECTIONS.filter((section) => section.band === band).map((section) => {
             const Icon = section.icon
             const active = section.id === activeId
@@ -52,13 +51,11 @@ function PrimaryRail({ activeId }: { activeId?: string }) {
                       href={section.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "grid size-10 shrink-0 place-items-center rounded-full transition-colors",
-                        active
-                          ? "border border-amama-foreground bg-amama text-amama-foreground"
-                          : "text-foreground/60 hover:bg-muted hover:text-foreground"
+                        "grid size-10 shrink-0 place-items-center rounded-xl transition-colors",
+                        active ? "bg-amama text-amama-foreground" : "text-foreground/65 hover:bg-muted hover:text-foreground"
                       )}
                     >
-                      <Icon className="size-[17px]" strokeWidth={2.25} />
+                      <Icon className="size-[17px]" strokeWidth={2.1} />
                       <span className="sr-only">{section.label}</span>
                     </Link>
                   }
@@ -77,24 +74,24 @@ function PrimaryRail({ activeId }: { activeId?: string }) {
 
 /**
  * The column that changes with the section — threads under Conversations,
- * trades with a stage dot under POs & Trades, and so on. Same visual
- * language as the existing dashboard sidebar (one rounded island on a
- * muted ground, pill rows, brand-green selection) so it reads as the same
- * product, not a second one bolted on.
+ * trades with a stage dot under Trades, and so on. Not a card of its own:
+ * it's the second column inside the same floating sidebar as the icon
+ * rail, a plain list under the section's name, with the same soft-green
+ * selection as the dashboard sidebar.
  */
 function ContextualRail({ section }: { section: TowerSection }) {
   const pathname = usePathname()
   const items = React.useMemo(() => railItemsFor(section.id), [section.id])
 
   return (
-    <div className="flex h-full w-[264px] shrink-0 flex-col overflow-hidden rounded-[24px] border border-border bg-muted bg-[repeating-linear-gradient(-45deg,var(--surface-border)_0px,var(--surface-border)_1px,transparent_1px,transparent_7px)]">
-      <header className="shrink-0 px-4 pt-4 pb-2">
-        <Eyebrow>{section.railLabel}</Eyebrow>
-        <p className="mt-1 text-[15px] font-semibold tracking-tight">{section.label}</p>
+    <div className="flex h-full w-[248px] shrink-0 flex-col overflow-hidden">
+      <header className="flex shrink-0 items-baseline justify-between gap-2 px-4 pt-3.5 pb-2">
+        <p className="text-[15px] font-semibold tracking-tight">{section.label}</p>
+        {items.length > 0 ? <span className="text-[12px] text-muted-foreground tabular-nums">{items.length}</span> : null}
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2 scrollbar-none">
-        <div className="flex flex-col gap-0.5 rounded-[20px] bg-card p-1">
+        <div className="flex flex-col gap-0.5">
           {items.length === 0 ? (
             <p className="px-3 py-6 text-center text-[12px] text-muted-foreground">Nothing here yet.</p>
           ) : (
@@ -114,19 +111,17 @@ function RailRow({ item, pathname }: { item: RailItem; pathname: string }) {
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex items-center gap-2.5 rounded-full px-3 py-2 transition-colors",
-        active
-          ? "border border-amama-foreground bg-amama text-amama-foreground"
-          : "text-foreground/80 hover:bg-muted"
+        "flex items-center gap-2.5 rounded-xl px-3 py-2 transition-colors",
+        active ? "bg-amama-subtle text-foreground" : "text-foreground/80 hover:bg-muted"
       )}
     >
       {item.dot ? (
         <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", DOT_CLASS[item.dot])} />
       ) : null}
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-medium">{item.label}</span>
+        <span className={cn("block truncate text-[13px]", active ? "font-semibold" : "font-medium")}>{item.label}</span>
         {item.meta ? (
-          <span className={cn("block truncate text-[11px]", active ? "text-amama-foreground/70" : "text-muted-foreground")}>
+          <span className="block truncate text-[11px] text-muted-foreground">
             {item.meta}
           </span>
         ) : null}

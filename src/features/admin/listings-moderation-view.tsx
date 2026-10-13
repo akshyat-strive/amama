@@ -43,7 +43,7 @@ function formatDate(iso: string) {
   return new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(iso))
 }
 
-function ListingRow({ listing, reviewerName }: { listing: Listing; reviewerName: string }) {
+function ListingRow({ listing, reviewerName, canModerate }: { listing: Listing; reviewerName: string; canModerate: boolean }) {
   const [requesting, setRequesting] = React.useState(false)
   const status = moderationStyles[listing.moderationStatus]
   const country = countries.find((entry) => entry.code === listing.country)
@@ -105,12 +105,16 @@ function ListingRow({ listing, reviewerName }: { listing: Listing; reviewerName:
 
         <div className="flex shrink-0 items-center gap-2 max-sm:w-full max-sm:justify-end">
           <StatusPill tone={status.tone}>{status.label}</StatusPill>
-          <ApproveButton
-            label="Mark verified"
-            done={listing.moderationStatus === "verified"}
-            onClick={() => moderateListing(listing.id, "verified", reviewerName)}
-          />
-          <RequestAgainButton active={requesting} onClick={() => setRequesting((value) => !value)} />
+          {canModerate ? (
+            <>
+              <ApproveButton
+                label="Mark verified"
+                done={listing.moderationStatus === "verified"}
+                onClick={() => moderateListing(listing.id, "verified", reviewerName)}
+              />
+              <RequestAgainButton active={requesting} onClick={() => setRequesting((value) => !value)} />
+            </>
+          ) : null}
         </div>
       </div>
 
@@ -143,6 +147,8 @@ function ListingsModerationView() {
   const listings = useListings()
   const admin = useCurrentAdmin()
   const reviewerName = admin?.user.name ?? "Admin"
+  // Executives outside SaleOps see listings but don't moderate them.
+  const canModerate = admin?.can("listings.moderate") ?? false
   const [filter, setFilter] = React.useState<Filter>("unverified")
 
   const sorted = React.useMemo(
@@ -185,7 +191,7 @@ function ListingsModerationView() {
             }
           >
             {visible.map((listing) => (
-              <ListingRow key={listing.id} listing={listing} reviewerName={reviewerName} />
+              <ListingRow key={listing.id} listing={listing} reviewerName={reviewerName} canModerate={canModerate} />
             ))}
           </ReviewGroup>
         </TooltipProvider>

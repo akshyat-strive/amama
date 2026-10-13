@@ -323,7 +323,7 @@ function AdminHomeView() {
   if (!admin) return null
 
   const canSeeOverview = admin.can("overview.view")
-  const canReview = admin.can("onboarding.review")
+  const canReview = admin.can("onboarding.review") || admin.can("onboarding.viewAll")
   const canSeeDeals = admin.can("deals.viewAll")
 
   return (

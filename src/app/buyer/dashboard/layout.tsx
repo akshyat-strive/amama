@@ -6,10 +6,10 @@ export default function BuyerDashboardLayout({
   children,
 }: LayoutProps<"/buyer/dashboard">) {
   return (
-    <ReviewGate role="buyer">
-      <DashboardShell role="buyer">
+    <DashboardShell role="buyer">
+      <ReviewGate role="buyer">
         <LiveWorldBoundary>{children}</LiveWorldBoundary>
-      </DashboardShell>
-    </ReviewGate>
+      </ReviewGate>
+    </DashboardShell>
   )
 }

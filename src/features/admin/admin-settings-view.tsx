@@ -5,9 +5,9 @@ import { LogOutIcon, RotateCcwIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { AdminPanel } from "@/features/admin/admin-ui"
-import { authClient } from "@/lib/auth/client"
-import { invalidateCurrentAdmin, useCurrentAdmin } from "@/features/admin/current-admin"
-import { resetAdminDemoData } from "@/features/admin/seed-data"
+import { signOut } from "@/features/auth/local-auth"
+import { useCurrentAdmin } from "@/features/admin/current-admin"
+import { resetDemoData } from "@/features/local-db/seed-version"
 
 /** Deliberately thin — there's no admin-wide preferences yet, just the one
  *  action that actually needs a settings-shaped home: ending the signed-in
@@ -18,9 +18,8 @@ function AdminSettingsView() {
   const admin = useCurrentAdmin()
   if (!admin) return null
 
-  const handleSignOut = async () => {
-    await authClient.signOut()
-    await invalidateCurrentAdmin()
+  const handleSignOut = () => {
+    signOut()
     router.replace("/internal/login")
   }
 
@@ -41,10 +40,10 @@ function AdminSettingsView() {
       <AdminPanel title="Demo data" className="mt-4">
         <div className="flex items-center justify-between gap-4 px-5 py-4">
           <p className="text-[13px] text-muted-foreground">
-            Deals, shipments, contracts and conversations here are all local to this browser. If testing has
-            assigned every deal or worked through every shipment, reset to get a fresh set back.
+            Every account, KYC ticket, deal, shipment, contract and conversation lives in this browser. Reset to put
+            the seed data back — this also signs you out.
           </p>
-          <Button variant="outline" size="sm" onClick={resetAdminDemoData}>
+          <Button variant="outline" size="sm" onClick={resetDemoData}>
             <RotateCcwIcon />
             Reset demo data
           </Button>

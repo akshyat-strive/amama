@@ -1,6 +1,6 @@
-import { TradePage } from "@/features/trades/trade-pages"
+import { redirect } from "next/navigation"
 
 export default async function Page({ params }: { params: Promise<{ tradeId: string }> }) {
   const { tradeId } = await params
-  return <TradePage perspective="seller" tradeId={decodeURIComponent(tradeId)} />
+  redirect(`/seller/dashboard/orders/${tradeId}`)
 }

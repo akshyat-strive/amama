@@ -9,7 +9,7 @@ import { TradeDetail } from "@/features/trades/trade-detail"
 
 const BASE_PATH: Record<TradePerspective, string> = {
   buyer: "/buyer/dashboard/trades",
-  seller: "/seller/dashboard/trades",
+  seller: "/seller/dashboard/orders",
   internal: "/internal/trade-desk",
 }
 

@@ -11,6 +11,7 @@ import {
   UsersRoundIcon,
   UserRoundIcon,
   WalletIcon,
+  WarehouseIcon,
   WaypointsIcon,
 } from "lucide-react"
 
@@ -38,6 +39,7 @@ const adminNavItems: AdminNavItem[] = [
   { label: "Contracts", href: "/internal/contracts", icon: FileSignatureIcon, group: "work", permission: ["deals.work", "deals.viewAll"] },
   { label: "Listings", href: "/internal/listings", icon: PackageSearchIcon, group: "work", permission: ["listings.moderate", "onboarding.viewAll", "deals.viewAll"] },
   { label: "Trades", href: "/internal/trade-desk", icon: WaypointsIcon, group: "operations", permission: ["deals.work", "deals.viewAll", "logistics.view"] },
+  { label: "Warehouse", href: "/internal/warehouse", icon: WarehouseIcon, group: "operations", permission: ["logistics.view", "logistics.manage"] },
   { label: "Logistics", href: "/internal/logistics", icon: ShipIcon, group: "operations", permission: ["logistics.view", "logistics.manage"] },
   { label: "Finance", href: "/internal/finance", icon: WalletIcon, group: "operations", permission: ["finance.view", "finance.manage", "finops.view", "finops.manage"] },
   { label: "Announcements", href: "/internal/announcements", icon: MegaphoneIcon, group: "team" },

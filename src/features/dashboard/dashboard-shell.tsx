@@ -140,7 +140,7 @@ function DashboardShell({
 
   const person = role === "buyer" ? draft.buyer : draft.seller
   // Buyers follow trades as orders; sellers still have the trades board.
-  const tradeBase = role === "buyer" ? "/buyer/dashboard/orders" : `/${role}/dashboard/trades`
+  const tradeBase = `/${role}/dashboard/orders`
   const displayName = person.fullName.trim() || "Your account"
 
   if (!sessionLoaded || !signedIn || !isLoaded()) return <FullPageLoader />

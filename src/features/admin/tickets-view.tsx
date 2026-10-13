@@ -213,7 +213,7 @@ function TicketsWorkspace() {
           <h1 className="me-auto text-[34px] font-semibold tracking-[-0.03em]">Tickets</h1>
           {typeSwitch}
         </div>
-        <div className="mt-6">
+        <div className="mt-4">
           <RequestsPanel />
         </div>
       </div>
@@ -494,6 +494,8 @@ function RequestsPanel() {
   const visible = seesAll ? tickets : tickets.filter((ticket) => ticket.assigneeId === admin.user.id || ticket.raisedBy.id === admin.user.id)
   return (
     <TicketsList
+      title="Requests"
+      heightClassName="h-[calc(100dvh-160px)] sm:h-[calc(100dvh-172px)]"
       tickets={visible}
       me={{ kind: "staff", id: admin.user.id, name: admin.user.name, title: admin.role.name }}
       staff={users.map((user) => ({ id: user.id, name: user.name }))}

@@ -8,13 +8,11 @@ import {
   PackageIcon,
   SettingsIcon,
   ShieldCheckIcon,
-  ShipIcon,
   StoreIcon,
   SproutIcon,
   UserRoundIcon,
   UsersIcon,
   WalletIcon,
-  WaypointsIcon,
 } from "lucide-react"
 
 import type { OnboardingRole } from "@/features/onboarding/types"
@@ -80,9 +78,7 @@ export const dashboardNav: Record<OnboardingRole, DashboardNavItem[]> = {
     { label: "Buyers", href: "/seller/dashboard/buyers", icon: UsersIcon, group: "selling" },
     { label: "RFQs", href: "/seller/dashboard/rfqs", icon: ClipboardListIcon, group: "selling" },
     { label: "Contracts", href: "/seller/dashboard/contracts", icon: FileSignatureIcon, group: "selling" },
-    { label: "Trades", href: "/seller/dashboard/trades", icon: WaypointsIcon, group: "fulfilment" },
     { label: "Orders", href: "/seller/dashboard/orders", icon: PackageIcon, group: "fulfilment" },
-    { label: "Shipments", href: "/seller/dashboard/shipments", icon: ShipIcon, group: "fulfilment" },
     { label: "Payments", href: "/seller/dashboard/payments", icon: WalletIcon, group: "fulfilment" },
     { label: "Verification", href: "/seller/dashboard/verification", icon: ShieldCheckIcon, group: "general" },
     { label: "Support", href: "/seller/dashboard/tickets", icon: LifeBuoyIcon, group: "general" },

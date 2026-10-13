@@ -1,7 +1,6 @@
-"use client"
+import { redirect } from "next/navigation"
 
-import { SellerShipmentsView } from "@/features/dashboard/views/seller-shipments-view"
-
+/** Shipments now live under Orders. */
 export default function Page() {
-  return <SellerShipmentsView />
+  redirect("/seller/dashboard/orders?view=shipments")
 }

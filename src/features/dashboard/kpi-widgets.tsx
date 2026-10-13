@@ -52,7 +52,7 @@ function kpisFor(role: OnboardingRole, orders: DemoOrder[]): Kpi[] {
   const seed = tonnes + orders.length * 13
   if (role === "seller") {
     return [
-      { label: "In our lots", value: `${stored} MT`, caption: `≈ ${formatInr(stored * 182_000)} held in amama warehouses`, trend: series(seed, 10, stored, stored / 3 + 4), icon: WarehouseIcon, href: "/seller/dashboard/shipments" },
+      { label: "In our lots", value: `${stored} MT`, caption: `≈ ${formatInr(stored * 182_000)} held in amama warehouses`, trend: series(seed, 10, stored, stored / 3 + 4), icon: WarehouseIcon, href: "/seller/dashboard/orders?view=shipments" },
       { label: "GRNs this month", value: String(orders.length * 3 + 2), caption: "Goods received notes issued", trend: series(seed + 3, 10, orders.length * 3, 4), icon: ClipboardCheckIcon, href: "/seller/dashboard/orders" },
       { label: "RFQs to quote", value: String(Math.max(1, orders.length - 1)), caption: "Buyers waiting on your price", trend: series(seed + 7, 10, orders.length, 3), icon: ClipboardListIcon, href: "/seller/dashboard/rfqs" },
       { label: "Payments due", value: formatInr(tonnes * 61_000), caption: "Released as gates clear", trend: series(seed + 11, 10, tonnes, tonnes / 2), icon: WalletIcon, href: "/seller/dashboard/payments" },

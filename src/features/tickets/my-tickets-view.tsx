@@ -17,17 +17,7 @@ function MyTicketsView({ role }: { role: OnboardingRole }) {
   const mine = tickets.filter((ticket) => ticket.raisedBy.id === session.accountId)
   const name = findAccount(session.accountId)?.name ?? session.accountId
 
-  return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Support</h1>
-      <p className="mt-1 text-[15px] text-muted-foreground">
-        Questions you&apos;ve raised and products you&apos;ve asked us to add. Raise a new one from any page with the lifebuoy at the top.
-      </p>
-      <div className="mt-6">
-        <TicketsList tickets={mine} me={{ kind: "user", id: session.accountId, name }} emptyText="Nothing raised yet." />
-      </div>
-    </div>
-  )
+  return <TicketsList title="Support" tickets={mine} me={{ kind: "user", id: session.accountId, name }} emptyText="Nothing raised yet — use the lifebuoy at the top of any page." />
 }
 
 export { MyTicketsView }

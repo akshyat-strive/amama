@@ -10,7 +10,7 @@
  * empty" guard.
  */
 
-const SEED_VERSION = "12"
+const SEED_VERSION = "13"
 const VERSION_KEY = "amama.admin.seedVersion"
 
 /** Everything a version bump wipes. The language, sidebar state and the
@@ -23,6 +23,8 @@ const DEMO_LOCAL_STORAGE_KEYS = [
   "amama.admin.roles",
   "amama.kyc.applications",
   "amama.tickets",
+  "amama.warehouse.inbound",
+  "amama.warehouse.outbound",
   "amama.marketplace.deals",
   "amama.marketplace.conversations",
   "amama.marketplace.listings",

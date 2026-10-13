@@ -59,6 +59,7 @@ function ChatLayout({
   windowActions,
   windowBody,
   onClose,
+  heightClassName = FULL_HEIGHT,
 }: {
   title?: string
   /** Sits beside the "Chats" title — a filter or tab switch. */
@@ -72,9 +73,11 @@ function ChatLayout({
   windowActions?: React.ReactNode
   windowBody?: React.ReactNode
   onClose: () => void
+  /** Overrides the full-viewport height, for a layout under a page title. */
+  heightClassName?: string
 }) {
   return (
-    <div className={cn("flex gap-3", FULL_HEIGHT)}>
+    <div className={cn("flex gap-3", heightClassName)}>
       <section
         aria-label={title}
         className={cn(

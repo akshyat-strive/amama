@@ -46,8 +46,8 @@ function TabButtons<T extends string>({
       className={cn(
         "flex items-stretch gap-0.5 border border-border bg-card p-1",
         variant === "pill"
-          ? "w-fit rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
-          : "w-full rounded-[22px] shadow-[0_12px_32px_-8px_rgba(0,0,0,0.28)]"
+          ? "w-fit rounded-full"
+          : "w-full rounded-[22px]"
       )}
     >
       {tabs.map((tab, index) => {

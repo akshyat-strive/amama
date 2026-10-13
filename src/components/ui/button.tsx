@@ -9,9 +9,10 @@ import { cn } from "@/lib/utils"
  * and a springy press that scales down instead of nudging down a pixel.
  *
  * Contrast notes:
- * - `default` sits on --amama-deep (#047D4E) with white text → 5.19:1 (AA).
- * - `brand` sits on the bright identity green (#00D084) with near-black text
- *   → 9.59:1. White on bright green is only 2.03:1, so it is never offered.
+ * - `default` / `brand` sit on olive (#556B2F) with white text → 6.4:1 (AA).
+ * - `sun` is orangish yellow (#F2B33D) with graphite text → 9.6:1. It's
+ *   for buttons placed *on* an olive surface; on white use `default`.
+ * - `dark` is graphite with white text, Apple's secondary emphasis.
  */
 const buttonVariants = cva(
   [
@@ -29,9 +30,10 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-amama-deep-hover",
-        brand: "bg-amama text-amama-foreground hover:bg-amama/85",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[color:theme(colors.muted)]",
+        brand: "bg-amama text-amama-foreground hover:bg-amama-hover",
+        sun: "bg-sun text-sun-foreground hover:bg-sun-hover",
+        dark: "bg-graphite text-white hover:bg-graphite/85 dark:text-black",
+        secondary: "bg-[#e8e8ed] text-foreground hover:bg-[#dedee3] dark:bg-secondary dark:hover:bg-muted",
         outline:
           "border border-border bg-transparent text-foreground hover:bg-muted",
         ghost: "text-foreground hover:bg-muted",

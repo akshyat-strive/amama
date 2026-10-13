@@ -92,7 +92,7 @@ function TopbarNotifications({ perspective, email, basePath }: { perspective: Tr
     <Popover>
       <PopoverTrigger
         aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
-        className="relative grid size-8 shrink-0 place-items-center rounded-full bg-muted/70 text-foreground/80 transition-colors outline-none hover:bg-green-300 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
+        className="relative grid size-8 shrink-0 place-items-center rounded-full bg-muted/70 text-foreground/80 transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
       >
         <BellIcon aria-hidden className="size-4" />
         {unread > 0 ? (

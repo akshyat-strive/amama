@@ -22,7 +22,7 @@ function ReviewGroup({
   className?: string
 }) {
   return (
-    <section className={cn("rounded-[22px] border border-border bg-muted p-1 shadow-[0_1px_2px_rgba(0,0,0,0.04)]", className)}>
+    <section className={cn("rounded-[22px] border border-border bg-muted p-1", className)}>
       {header ? <div className="px-3 pt-2 pb-2.5 sm:px-3.5">{header}</div> : null}
       <div className="divide-y divide-border overflow-hidden rounded-[18px] border border-border bg-card">{children}</div>
     </section>

@@ -43,7 +43,7 @@ function Fan({ photos, open, size }: { photos: string[]; open: boolean; size: "l
       {cards.map((photo, index) => (
         <span
           key={`${photo}-${index}`}
-          className="absolute bottom-0 left-1/2 -ms-[29px] size-[58px] overflow-hidden rounded-[14px] border-2 border-card bg-muted shadow-[0_6px_14px_-6px_rgba(0,0,0,0.35)] transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] motion-reduce:transition-none"
+          className="absolute bottom-0 left-1/2 -ms-[29px] size-[58px] overflow-hidden rounded-[14px] border-2 border-card bg-muted transition-transform duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] motion-reduce:transition-none"
           style={{
             transform: (open ? layout.open : layout.rest)[index],
             transformOrigin: "50% 100%",
@@ -124,7 +124,7 @@ function CategoryChips({
   onSelect: (id: string) => void
 }) {
   return (
-    <div className="flex gap-1.5 overflow-x-auto rounded-full border border-border bg-card/95 p-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.3)] backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex gap-1.5 overflow-x-auto rounded-full border border-border bg-card/95 p-1 backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {items.map((item) => {
         const selected = item.id === selectedId
         return (

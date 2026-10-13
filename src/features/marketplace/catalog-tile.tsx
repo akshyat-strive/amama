@@ -28,7 +28,7 @@ function CatalogTile({
   return (
     <Link
       href={href}
-      className="group block rounded-[22px] border border-border bg-card p-1.5 transition-[transform,box-shadow,border-color] duration-200 outline-none hover:-translate-y-0.5 hover:border-foreground/15 hover:shadow-[0_14px_30px_-16px_rgba(0,0,0,0.3)] focus-visible:ring-2 focus-visible:ring-amama-deep/40"
+      className="group block rounded-[22px] border border-border bg-card p-1.5 transition-[transform,box-shadow,border-color] duration-200 outline-none hover:-translate-y-0.5 hover:border-foreground/15 focus-visible:ring-2 focus-visible:ring-amama-deep/40"
     >
       <div className="relative aspect-4/3 w-full overflow-hidden rounded-[16px] bg-amama-subtle">
         {photo ? (

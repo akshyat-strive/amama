@@ -244,7 +244,7 @@ function EveryDealSection({
       <div
         role="tablist"
         aria-label="Filter deals"
-        className="mt-6 flex w-fit max-w-full gap-0.5 overflow-x-auto rounded-full border border-border bg-card p-1 shadow-[0_1px_2px_rgba(0,0,0,0.04)] [scrollbar-width:none]"
+        className="mt-6 flex w-fit max-w-full gap-0.5 overflow-x-auto rounded-full border border-border bg-card p-1 [scrollbar-width:none]"
       >
         {filters.map(({ id, label }) => (
           <button

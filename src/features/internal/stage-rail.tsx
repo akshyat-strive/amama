@@ -98,7 +98,7 @@ function StageRail({
                     className={cn(
                       "flex items-center gap-2.5 rounded-full px-2.5 py-1.5 transition-colors",
                       active
-                        ? "border border-amama-foreground bg-amama text-amama-foreground"
+                        ? "bg-amama text-amama-foreground"
                         : "text-foreground/80 hover:bg-muted"
                     )}
                   >

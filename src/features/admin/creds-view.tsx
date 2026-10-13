@@ -61,6 +61,7 @@ function CredsView() {
                 <th className="px-5 py-3 text-start">Password</th>
                 <th className="px-5 py-3 text-start">Role</th>
                 <th className="px-5 py-3 text-start">Domain</th>
+                <th className="px-5 py-3 text-start">Reports to</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -71,10 +72,10 @@ function CredsView() {
                     <td className="px-5 py-3 text-muted-foreground">{user.email}</td>
                     <td className="px-5 py-3 font-mono text-muted-foreground">{DEMO_PASSWORD}</td>
                     <td className="px-5 py-3 text-muted-foreground">
-                      {user.roleName}
-                      <span className="text-muted-foreground/70"> · {LEVEL_LABEL[user.level]}</span>
+                      {user.level === "executive" ? LEVEL_LABEL.executive : user.roleName}
                     </td>
                     <td className="px-5 py-3 text-muted-foreground">{user.domainLabel}</td>
+                    <td className="px-5 py-3 text-muted-foreground">{user.reportsTo ?? "—"}</td>
                   </tr>
                 )
               })}

@@ -49,7 +49,7 @@ function LanguageSwitcher({
                 buttonVariants({ variant: "outline", size: "sm" }),
                 "fixed end-3 top-3 z-50 border-border/60 bg-card/90 font-medium shadow-sm backdrop-blur-sm hover:bg-muted"
               )
-            : "inline-flex h-8 shrink-0 items-center rounded-full bg-muted/70 px-3 text-[13px] font-medium text-foreground/80 outline-none transition-colors hover:bg-green-300 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
+            : "inline-flex h-8 shrink-0 items-center rounded-full bg-muted/70 px-3 text-[13px] font-medium text-foreground/80 outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
         )}
       >
         {nameFor(locale, locale.code)}

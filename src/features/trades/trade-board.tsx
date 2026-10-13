@@ -118,7 +118,7 @@ function TradeCard({ trade, perspective, href }: { trade: W.Trade; perspective: 
   return (
     <Link
       href={href}
-      className="group block rounded-[16px] border border-border bg-card shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-[border-color,box-shadow] hover:border-foreground/20 hover:shadow-[0_4px_14px_-6px_rgba(0,0,0,0.15)]"
+      className="group block rounded-[16px] border border-border bg-card transition-[border-color,box-shadow] hover:border-foreground/20"
     >
       <span className="block px-3.5 pt-3">
         <span className="flex items-start justify-between gap-2">

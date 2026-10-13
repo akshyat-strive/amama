@@ -119,7 +119,7 @@ function ConversationThread({
   return (
     <div className={cn("flex h-full flex-col", className)}>
       {header ? (
-        <div className="shrink-0 border-b border-border bg-muted/40 px-5 py-3.5">{header}</div>
+        <div className="shrink-0 border-b border-border px-4 py-3">{header}</div>
       ) : null}
 
       {messages ? (

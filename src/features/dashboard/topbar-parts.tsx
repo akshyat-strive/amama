@@ -57,9 +57,9 @@ function SidebarToggle({ open, onToggle }: { open: boolean; onToggle: () => void
       aria-label={open ? "Collapse navigation" : "Expand navigation"}
       aria-pressed={open}
       className={cn(
-        "group grid size-11 shrink-0 place-items-center rounded-full md:w-14",
-        "border border-amama-foreground bg-amama text-amama-foreground shadow-sm",
-        "transition-[background-color,color,transform] duration-200 hover:bg-amama-hover hover:text-white active:scale-[0.96]",
+        "group grid size-11 shrink-0 place-items-center rounded-full md:w-[52px]",
+        "bg-amama text-sun",
+        "transition-[background-color,color,transform] duration-200 hover:bg-amama-hover active:scale-[0.96]",
         "outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       )}
     >
@@ -89,15 +89,9 @@ function TopbarBrand({ href, role }: { href: string; role?: string }) {
   )
 }
 
-/** The right-hand controls as one island, built like a sidebar group: a
- *  striped outer shell carrying the only shadow, a white inner tray, and
- *  flat items inside it. */
+/** The right-hand controls as one white pill on the mist page. */
 function TopbarActions({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="ms-auto rounded-full border border-border bg-muted bg-[repeating-linear-gradient(-45deg,var(--surface-border)_0px,var(--surface-border)_1px,transparent_1px,transparent_7px)] p-[3px] shadow-lg">
-      <div className="flex items-center gap-1 rounded-full bg-card p-0.5">{children}</div>
-    </div>
-  )
+  return <div className="ms-auto flex items-center gap-1 rounded-full bg-card p-1">{children}</div>
 }
 
 export { SidebarToggle, TopbarActions, TopbarBrand }

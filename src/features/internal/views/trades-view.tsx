@@ -566,7 +566,7 @@ function StageDetailView({ tradeId, stageNo }: { tradeId: string; stageNo: numbe
                 className={cn(
                   "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors",
                   active
-                    ? "border border-amama-foreground bg-amama text-amama-foreground"
+                    ? "bg-amama text-amama-foreground"
                     : "text-foreground/80 hover:bg-muted"
                 )}
               >

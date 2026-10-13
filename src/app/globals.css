@@ -16,6 +16,10 @@
   --color-amama-deep: var(--amama-deep);
   --color-amama-deep-hover: var(--amama-deep-hover);
   --color-amama-subtle: var(--amama-subtle);
+  --color-sun: var(--sun);
+  --color-sun-hover: var(--sun-hover);
+  --color-sun-foreground: var(--sun-foreground);
+  --color-graphite: var(--graphite);
   --color-surface-base: var(--surface-base);
   --color-surface-card: var(--surface-card);
   --color-surface-elevated: var(--surface-elevated);
@@ -66,27 +70,40 @@
 }
 
 :root {
-  /* Brand identity green (#00D084) — illustrations, accents, highlights.
-     Pairs with near-black text only (9.59:1); never with white (2.03:1). */
-  --amama: oklch(0.7556 0.1759 158.29);
-  --amama-hover: oklch(0.5729 0.1326 158.61);
-  --amama-foreground: oklch(0.1591 0 89.88);
-  /* Deep green (#047D4E) — solid CTA surface, carries white text at 5.19:1 (AA). */
-  --amama-deep: oklch(0.52 0.12 158.29);
-  --amama-deep-hover: oklch(0.44 0.102 158.29);
-  /* Tinted wash for selected cards / soft brand fills. */
-  --amama-subtle: oklch(0.958 0.038 158.29);
-  --surface-base: oklch(0.9755 0.0045 258.32);
-  --surface-card: oklch(1 0 0);
-  --surface-elevated: oklch(0.9605 0.0046 258.32);
-  --surface-border: oklch(0.9230 0.0069 247.90);
-  --text-primary: oklch(0.1591 0 89.88);
-  --text-secondary: oklch(0.4835 0.0129 256.74);
-  --text-disabled: oklch(0.7713 0.0114 256.71);
-  --status-success: oklch(0.6448 0.1488 158.78);
-  --status-warning: oklch(0.7686 0.1647 70.08);
-  --status-error: oklch(0.6368 0.2078 25.33);
-  --status-info: oklch(0.6231 0.1880 259.81);
+  /*
+   * Apple-like ground: a mist page, white cards, graphite type. Olive is
+   * the one brand colour — primary actions, the selected item, the logo.
+   * Orangish yellow is the accent and only ever sits on olive (an icon on
+   * the selected nav row, a button on an olive card); on white it's
+   * graphite or olive instead.
+   *
+   * The `amama-*` names are kept so every existing class picks up the new
+   * palette: `amama` / `amama-deep` are both olive now, `amama-subtle` its
+   * wash.
+   */
+  --amama: #556b2f;
+  --amama-hover: #4a5d28;
+  --amama-foreground: #ffffff;
+  --amama-deep: #556b2f;
+  --amama-deep-hover: #46582a;
+  --amama-subtle: #eef1e3;
+  --sun: #f2b33d;
+  --sun-hover: #e5a42a;
+  --sun-foreground: #1d1d1f;
+  --graphite: #1d1d1f;
+  --surface-base: #f5f5f7;
+  --surface-card: #ffffff;
+  --surface-elevated: #f5f5f7;
+  /* The same family as the page, so a white card's edge reads as the card
+     itself rather than a drawn outline; inside a card it's a hairline. */
+  --surface-border: #ececf0;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-disabled: #a1a1a6;
+  --status-success: #3d7d3a;
+  --status-warning: #d98a1c;
+  --status-error: #d93025;
+  --status-info: #3a6ea5;
 
   --background: var(--surface-base);
   --foreground: var(--text-primary);
@@ -104,12 +121,13 @@
   --accent-foreground: var(--text-primary);
   --destructive: var(--status-error);
   --border: var(--surface-border);
-  --input: var(--surface-border);
+  /* Controls keep a visible edge — the one place a border belongs. */
+  --input: #d2d2d7;
   --ring: var(--amama-deep);
   --chart-1: var(--amama);
-  --chart-2: var(--status-info);
-  --chart-3: var(--status-warning);
-  --chart-4: var(--amama-hover);
+  --chart-2: var(--sun);
+  --chart-3: var(--graphite);
+  --chart-4: #9aa86b;
   --chart-5: var(--status-error);
   --radius: 0.5rem;
   --sidebar: var(--surface-card);
@@ -123,25 +141,27 @@
 }
 
 .dark {
-  --amama: oklch(0.7556 0.1759 158.29);
-  --amama-hover: oklch(0.5729 0.1326 158.61);
-  --amama-foreground: oklch(0.1591 0 89.88);
-  /* Lifted a step on dark ground so the CTA separates from #0D0D0D
-     while white text still clears AA (4.76:1). */
-  --amama-deep: oklch(0.54 0.124 158.29);
-  --amama-deep-hover: oklch(0.60 0.138 158.29);
-  --amama-subtle: oklch(0.28 0.055 158.29);
-  --surface-base: oklch(0.1591 0 89.88);
-  --surface-card: oklch(0.2002 0 89.88);
-  --surface-elevated: oklch(0.2520 0 89.88);
-  --surface-border: oklch(0.2972 0 89.88);
-  --text-primary: oklch(1 0 0);
-  --text-secondary: oklch(0.7058 0 89.88);
-  --text-disabled: oklch(0.4386 0 89.88);
-  --status-success: oklch(0.6448 0.1488 158.78);
-  --status-warning: oklch(0.7686 0.1647 70.08);
-  --status-error: oklch(0.6368 0.2078 25.33);
-  --status-info: oklch(0.6231 0.1880 259.81);
+  --amama: #8a9e4f;
+  --amama-hover: #9bb05c;
+  --amama-foreground: #111111;
+  --amama-deep: #7d9146;
+  --amama-deep-hover: #8ea353;
+  --amama-subtle: #2a3119;
+  --sun: #f2b33d;
+  --sun-hover: #f5c05c;
+  --sun-foreground: #1d1d1f;
+  --graphite: #f5f5f7;
+  --surface-base: #000000;
+  --surface-card: #1c1c1e;
+  --surface-elevated: #2c2c2e;
+  --surface-border: #2c2c2e;
+  --text-primary: #f5f5f7;
+  --text-secondary: #a1a1a6;
+  --text-disabled: #636366;
+  --status-success: #5fae5a;
+  --status-warning: #f0a33a;
+  --status-error: #ff6b5e;
+  --status-info: #6ea2d8;
 
   --background: var(--surface-base);
   --foreground: var(--text-primary);
@@ -159,12 +179,12 @@
   --accent-foreground: var(--text-primary);
   --destructive: var(--status-error);
   --border: var(--surface-border);
-  --input: var(--surface-border);
+  --input: #3a3a3c;
   --ring: var(--amama);
   --chart-1: var(--amama);
-  --chart-2: var(--status-info);
-  --chart-3: var(--status-warning);
-  --chart-4: var(--amama-hover);
+  --chart-2: var(--sun);
+  --chart-3: var(--graphite);
+  --chart-4: #6f7f3c;
   --chart-5: var(--status-error);
   --sidebar: var(--surface-card);
   --sidebar-foreground: var(--text-primary);
@@ -176,12 +196,26 @@
   --sidebar-ring: var(--amama);
 }
 
+/* No shadows anywhere — surfaces separate by fill, the way Apple's do.
+   The only depth cue left is the dimmed backdrop behind a modal. */
+@theme {
+  --shadow-2xs: 0 0 #0000;
+  --shadow-xs: 0 0 #0000;
+  --shadow-sm: 0 0 #0000;
+  --shadow-md: 0 0 #0000;
+  --shadow-lg: 0 0 #0000;
+  --shadow-xl: 0 0 #0000;
+  --shadow-2xl: 0 0 #0000;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+    letter-spacing: -0.011em;
+    -webkit-font-smoothing: antialiased;
   }
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
@@ -230,35 +264,10 @@ html[lang="kn"] {
   --font-sans: var(--font-kn);
 }
 
-/*
- * "Floating chip" shadow — small controls that sit directly on the bare
- * background rather than inside a bordered card, like the topbar's icon
- * button, pills, and avatar once the topbar itself has no fill of its own.
- * Several tightly-stacked layers at falling opacity read as one soft
- * directional shadow rather than a single flat ring; the inset top/bottom
- * hairlines add just enough bevel for the chip to read as a distinct
- * physical surface instead of a flat cutout of the card color.
- */
+/* Kept as a no-op so existing markup stays valid — chips separate from
+   the page by their white fill now, not a shadow. */
 .shadow-floating {
-  box-shadow:
-    0 1px 1.5px oklch(0 0 0 / 6%),
-    0 2.8px 2.2px oklch(0 0 0 / 4.5%),
-    0 6.7px 5.3px oklch(0 0 0 / 4%),
-    0 12.5px 10px oklch(0 0 0 / 3.5%),
-    0 22px 18px oklch(0 0 0 / 3%),
-    inset 0 1px 0 oklch(1 0 0 / 70%),
-    inset 0 -1px 0 oklch(0 0 0 / 4%);
-}
-
-.dark .shadow-floating {
-  box-shadow:
-    0 1px 1.5px oklch(0 0 0 / 35%),
-    0 2.8px 2.2px oklch(0 0 0 / 28%),
-    0 6.7px 5.3px oklch(0 0 0 / 24%),
-    0 12.5px 10px oklch(0 0 0 / 22%),
-    0 22px 18px oklch(0 0 0 / 18%),
-    inset 0 1px 0 oklch(1 0 0 / 6%),
-    inset 0 -1px 0 oklch(0 0 0 / 35%);
+  box-shadow: none;
 }
 
 /*
@@ -337,7 +346,7 @@ html[lang="kn"] {
       #ff4d8d 0%,
       transparent 70%
     ),
-    radial-gradient(42% 56% at 32% 76%, #00d084 0%, transparent 72%);
+    radial-gradient(42% 56% at 32% 76%, #8a9e4f 0%, transparent 72%);
   animation: upload-aurora-b 2s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 

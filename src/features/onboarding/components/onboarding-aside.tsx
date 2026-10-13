@@ -140,7 +140,7 @@ function ProfilePreview({ role }: { role: OnboardingRole }) {
   const shown = chips.slice(0, 8)
 
   return (
-    <div className="max-w-md rounded-[28px] bg-card p-5 text-foreground shadow-[0_24px_60px_-20px_rgba(0,0,0,0.45)]">
+    <div className="max-w-md rounded-[28px] bg-card p-5 text-foreground">
       <div className="flex items-center gap-3">
         <span className="grid size-12 shrink-0 place-items-center rounded-full bg-amama-subtle text-[16px] font-bold text-amama-deep">
           {initials || <Bar className="size-5 rounded-full" />}

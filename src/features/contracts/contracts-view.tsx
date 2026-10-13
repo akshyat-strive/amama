@@ -995,7 +995,7 @@ function StageRail({ stage }: { stage: Contract["stage"] }) {
                 current
                   ? "font-bold text-amber-600"
                   : done
-                    ? "text-emerald-600"
+                    ? "text-amama-deep"
                     : "text-slate-300"
               )}
             >

@@ -83,7 +83,7 @@ function InternalShell({ children }: { children: React.ReactNode }) {
   return (
     <TooltipProvider>
       <PeekProvider>
-        <div className="flex h-dvh flex-col gap-2 bg-card p-2 sm:p-3">
+        <div className="flex h-dvh flex-col gap-2 bg-background p-2 sm:p-3">
           <header className="flex h-12 shrink-0 items-center gap-3">
             <Button
               variant="ghost"
@@ -132,7 +132,7 @@ function InternalShell({ children }: { children: React.ReactNode }) {
             {/* One floating sidebar: the icon rail, and beside it (on wide
                 screens, while open) the section's own list — two columns
                 of the same card, split by a hairline. */}
-            <div className="hidden shrink-0 overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_12px_32px_-16px_rgba(16,24,20,0.22)] md:flex">
+            <div className="hidden shrink-0 overflow-hidden rounded-[20px] bg-card md:flex">
               <PrimaryRail activeId={section.id} />
               <div
                 className={cn(
@@ -147,7 +147,7 @@ function InternalShell({ children }: { children: React.ReactNode }) {
             {/* Same ground as the sidebar rail — muted, faintly hatched —
                 so the white islands the screens are built from read as
                 the same material as the nav's own white item panels. */}
-            <main className="min-w-0 flex-1 overflow-y-auto rounded-[24px] border border-border bg-muted bg-[repeating-linear-gradient(-45deg,var(--surface-border)_0px,var(--surface-border)_1px,transparent_1px,transparent_7px)]">
+            <main className="min-w-0 flex-1 overflow-y-auto">
               <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-3 py-4 sm:px-4 sm:py-5">
                 {children}
               </div>

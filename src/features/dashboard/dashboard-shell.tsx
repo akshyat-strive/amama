@@ -55,7 +55,7 @@ const TOPBAR_OFFSET = "pt-20"
  * the label visibility there have to move together or the rail would clip
  * text instead of hiding it.
  */
-const RAIL_WIDTH_MD = "md:w-[68px]"
+const RAIL_WIDTH_MD = "md:w-16"
 
 /** What stays open while KYC is in review: the ticket itself, and
  *  settings. Everything else waits for approval. */
@@ -145,7 +145,7 @@ function DashboardShell({
   if (!sessionLoaded || !signedIn || !isLoaded()) return <FullPageLoader />
 
   return (
-    <div className="h-dvh bg-card">
+    <div className="h-dvh bg-background">
       <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center gap-4 bg-transparent ps-3 pe-4 sm:pe-6">
         <SidebarToggle open={sidebarOpen} onToggle={toggleSidebar} />
         <TopbarBrand href="/" role={role === "seller" ? "Seller" : undefined} />
@@ -198,7 +198,7 @@ function DashboardShell({
           className={cn(
             "fixed inset-y-0 start-0 z-40 min-w-0 overflow-hidden md:static md:inset-auto md:z-auto md:shrink-0",
             "transition-[width] duration-300 ease-out",
-            sidebarOpen ? "w-64" : cn("w-0", RAIL_WIDTH_MD)
+            sidebarOpen ? "w-60" : cn("w-0", RAIL_WIDTH_MD)
           )}
         >
           {/* Inner panel: matches the outer wrapper's width exactly — a
@@ -210,7 +210,7 @@ function DashboardShell({
             className={cn(
               "h-full p-3 transition-[width,transform] duration-300 ease-out md:pe-0",
               TOPBAR_OFFSET,
-              sidebarOpen ? "w-64" : cn("w-64", RAIL_WIDTH_MD),
+              sidebarOpen ? "w-60" : cn("w-60", RAIL_WIDTH_MD),
               sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 rtl:translate-x-full md:rtl:translate-x-0"
             )}
           >

@@ -243,7 +243,7 @@ function Row({
   const classes = cn(
     "flex w-full items-center gap-3 rounded-[18px] px-3 py-2.5 text-start transition-colors",
     active
-      ? "border border-amama-foreground bg-amama text-amama-foreground"
+      ? "bg-amama text-amama-foreground"
       : (onClick || href) && "hover:bg-muted",
     className
   )

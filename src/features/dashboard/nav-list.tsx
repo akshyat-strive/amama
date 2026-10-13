@@ -14,11 +14,11 @@ import {
 } from "@/features/dashboard/nav-config"
 
 /**
- * The sidebar: one floating card, and inside it plain groups — a quiet
- * label, then compact rows. Only the active row carries colour (a soft
- * green row with a filled green icon), so the eye finds "where am I"
- * without the whole rail competing for attention. Account items pin to
- * the bottom.
+ * The sidebar: one white card floating on the mist page, and inside it
+ * plain groups — a quiet label, then tight rows that sit flush against
+ * each other so a group reads as one list, not scattered buttons. Only the
+ * selected row carries colour, the macOS way: an olive fill with a white
+ * label and a yellow icon. Account items pin to the bottom.
  *
  * Collapsed, it's an icon rail: groups split by hairlines, labels in
  * tooltips.
@@ -83,21 +83,21 @@ function NavList({
 
   return (
     <TooltipProvider>
-      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_12px_32px_-16px_rgba(16,24,20,0.22)]">
-        <nav aria-label="Main" className={cn("min-h-0 flex-1 overflow-y-auto overflow-x-hidden scrollbar-none", expanded ? "px-2.5 py-3" : "px-2 py-3")}>
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[20px] bg-card">
+        <nav aria-label="Main" className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 py-2 scrollbar-none">
           {regularGroups.map(({ group, items: groupItems }, index) => (
-            <div key={group} className={cn(index > 0 && (expanded ? "mt-4" : "mt-2.5 border-t border-border pt-2.5"))}>
+            <div key={group} className={cn(index > 0 && (expanded ? "mt-2.5" : "mt-1.5 border-t border-border pt-1.5"))}>
               {expanded && dashboardNavGroupLabels[group] ? (
-                <p className="px-2.5 pb-1.5 text-[11.5px] font-medium text-muted-foreground">{dashboardNavGroupLabels[group]}</p>
+                <p className="px-2.5 pt-0.5 pb-1 text-[11px] font-medium text-muted-foreground">{dashboardNavGroupLabels[group]}</p>
               ) : null}
-              <div className={cn("flex flex-col gap-0.5", !expanded && "items-center")}>{groupItems.map(renderItem)}</div>
+              <div className={cn("flex flex-col", !expanded && "items-center")}>{groupItems.map(renderItem)}</div>
             </div>
           ))}
         </nav>
 
         {footerGroup ? (
-          <div className={cn("shrink-0 border-t border-border", expanded ? "px-2.5 py-2.5" : "px-2 py-2.5")}>
-            <div className={cn("flex flex-col gap-0.5", !expanded && "items-center")}>{footerGroup.items.map(renderItem)}</div>
+          <div className="shrink-0 border-t border-border px-2 py-1.5">
+            <div className={cn("flex flex-col", !expanded && "items-center")}>{footerGroup.items.map(renderItem)}</div>
           </div>
         ) : null}
       </div>
@@ -121,26 +121,18 @@ function NavItemLink({
   onNavigate?: () => void
 }) {
   const className = cn(
-    "group/nav relative flex shrink-0 items-center text-[13.5px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-amama-deep/40",
-    expanded ? "h-10 w-full gap-2.5 rounded-xl ps-1.5 pe-2.5" : "size-10 justify-center rounded-xl",
+    "group/nav relative flex shrink-0 items-center text-[13px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-amama-deep/40",
+    expanded ? "h-8 w-full gap-2.5 rounded-lg px-2.5" : "size-9 justify-center rounded-lg",
     locked
       ? "cursor-not-allowed text-muted-foreground/60"
       : active
-        ? "bg-amama-subtle font-semibold text-foreground"
-        : "font-medium text-foreground/75 hover:bg-muted hover:text-foreground"
+        ? "bg-amama font-medium text-white"
+        : "text-foreground/80 hover:bg-muted hover:text-foreground"
   )
 
   const body = (
     <>
-      <span
-        aria-hidden
-        className={cn(
-          "grid size-7 shrink-0 place-items-center rounded-lg transition-colors",
-          active && !locked ? "bg-amama text-amama-foreground" : "text-current"
-        )}
-      >
-        <item.icon className="size-[17px]" strokeWidth={2.1} />
-      </span>
+      <item.icon aria-hidden className={cn("size-4 shrink-0", active && !locked && "text-sun")} strokeWidth={2.1} />
       {expanded ? <span className="min-w-0 flex-1 truncate">{item.label}</span> : null}
       {locked && expanded ? <LockIcon aria-hidden className="size-3.5 shrink-0" /> : null}
       {attention && !locked ? (

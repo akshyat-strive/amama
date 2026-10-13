@@ -37,9 +37,9 @@ function PrimaryRail({ activeId }: { activeId?: string }) {
   const bands: NavBand[] = ["commercial", "execution", "back-office"]
 
   return (
-    <nav aria-label="Sections" className="flex h-full w-[60px] shrink-0 flex-col items-center overflow-y-auto py-2.5 scrollbar-none">
+    <nav aria-label="Sections" className="flex h-full w-[52px] shrink-0 flex-col items-center overflow-y-auto py-2 scrollbar-none">
       {bands.map((band, index) => (
-        <div key={band} className={cn("flex flex-col items-center gap-0.5", index > 0 && "mt-2.5 border-t border-border pt-2.5")}>
+        <div key={band} className={cn("flex flex-col items-center", index > 0 && "mt-1.5 border-t border-border pt-1.5")}>
           {TOWER_SECTIONS.filter((section) => section.band === band).map((section) => {
             const Icon = section.icon
             const active = section.id === activeId
@@ -51,8 +51,8 @@ function PrimaryRail({ activeId }: { activeId?: string }) {
                       href={section.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "grid size-10 shrink-0 place-items-center rounded-xl transition-colors",
-                        active ? "bg-amama text-amama-foreground" : "text-foreground/65 hover:bg-muted hover:text-foreground"
+                        "grid size-9 shrink-0 place-items-center rounded-lg transition-colors",
+                        active ? "bg-amama text-sun" : "text-foreground/65 hover:bg-muted hover:text-foreground"
                       )}
                     >
                       <Icon className="size-[17px]" strokeWidth={2.1} />
@@ -91,7 +91,7 @@ function ContextualRail({ section }: { section: TowerSection }) {
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2 scrollbar-none">
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col">
           {items.length === 0 ? (
             <p className="px-3 py-6 text-center text-[12px] text-muted-foreground">Nothing here yet.</p>
           ) : (
@@ -111,8 +111,8 @@ function RailRow({ item, pathname }: { item: RailItem; pathname: string }) {
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex items-center gap-2.5 rounded-xl px-3 py-2 transition-colors",
-        active ? "bg-amama-subtle text-foreground" : "text-foreground/80 hover:bg-muted"
+        "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 transition-colors",
+        active ? "bg-amama text-white" : "text-foreground/80 hover:bg-muted"
       )}
     >
       {item.dot ? (
@@ -121,7 +121,7 @@ function RailRow({ item, pathname }: { item: RailItem; pathname: string }) {
       <span className="min-w-0 flex-1">
         <span className={cn("block truncate text-[13px]", active ? "font-semibold" : "font-medium")}>{item.label}</span>
         {item.meta ? (
-          <span className="block truncate text-[11px] text-muted-foreground">
+          <span className={cn("block truncate text-[11px]", active ? "text-white/70" : "text-muted-foreground")}>
             {item.meta}
           </span>
         ) : null}

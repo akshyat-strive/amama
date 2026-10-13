@@ -10,7 +10,7 @@
  * empty" guard.
  */
 
-const SEED_VERSION = "10"
+const SEED_VERSION = "11"
 const VERSION_KEY = "amama.admin.seedVersion"
 
 /** Everything a version bump wipes. The language, sidebar state and the

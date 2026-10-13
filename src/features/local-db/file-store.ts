@@ -65,13 +65,13 @@ function seedDocument(id: string): Blob {
     .map((y, index) => `<rect x="48" y="${y + 120}" width="${index % 3 === 2 ? 220 : 400}" height="10" rx="5" fill="#e6e9e7"/>`)
     .join("")
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="680" viewBox="0 0 500 680">
-<rect width="500" height="680" fill="#ffffff"/><rect x="0" y="0" width="500" height="10" fill="#047d4e"/>
+<rect width="500" height="680" fill="#ffffff"/><rect x="0" y="0" width="500" height="10" fill="#556b2f"/>
 <text x="48" y="80" font-family="Inter, Arial, sans-serif" font-size="13" fill="#5f6b66">Sample document · amama demo</text>
 <text x="48" y="122" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700" fill="#111">${escapeXml(label)}</text>
 <text x="48" y="152" font-family="Inter, Arial, sans-serif" font-size="15" fill="#333">${escapeXml(owner)}</text>
 ${lines}
-<rect x="48" y="560" width="160" height="56" rx="10" fill="none" stroke="#047d4e" stroke-width="2" stroke-dasharray="6 5"/>
-<text x="64" y="594" font-family="Inter, Arial, sans-serif" font-size="13" fill="#047d4e">Verified stamp</text>
+<rect x="48" y="560" width="160" height="56" rx="10" fill="none" stroke="#556b2f" stroke-width="2" stroke-dasharray="6 5"/>
+<text x="64" y="594" font-family="Inter, Arial, sans-serif" font-size="13" fill="#556b2f">Verified stamp</text>
 </svg>`
   return new Blob([svg], { type: "image/svg+xml" })
 }

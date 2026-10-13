@@ -159,7 +159,7 @@ function StepShell({
               Skip as a quieter text button beside it — still sticky for
               steps taller than the viewport. */}
           <footer className="sticky bottom-0 z-20 px-3 sm:px-0">
-            <div className="mx-auto w-full max-w-lg rounded-t-[40px] border border-b-0 border-border/60 bg-card/95 px-5 pt-4 pb-0 shadow-[0_-12px_24px_-16px_rgba(0,0,0,0.15)] backdrop-blur-sm lg:mx-0 lg:max-w-[560px] lg:rounded-none lg:border-0 lg:bg-card lg:px-0 lg:pt-8 lg:shadow-none lg:backdrop-blur-none">
+            <div className="mx-auto w-full max-w-lg rounded-t-[40px] border border-b-0 border-border/60 bg-card/95 px-5 pt-4 pb-0 backdrop-blur-sm lg:mx-0 lg:max-w-[560px] lg:rounded-none lg:border-0 lg:bg-card lg:px-0 lg:pt-8 lg:shadow-none lg:backdrop-blur-none">
               <div className="flex items-stretch gap-2 lg:flex-row-reverse lg:items-center lg:justify-end lg:gap-3">
                 {skipHref ? (
                   <Link

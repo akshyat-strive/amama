@@ -15,6 +15,8 @@ export type DemoDirectoryEntry = {
   level: Role["level"]
   domain: Role["domain"]
   domainLabel: string
+  /** Name of the person they report to, if anyone. */
+  reportsTo: string | null
 }
 
 /** Every staff account with its role, for the two places that list them
@@ -34,6 +36,7 @@ function useDemoDirectory(): DemoDirectoryEntry[] {
       level: role?.level ?? "member",
       domain: role?.domain ?? "saleops",
       domainLabel: DOMAIN_LABEL[role?.domain ?? "saleops"],
+      reportsTo: users.find((entry) => entry.id === user.reportsTo)?.name ?? null,
     }
   })
 }

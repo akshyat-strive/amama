@@ -102,7 +102,7 @@ export const SEED_SELLER_PROFILES: SellerDraft[] = [
 ]
 
 const STAFF = {
-  priya: { kind: "staff" as const, id: "priya@amama.com", name: "Priya Nair", title: "Lead KAM" },
+  priya: { kind: "staff" as const, id: "priya@amama.com", name: "Priya Nair", title: "Master KAM" },
   arjun: { kind: "staff" as const, id: "arjun@amama.com", name: "Arjun Mehta", title: "KAM" },
   rohit: { kind: "staff" as const, id: "rohit@amama.com", name: "Rohit Verma", title: "KAM" },
 }

@@ -16,7 +16,7 @@ import { createUser, DEMO_PASSWORD, updateUser, useUsers, type AdminUser } from 
 
 /**
  * The org as it actually runs: the chief executive and one executive per
- * domain on top, then each domain's lead and members under them. Access
+ * domain on top, then each domain's Master KAM and KAMs under them. Access
  * follows both lines — level (executives see everything, leads their
  * whole domain, members what's assigned to them) and domain (what kind of
  * work a role can act on). People and roles are editable for whoever

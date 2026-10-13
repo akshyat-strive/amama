@@ -20,7 +20,7 @@ import { TopbarSearch } from "@/features/trades/topbar-search"
 /** Same rail-width constant and rationale as `DashboardShell` — see there
  *  for why one `sidebarOpen` boolean resolves to three different visual
  *  states across the two breakpoints. */
-const RAIL_WIDTH_MD = "md:w-[68px]"
+const RAIL_WIDTH_MD = "md:w-16"
 
 /**
  * The admin module's own shell — same popover-sidebar-over-flat-canvas shape
@@ -76,7 +76,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="h-dvh bg-card">
+    <div className="h-dvh bg-background">
       <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center gap-4 bg-transparent ps-3 pe-4 sm:pe-6">
         <SidebarToggle open={sidebarOpen} onToggle={toggleSidebar} />
         <TopbarBrand href="/internal" role={admin.role.name} />
@@ -114,13 +114,13 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           className={cn(
             "fixed inset-y-0 start-0 z-40 min-w-0 overflow-hidden md:static md:inset-auto md:z-auto md:shrink-0",
             "transition-[width] duration-300 ease-out",
-            sidebarOpen ? "w-64" : cn("w-0", RAIL_WIDTH_MD)
+            sidebarOpen ? "w-60" : cn("w-0", RAIL_WIDTH_MD)
           )}
         >
           <div
             className={cn(
               "h-full p-3 pt-20 transition-[width,transform] duration-300 ease-out md:pe-0",
-              sidebarOpen ? "w-64" : cn("w-64", RAIL_WIDTH_MD),
+              sidebarOpen ? "w-60" : cn("w-60", RAIL_WIDTH_MD),
               sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 rtl:translate-x-full md:rtl:translate-x-0"
             )}
           >

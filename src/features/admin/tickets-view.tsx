@@ -29,7 +29,7 @@ import { kycTicketId } from "@/features/verification/ticket"
  * Every KYC application as a ticket, in one queue, sliced by tags —
  * "seller KYC, producers, waiting on the applicant" — without switching
  * pages. What's in the queue follows the hierarchy: a KAM sees the
- * tickets they own plus unclaimed ones; leads and executives (who hold
+ * tickets they own plus unclaimed ones; Master KAMs and executives (who hold
  * `onboarding.viewAll`) see every ticket.
  */
 
@@ -433,7 +433,7 @@ function TicketBoard({
                       }}
                       onClick={() => onOpen(ticket.id)}
                       className={cn(
-                        "w-full cursor-grab rounded-2xl border border-border bg-card p-3 text-start shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-md active:cursor-grabbing",
+                        "w-full cursor-grab rounded-2xl border border-border bg-card p-3 text-start transition-shadow hover:shadow-md active:cursor-grabbing",
                         dragging === ticket.id && "opacity-50"
                       )}
                     >

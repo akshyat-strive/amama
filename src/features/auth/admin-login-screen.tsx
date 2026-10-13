@@ -11,7 +11,9 @@ import {
   FieldGroupInput,
   FieldStatusIcon,
 } from "@/components/ui/field-group"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { EditorialImage } from "@/components/ui/editorial-image"
 import { adminLoginContent } from "@/features/auth/admin-login-content"
 import { signIn } from "@/features/auth/local-auth"
@@ -58,12 +60,16 @@ function AdminLoginScreen() {
     enterConsole()
   }
 
-  // Quick login follows the org: executives first, then each domain.
+  // Quick login follows the org: executives first, then each domain's
+  // Master KAM and the KAMs who report to them.
+  const LEVEL_ORDER = { executive: 0, lead: 1, member: 2 } as const
   const groups: { label: string; people: DemoDirectoryEntry[] }[] = [
-    { label: "Executives", people: directory.filter((user) => user.level === "executive") },
+    { label: "Executives", people: directory.filter((user) => user.level === "executive").sort((a, b) => (a.domain === "all" ? -1 : b.domain === "all" ? 1 : 0)) },
     ...DOMAINS.map((domain) => ({
       label: domain.label,
-      people: directory.filter((user) => user.level !== "executive" && user.domain === domain.id),
+      people: directory
+        .filter((user) => user.level !== "executive" && user.domain === domain.id)
+        .sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level]),
     })),
   ].filter((group) => group.people.length > 0)
 
@@ -150,53 +156,64 @@ function AdminLoginScreen() {
               </Button>
             </form>
 
-            <div className="mt-4">
-              <button
-                type="button"
-                onClick={() => setQuickLoginOpen((open) => !open)}
-                aria-expanded={quickLoginOpen}
-                className="flex w-full items-center justify-center gap-1.5 rounded-full border border-dashed border-border py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
-              >
-                <KeyRoundIcon className="size-3.5" />
-                Quick login as a demo account
-              </button>
+            <button
+              type="button"
+              onClick={() => setQuickLoginOpen(true)}
+              className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-full py-2.5 text-[13px] font-medium text-amama-deep transition-colors hover:bg-amama-subtle"
+            >
+              <KeyRoundIcon className="size-3.5" />
+              Quick login as a demo account
+            </button>
 
-              {quickLoginOpen ? (
-                <div className="mt-2 flex max-h-[360px] flex-col gap-2 overflow-y-auto rounded-[16px] border border-border bg-card p-1.5">
+            <Dialog open={quickLoginOpen} onOpenChange={setQuickLoginOpen}>
+              <DialogContent className="max-h-[85dvh] gap-4 overflow-hidden p-0 sm:max-w-lg">
+                <DialogHeader className="px-6 pt-6">
+                  <DialogTitle>Sign in as</DialogTitle>
+                  <DialogDescription>Every demo account uses the password {DEMO_PASSWORD}.</DialogDescription>
+                </DialogHeader>
+                <div className="flex max-h-[calc(85dvh-7rem)] flex-col gap-4 overflow-y-auto px-4 pb-5">
                   {groups.map((group) => (
-                    <div key={group.label}>
-                      <p className="px-3 pt-1.5 pb-1 text-[11.5px] font-semibold text-muted-foreground">{group.label}</p>
-                      {group.people.map((user) => (
-                        <button
-                          key={user.id}
-                          type="button"
-                          disabled={submitting}
-                          onClick={() => {
-                            setActiveAction(user.id)
-                            attemptSignIn(user.email, DEMO_PASSWORD)
-                          }}
-                          className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2 text-start transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
-                        >
-                          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-amama-deep text-[12px] font-semibold text-white">
-                            {submitting && activeAction === user.id ? (
-                              <Loader2Icon className="size-3.5 animate-spin" />
-                            ) : (
-                              user.name.trim().charAt(0).toUpperCase() || "?"
+                    <section key={group.label} aria-label={group.label}>
+                      <h3 className="px-2 pb-1.5 text-[12px] font-medium text-muted-foreground">{group.label}</h3>
+                      <div className="overflow-hidden rounded-2xl bg-muted">
+                        {group.people.map((user, index) => (
+                          <button
+                            key={user.id}
+                            type="button"
+                            disabled={submitting}
+                            onClick={() => {
+                              setActiveAction(user.id)
+                              attemptSignIn(user.email, DEMO_PASSWORD)
+                            }}
+                            className={cn(
+                              "flex w-full items-center gap-3 px-3.5 py-2.5 text-start transition-colors hover:bg-[#ebebef] disabled:pointer-events-none disabled:opacity-50 dark:hover:bg-card",
+                              index > 0 && "border-t border-background",
+                              user.level === "member" && "ps-9"
                             )}
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[13px] font-semibold text-foreground">{user.name}</span>
-                            <span className="block truncate text-[12px] text-muted-foreground">
-                              {user.roleName} · {user.email}
+                          >
+                            <span
+                              className={cn(
+                                "grid size-8 shrink-0 place-items-center rounded-full text-[12px] font-semibold",
+                                user.level === "executive" ? "bg-amama text-sun" : user.level === "lead" ? "bg-graphite text-white" : "bg-card text-foreground"
+                              )}
+                            >
+                              {submitting && activeAction === user.id ? <Loader2Icon className="size-3.5 animate-spin" /> : user.name.trim().charAt(0).toUpperCase() || "?"}
                             </span>
-                          </span>
-                        </button>
-                      ))}
-                    </div>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[13.5px] font-semibold text-foreground">{user.name}</span>
+                              <span className="block truncate text-[12px] text-muted-foreground">
+                                {user.level === "executive" && user.domain !== "all" ? `${user.domainLabel} Executive` : user.roleName}
+                                {user.reportsTo ? ` · reports to ${user.reportsTo}` : ""}
+                              </span>
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
                   ))}
                 </div>
-              ) : null}
-            </div>
+              </DialogContent>
+            </Dialog>
 
             <p className="mt-6 text-center text-[13px] text-muted-foreground">
               <Link href="/creds" className="underline underline-offset-4 hover:text-foreground">

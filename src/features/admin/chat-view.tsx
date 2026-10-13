@@ -1,14 +1,14 @@
 "use client"
 
 import * as React from "react"
-import { ChevronLeftIcon, MessageCircleIcon, PinIcon, UsersIcon, type LucideIcon } from "lucide-react"
+import { MessageCircleIcon, PinIcon, UsersIcon, type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ADMIN_SELECTED_CLASS } from "@/features/admin/admin-ui"
+import { ChatAvatar, ChatLayout, ChatListRow, useChatSelection } from "@/features/chat/chat-layout"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { useUsers } from "@/features/admin/user-store"
 import { StaffChatThread } from "@/features/admin/staff-chat-thread"
@@ -56,10 +56,6 @@ type ConversationRow = {
 type ChatItem = StaffChannel | ConversationRow
 type Tab = "external" | "internal"
 
-function initial(name: string) {
-  return name.trim().charAt(0).toUpperCase() || "?"
-}
-
 /**
  * A single sliding unit, not two independent buttons — the highlight is
  * one shared element that moves to whichever label is active (an
@@ -70,19 +66,19 @@ function initial(name: string) {
  */
 function ChatTabSwitch({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {
   return (
-    <div className="relative flex shrink-0 rounded-full bg-card p-1">
+    <div className="relative flex w-[180px] shrink-0 rounded-full bg-muted p-0.5">
       <span
         aria-hidden
         className={cn(
-          "absolute inset-y-1 w-[calc(50%-4px)] rounded-full bg-amama-deep shadow-sm transition-all duration-200 ease-out",
-          tab === "external" ? "left-1" : "left-1/2"
+          "absolute inset-y-0.5 w-[calc(50%-2px)] rounded-full bg-amama transition-all duration-200 ease-out",
+          tab === "external" ? "left-0.5" : "left-1/2"
         )}
       />
       <button
         type="button"
         onClick={() => onChange("external")}
         className={cn(
-          "relative z-10 flex-1 rounded-full py-1.5 text-center text-[13px] font-medium transition-colors",
+          "relative z-10 flex-1 rounded-full py-1 text-center text-[12.5px] font-medium transition-colors",
           tab === "external" ? "text-white" : "text-muted-foreground hover:text-foreground"
         )}
       >
@@ -92,7 +88,7 @@ function ChatTabSwitch({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => vo
         type="button"
         onClick={() => onChange("internal")}
         className={cn(
-          "relative z-10 flex-1 rounded-full py-1.5 text-center text-[13px] font-medium transition-colors",
+          "relative z-10 flex-1 rounded-full py-1 text-center text-[12.5px] font-medium transition-colors",
           tab === "internal" ? "text-white" : "text-muted-foreground hover:text-foreground"
         )}
       >
@@ -103,8 +99,8 @@ function ChatTabSwitch({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => vo
 }
 
 /**
- * One inbox, split by an External/Internal tab rather than two separate
- * pages — External is read-only buyer/seller oversight (`ConversationThread`,
+ * One inbox on the shared `ChatLayout`, split by an External/Internal tab
+ * rather than two separate pages — External is read-only buyer/seller oversight (`ConversationThread`,
  * with its contact-info guard); Internal is the team's own DM/Team channels
  * (`StaffChatThread`, no guard — staff can share contact details with each
  * other freely). Announcements isn't a third tab here — it's its own page
@@ -112,6 +108,16 @@ function ChatTabSwitch({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => vo
  * check, not a thread you pick out of an inbox.
  */
 function ChatView() {
+  // `useSearchParams` (the open conversation) needs a boundary to keep the
+  // route statically renderable.
+  return (
+    <React.Suspense fallback={null}>
+      <ChatViewInner />
+    </React.Suspense>
+  )
+}
+
+function ChatViewInner() {
   const admin = useCurrentAdmin()
   const users = useUsers()
   const conversations = useConversations()
@@ -119,7 +125,7 @@ function ChatView() {
   const rfqs = useRfqs()
   const staffStore = useStaffChatStore()
   const [tab, setTab] = React.useState<Tab>("external")
-  const [selectedId, setSelectedId] = React.useState<string | null>(null)
+  const { selectedId, select, clear } = useChatSelection()
   const mentionCandidates = React.useMemo(() => users.map((user) => ({ id: user.id, name: user.name })), [users])
   if (!admin) return null
 
@@ -154,209 +160,93 @@ function ChatView() {
       conversation,
     }))
 
-  const items: ChatItem[] = tab === "external" ? conversationRows : staffChannels
-  // What to *render* in the thread pane — falls back to the tab's first
-  // item so desktop (which shows both panes at once) never sits on an
-  // empty pane.
-  const selected = items.find((item) => item.id === selectedId) ?? items[0] ?? null
-  // Whether a chat has actually been *picked* — separate from `selected`
-  // above because this, not the fallback, is what decides which pane shows
-  // on mobile. Falling back to item 0 for that too would open a thread the
-  // moment the page loads, defeating the point of splitting the two panes.
-  const threadOpenOnMobile = selectedId !== null && items.some((item) => item.id === selectedId)
+  // An open conversation from the other tab (a deep link, say) still
+  // shows — and its tab follows it.
+  const all: ChatItem[] = [...conversationRows, ...staffChannels]
+  const selected = all.find((item) => item.id === selectedId) ?? null
+  const shownTab: Tab = selected ? (selected.kind === "staff" ? "internal" : "external") : tab
 
   const switchTab = (next: Tab) => {
     setTab(next)
-    setSelectedId(null)
+    clear()
   }
 
-  const backButton = (
-    <button
-      type="button"
-      onClick={() => setSelectedId(null)}
-      aria-label="Back to chat list"
-      className="mr-1 -ml-1.5 grid size-8 shrink-0 place-items-center rounded-full text-foreground/70 transition-colors hover:bg-muted lg:hidden"
-    >
-      <ChevronLeftIcon className="size-5 rtl:-scale-x-100" />
-    </button>
-  )
-
   return (
-    <div>
-      <h1 className="text-[28px] font-bold tracking-tight">Chat</h1>
-
-      {/* Two genuinely separate cards, not one box split by an internal
-          divider — on mobile only one of them is ever on screen at a time
-          (the list, or the open thread with a way back), which a single
-          shared box can't do cleanly. */}
-      <div className="mt-6 flex flex-col gap-4 lg:h-[calc(100vh-158px)] lg:flex-row">
-        <div
-          className={cn(
-            "flex flex-col gap-2 overflow-hidden rounded-[20px] border border-border bg-muted p-2 lg:flex lg:h-full lg:w-[300px] lg:shrink-0",
-            threadOpenOnMobile && "hidden"
-          )}
-        >
-          <ChatTabSwitch tab={tab} onChange={switchTab} />
-
-          <div className="flex flex-1 flex-col gap-1 overflow-y-auto">
-            {items.length === 0 ? (
-              <p className="px-3 py-4 text-[13px] text-muted-foreground">
-                {tab === "external"
-                  ? "Nothing yet. Buyer–seller conversations open to the desk once a deal is agreed or a buyer publishes an RFQ."
-                  : "Nobody else has signed in yet."}
-              </p>
-            ) : tab === "external" ? (
-              conversationRows.map((row) => (
-                <ConversationRowButton
-                  key={row.id}
-                  row={row}
-                  active={selected?.id === row.id}
-                  onClick={() => setSelectedId(row.id)}
-                />
-              ))
-            ) : (
-              staffChannels.map((channel) => (
-                <StaffChannelRowButton
-                  key={channel.id}
-                  channel={channel}
-                  lastMessage={staffStore[channel.id]?.at(-1)?.text}
-                  active={selected?.id === channel.id}
-                  onClick={() => setSelectedId(channel.id)}
-                />
-              ))
-            )}
-          </div>
-        </div>
-
-        <div
-          className={cn(
-            "flex-1 overflow-hidden rounded-[20px] border border-border lg:flex lg:h-full",
-            !threadOpenOnMobile && "hidden lg:flex"
-          )}
-        >
-          {selected?.kind === "conversation" ? (
-            <ConversationPane
-              conversation={selected.conversation}
-              kamName={admin.user.name}
-              backButton={backButton}
-            />
-          ) : selected?.kind === "staff" ? (
-            <StaffChannelPane
-              channel={selected}
-              sender={sender}
-              mentionCandidates={mentionCandidates}
-              backButton={backButton}
-            />
-          ) : (
-            <div className="flex flex-1 items-center justify-center bg-card p-6 text-center text-[13px] text-muted-foreground">
-              Nothing to show yet.
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function RowShell({
-  active,
-  onClick,
-  avatar,
-  title,
-  preview,
-}: {
-  active: boolean
-  onClick: () => void
-  avatar: React.ReactNode
-  title: string
-  preview: string
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex w-full items-center gap-3 rounded-[14px] border px-3 py-2.5 text-start transition-colors",
-        active ? ADMIN_SELECTED_CLASS : "border-transparent text-foreground hover:bg-card"
-      )}
-    >
-      {avatar}
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-semibold">{title}</span>
-        <span
-          className={cn("block truncate text-[12px]", active ? "text-amama-foreground/70" : "text-muted-foreground")}
-        >
-          {preview}
-        </span>
-      </span>
-    </button>
-  )
-}
-
-function ConversationRowButton({
-  row,
-  active,
-  onClick,
-}: {
-  row: ConversationRow
-  active: boolean
-  onClick: () => void
-}) {
-  const { conversation } = row
-  const last = conversation.messages[conversation.messages.length - 1]
-  return (
-    <RowShell
-      active={active}
-      onClick={onClick}
-      title={`${conversation.buyerName} ↔ ${conversation.sellerName}`}
-      preview={last ? last.text : conversation.listingTitle}
-      avatar={
-        <span
-          className={cn(
-            "grid size-9 shrink-0 place-items-center rounded-full",
-            active ? "bg-white/50" : "bg-card"
-          )}
-        >
-          <MessageCircleIcon className="size-4" />
-        </span>
+    <ChatLayout
+      open={!!selected}
+      onClose={clear}
+      listAction={<ChatTabSwitch tab={shownTab} onChange={switchTab} />}
+      emptyDescription={
+        shownTab === "external" ? "Buyer–seller threads the desk is part of open here." : "Your team and direct messages open here."
       }
-    />
-  )
-}
-
-function StaffChannelRowButton({
-  channel,
-  lastMessage,
-  active,
-  onClick,
-}: {
-  channel: StaffChannel
-  lastMessage: string | undefined
-  active: boolean
-  onClick: () => void
-}) {
-  const isGroup = channel.id === STAFF_GROUP_CHANNEL_ID
-  return (
-    <RowShell
-      active={active}
-      onClick={onClick}
-      title={channel.title}
-      preview={lastMessage ?? channel.subtitle}
-      avatar={
-        isGroup ? (
-          <span
-            className={cn(
-              "grid size-9 shrink-0 place-items-center rounded-full",
-              active ? "bg-white/50" : "bg-card"
-            )}
-          >
-            <channel.icon className="size-4" />
-          </span>
+      list={
+        (shownTab === "external" ? conversationRows : staffChannels).length === 0 ? (
+          <p className="px-3 py-4 text-[13px] text-muted-foreground">
+            {shownTab === "external"
+              ? "Nothing yet. Buyer–seller conversations open to the desk once a deal is agreed or a buyer publishes an RFQ."
+              : "Nobody else has signed in yet."}
+          </p>
+        ) : shownTab === "external" ? (
+          conversationRows.map((row) => {
+            const last = row.conversation.messages.at(-1)
+            return (
+              <ChatListRow
+                key={row.id}
+                active={selected?.id === row.id}
+                onClick={() => select(row.id)}
+                title={`${row.conversation.buyerName} ↔ ${row.conversation.sellerName}`}
+                preview={last ? last.text : row.conversation.listingTitle}
+                avatar={<ChatAvatar icon={MessageCircleIcon} active={selected?.id === row.id} tone="mist" />}
+              />
+            )
+          })
         ) : (
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-amama-deep text-[12px] font-semibold text-white">
-            {initial(channel.title)}
-          </span>
+          staffChannels.map((channel) => (
+            <ChatListRow
+              key={channel.id}
+              active={selected?.id === channel.id}
+              onClick={() => select(channel.id)}
+              title={channel.title}
+              preview={staffStore[channel.id]?.at(-1)?.text ?? channel.subtitle}
+              avatar={
+                <ChatAvatar
+                  label={channel.title}
+                  icon={channel.id === STAFF_GROUP_CHANNEL_ID ? UsersIcon : undefined}
+                  active={selected?.id === channel.id}
+                  tone={channel.id === STAFF_GROUP_CHANNEL_ID ? "olive" : "graphite"}
+                />
+              }
+            />
+          ))
         )
+      }
+      windowHeader={
+        selected?.kind === "conversation" ? (
+          <div className="flex min-w-0 items-center gap-2.5">
+            <ChatAvatar icon={MessageCircleIcon} tone="mist" />
+            <div className="min-w-0">
+              <p className="truncate text-[14.5px] font-semibold">
+                {selected.conversation.buyerName} → {selected.conversation.sellerName}
+              </p>
+              <p className="truncate text-[12px] text-muted-foreground">{selected.conversation.listingTitle}</p>
+            </div>
+          </div>
+        ) : selected?.kind === "staff" ? (
+          <div className="flex min-w-0 items-center gap-2.5">
+            <ChatAvatar label={selected.title} icon={selected.id === STAFF_GROUP_CHANNEL_ID ? UsersIcon : undefined} tone={selected.id === STAFF_GROUP_CHANNEL_ID ? "olive" : "graphite"} />
+            <div className="min-w-0">
+              <p className="truncate text-[14.5px] font-semibold">{selected.title}</p>
+              <p className="truncate text-[12px] text-muted-foreground">{selected.subtitle}</p>
+            </div>
+          </div>
+        ) : null
+      }
+      windowBody={
+        selected?.kind === "conversation" ? (
+          <ConversationPane conversation={selected.conversation} kamName={admin.user.name} />
+        ) : selected?.kind === "staff" ? (
+          <StaffChannelPane channel={selected} sender={sender} mentionCandidates={mentionCandidates} />
+        ) : null
       }
     />
   )
@@ -369,15 +259,7 @@ function StaffChannelRowButton({
  * has to drive the contract, so the composer is live and everything they
  * post lands as the account manager rather than as either party.
  */
-function ConversationPane({
-  conversation,
-  kamName,
-  backButton,
-}: {
-  conversation: Conversation
-  kamName: string
-  backButton: React.ReactNode
-}) {
+function ConversationPane({ conversation, kamName }: { conversation: Conversation; kamName: string }) {
   // Neither trading party is "you" here — this is a KAM in someone else's
   // conversation — so buyer and seller each get a fixed, named side
   // (buyer left, seller right) instead of the "me"/"them" a first-person
@@ -406,17 +288,6 @@ function ConversationPane({
 
   return (
     <ConversationThread
-      header={
-        <div className="flex items-center">
-          {backButton}
-          <div className="min-w-0">
-            <p className="truncate text-[14px] font-semibold text-foreground">
-              {conversation.buyerName} → {conversation.sellerName}
-            </p>
-            <p className="truncate text-[12px] text-muted-foreground">{conversation.listingTitle}</p>
-          </div>
-        </div>
-      }
       messages={messages}
       viewer="kam"
       viewerName={kamName}
@@ -435,7 +306,7 @@ function ConversationPane({
               ) : null
           : undefined
       }
-      className="min-h-[420px] flex-1 bg-card lg:min-h-0"
+      className="min-h-0 flex-1"
     />
   )
 }
@@ -510,33 +381,22 @@ function StaffChannelPane({
   channel,
   sender,
   mentionCandidates,
-  backButton,
 }: {
   channel: StaffChannel
   sender: StaffChatSender
   mentionCandidates: { id: string; name: string }[]
-  backButton: React.ReactNode
 }) {
   const messages = useStaffChannel(channel.id)
 
   return (
     <StaffChatThread
-      header={
-        <div className="flex items-center">
-          {backButton}
-          <div className="min-w-0">
-            <p className="truncate text-[14px] font-semibold text-foreground">{channel.title}</p>
-            <p className="truncate text-[12px] text-muted-foreground">{channel.subtitle}</p>
-          </div>
-        </div>
-      }
       messages={messages}
       currentSenderId={sender.id}
       mentionCandidates={mentionCandidates}
       placeholder={`Message ${channel.title}…`}
       onSend={(text, mentions) => sendStaffMessage(channel.id, sender, text, mentions)}
       emptyState={<p className="text-[13px] text-muted-foreground">No messages yet — say hello.</p>}
-      className="min-h-[420px] flex-1 bg-card lg:min-h-0"
+      className="min-h-0 flex-1"
     />
   )
 }

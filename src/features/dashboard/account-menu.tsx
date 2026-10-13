@@ -67,7 +67,7 @@ function AccountMenu({
         className={cn(
           "shrink-0 rounded-full font-semibold outline-none transition-colors",
           grouped
-            ? "group/account flex h-8 items-center gap-2 bg-muted/70 ps-0.5 pe-2.5 text-[12.5px] text-foreground/80 hover:bg-green-300 hover:text-foreground"
+            ? "group/account flex h-8 items-center gap-2 bg-muted/70 ps-0.5 pe-2.5 text-[12.5px] text-foreground/80 hover:bg-muted hover:text-foreground"
             : "grid size-10 place-items-center bg-muted text-[13px] text-foreground shadow-floating hover:bg-muted/70",
           "focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:ring-offset-2"
         )}

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import type { TradeStatus } from "@/features/dashboard/dashboard-ui"
 import type { StatusBreakdown, VolumePoint } from "@/features/dashboard/demo-data"
 
-const EMERALD = "#10B981"
+const LINE_COLOR = "var(--amama)"
 
 /* ── season volume ─────────────────────────────────────────────────────── */
 
@@ -78,8 +78,8 @@ function SeasonVolumeChart({ points }: { points: VolumePoint[] }) {
       >
         <defs>
           <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor={EMERALD} stopOpacity={0.32} />
-            <stop offset="100%" stopColor={EMERALD} stopOpacity={0} />
+            <stop offset="0%" stopColor={LINE_COLOR} stopOpacity={0.32} />
+            <stop offset="100%" stopColor={LINE_COLOR} stopOpacity={0} />
           </linearGradient>
         </defs>
 
@@ -94,7 +94,7 @@ function SeasonVolumeChart({ points }: { points: VolumePoint[] }) {
 
         <polygon points={area} fill={`url(#${gradientId})`} />
         <polyline points={last} fill="none" className="stroke-muted-foreground/60" strokeWidth={1.5} strokeDasharray="4 4" />
-        <polyline points={line} fill="none" stroke={EMERALD} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        <polyline points={line} fill="none" stroke={LINE_COLOR} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
 
         {active !== null ? (
           <line x1={xAt(active)} x2={xAt(active)} y1={PAD.top} y2={PAD.top + PLOT_H} className="stroke-foreground/25" strokeWidth={1} />
@@ -107,7 +107,7 @@ function SeasonVolumeChart({ points }: { points: VolumePoint[] }) {
             cy={yAt(entry.volume)}
             r={active === index ? 5.5 : 4}
             className="fill-card"
-            stroke={EMERALD}
+            stroke={LINE_COLOR}
             strokeWidth={2}
           />
         ))}
@@ -141,7 +141,7 @@ function SeasonVolumeChart({ points }: { points: VolumePoint[] }) {
 
       <div className="mt-1 flex items-center gap-4 text-[11px] text-muted-foreground">
         <span className="flex items-center gap-1.5">
-          <span aria-hidden className="h-0.5 w-4 rounded-full" style={{ background: EMERALD }} />
+          <span aria-hidden className="h-0.5 w-4 rounded-full" style={{ background: LINE_COLOR }} />
           This season
         </span>
         <span className="flex items-center gap-1.5">

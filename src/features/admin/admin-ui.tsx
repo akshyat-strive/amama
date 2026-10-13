@@ -139,7 +139,7 @@ function AdminEmptyState({
 /** The "currently selected" treatment nav items and channel rows share —
  *  bright brand green with a matching border, not a solid deep fill, so
  *  a selected list row reads as the same move as a selected sidebar item. */
-const ADMIN_SELECTED_CLASS = "bg-amama text-amama-foreground border border-amama-foreground"
+const ADMIN_SELECTED_CLASS = "bg-amama text-amama-foreground"
 
 export {
   AdminPanel,

@@ -124,7 +124,7 @@ function ShipmentsView() {
 function ShipmentsSkeleton() {
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">Shipments</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Shipments</h1>
       <div className="mt-6 h-40 animate-pulse rounded-3xl bg-muted" />
     </div>
   )
@@ -162,7 +162,7 @@ function ShipmentsWorkspace() {
 
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">Shipments</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Shipments</h1>
 
       {trackedShipments.length === 0 ? (
         <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border px-5 py-16 text-center">
@@ -176,7 +176,7 @@ function ShipmentsWorkspace() {
         <>
           {arrived.length > 0 ? (
             <section className="mt-6">
-              <h2 className="text-[15px] font-bold text-foreground">Arrived</h2>
+              <h2 className="text-[15px] font-semibold text-foreground">Arrived</h2>
               <p className="mt-0.5 text-[13px] text-muted-foreground">Confirm delivery, or raise a claim if something&apos;s wrong.</p>
               <div className="mt-3 flex flex-col gap-3">
                 {arrived.map(({ deal, shipment }) => (
@@ -187,7 +187,7 @@ function ShipmentsWorkspace() {
           ) : null}
 
           <section className={arrived.length > 0 ? "mt-8" : "mt-6"}>
-            <h2 className="text-[15px] font-bold text-foreground">Your tracked shipments</h2>
+            <h2 className="text-[15px] font-semibold text-foreground">Your tracked shipments</h2>
             <p className="mt-0.5 text-[13px] text-muted-foreground">Real-time updates from the team handling your deal.</p>
             <ul className="mt-3 flex flex-col divide-y divide-border rounded-2xl border border-border bg-card px-3">
               {trackedShipments.map(({ shipment }) => (

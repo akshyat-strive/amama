@@ -38,7 +38,7 @@ export default function Home() {
         <p className="flex justify-center text-amama-deep">
           <AmamaWordmark className="h-6" />
         </p>
-        <h1 className="mt-4 text-center text-[28px] font-bold tracking-tight text-balance sm:text-[34px]">
+        <h1 className="mt-4 text-center text-[34px] font-semibold tracking-[-0.03em] text-balance sm:text-[34px]">
           Who&apos;s signing in?
         </h1>
         <p className="mt-2 text-center text-[15px] text-muted-foreground">
@@ -56,7 +56,7 @@ export default function Home() {
                 <role.icon className="size-5" />
               </span>
               <div>
-                <p className="text-[16px] font-bold text-foreground">{role.label}</p>
+                <p className="text-[16px] font-semibold text-foreground">{role.label}</p>
                 <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{role.description}</p>
               </div>
             </Link>

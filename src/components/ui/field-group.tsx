@@ -14,7 +14,7 @@ function FieldGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       className={cn(
-        "divide-y divide-border overflow-hidden rounded-2xl border border-border bg-transparent",
+        "divide-y divide-border overflow-hidden rounded-xl border border-input bg-background",
         className
       )}
       {...props}

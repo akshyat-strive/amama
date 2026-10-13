@@ -130,7 +130,6 @@ function MessagesViewInner({ role }: { role: OnboardingRole }) {
       <ChatLayout
         open={!!active}
         onClose={clear}
-        emptyDescription="Your conversations with sellers, buyers and your account manager open here."
         list={threads.map((thread) => (
           <ChatListRow
             key={thread.id}
@@ -138,13 +137,13 @@ function MessagesViewInner({ role }: { role: OnboardingRole }) {
             onClick={() => select(thread.id)}
             title={thread.name}
             preview={thread.preview}
-            avatar={<ChatAvatar label={thread.name} icon={thread.isKam ? ShieldCheckIcon : undefined} active={thread.id === active?.id} tone={thread.isKam ? "olive" : "graphite"} />}
+            avatar={<ChatAvatar label={thread.name} icon={thread.isKam ? ShieldCheckIcon : undefined} active={thread.id === active?.id} tone={thread.isKam ? "green" : "graphite"} />}
           />
         ))}
         windowHeader={
           active ? (
             <div className="flex min-w-0 items-center gap-2.5">
-              <ChatAvatar label={active.name} icon={active.isKam ? ShieldCheckIcon : undefined} tone={active.isKam ? "olive" : "graphite"} />
+              <ChatAvatar label={active.name} icon={active.isKam ? ShieldCheckIcon : undefined} tone={active.isKam ? "green" : "graphite"} />
               <div className="min-w-0">
                 <p className="truncate text-[14.5px] font-semibold">{active.name}</p>
                 <p className="truncate text-[12px] text-muted-foreground">

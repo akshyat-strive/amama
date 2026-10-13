@@ -130,7 +130,7 @@ function PlanCard({
         </div>
 
         <div>
-          <p className={cn("text-[18px] font-bold tracking-tight", gold ? "text-[#2b1a02]" : "text-white")}>
+          <p className={cn("text-[18px] font-semibold tracking-tight", gold ? "text-[#2b1a02]" : "text-white")}>
             {name}
           </p>
           <p className={cn("mt-0.5 text-[13px]", gold ? "text-[#4a3210]" : "text-white/70")}>{tagline}</p>

@@ -850,7 +850,7 @@ function PeekPanel() {
               ) : null}
               <div className="min-w-0 flex-1">
                 <Eyebrow>{KIND_LABEL[current.kind]}</Eyebrow>
-                <h2 className="mt-0.5 truncate text-[16px] font-bold tracking-tight">{resolved.title}</h2>
+                <h2 className="mt-0.5 truncate text-[16px] font-semibold tracking-tight">{resolved.title}</h2>
                 <p className="truncate text-[12px] text-muted-foreground">{resolved.subtitle}</p>
               </div>
               <button

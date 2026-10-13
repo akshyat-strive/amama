@@ -550,7 +550,7 @@ function ChangeRequestsPage() {
       <Link href="/internal/trade-desk" className="text-[13px] font-medium text-muted-foreground hover:text-foreground">
         ← Trades
       </Link>
-      <h1 className="mt-2 text-[26px] leading-tight font-bold tracking-tight">Change requests</h1>
+      <h1 className="mt-2 text-[28px] leading-tight font-semibold tracking-[-0.028em]">Change requests</h1>
       <p className="mt-1 text-[13px] text-muted-foreground">Scenario E across the book — every quantity, price, date, destination and spec change, and who decided it.</p>
 
       <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">

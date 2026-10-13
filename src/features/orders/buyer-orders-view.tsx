@@ -62,7 +62,7 @@ function BuyerOrdersPage() {
   return (
     <div className={PAGE_TABS_SPACE}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-[28px] font-bold tracking-tight">Orders</h1>
+        <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Orders</h1>
         <div className="relative w-full sm:w-72">
           <SearchIcon aria-hidden className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search orders" aria-label="Search orders" className="h-9 rounded-full ps-9" />
@@ -239,7 +239,7 @@ function OrderDetail({ trade, partyIds }: { trade: W.Trade; partyIds: string[] }
       <div className="mt-2 flex flex-wrap items-start gap-4">
         <Image src={orderPhoto(trade, 200)} alt="" width={64} height={64} className="size-16 shrink-0 rounded-2xl object-cover" />
         <div className="min-w-0 flex-1">
-          <h1 className="text-[26px] leading-tight font-bold tracking-tight">{productTitle(trade)}</h1>
+          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.028em]">{productTitle(trade)}</h1>
           <p className="mt-1 text-[13px] text-muted-foreground">
             Order <Mono className="text-[12.5px] text-foreground">{trade.id}</Mono> · placed {day(trade.contractSignedAt)} · {trade.qtyContractedMt} MT
           </p>

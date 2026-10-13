@@ -1,17 +1,17 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { ArrowLeftIcon, PackageSearchIcon } from "lucide-react"
+import { PackageSearchIcon } from "lucide-react"
 
-import { catalogCategory, productLabel, slugify } from "@/features/marketplace/catalog"
+import { catalogCategory, productLabel, gradeSlug } from "@/features/marketplace/catalog"
 import { CatalogTile } from "@/features/marketplace/catalog-tile"
 import { formatInr } from "@/features/marketplace/currency"
 import { useListings } from "@/features/marketplace/listing-store"
+import { MarketplaceBreadcrumbs } from "@/features/marketplace/marketplace-ui"
 
 /** Level 2 of the drill-down: every product listed under one category
- *  ("Fruits" → Apple, Fresh fruit, Dried fruit), each tile leading to that
- *  product's own variants. */
+ *  ("Fruits" → Apple, Fresh fruit, Dried fruit), as photo tiles — each
+ *  leading to the grades that product is offered at. */
 function CategoryProductsView({ categoryId }: { categoryId: string }) {
   const category = catalogCategory(categoryId)
   const allListings = useListings()
@@ -36,7 +36,8 @@ function CategoryProductsView({ categoryId }: { categoryId: string }) {
         cropId,
         label: productLabel(cropId),
         photo: group[0].photo,
-        variantCount: new Set(group.map((listing) => slugify(listing.variety))).size,
+        gradeCount: new Set(group.map((listing) => gradeSlug(listing.grade))).size,
+        sellerCount: new Set(group.map((listing) => listing.sellerId)).size,
         minPrice: Math.min(...group.map((listing) => listing.pricePerTonneUsd)),
       }))
       .sort((a, b) => a.label.localeCompare(b.label))
@@ -44,18 +45,15 @@ function CategoryProductsView({ categoryId }: { categoryId: string }) {
 
   return (
     <div>
-      <Link
-        href="/buyer/dashboard/sourcing"
-        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeftIcon className="size-3.5" />
-        Marketplace
-      </Link>
+      <MarketplaceBreadcrumbs trail={[{ label: "Marketplace", href: "/buyer/dashboard/sourcing" }, { label: category.label }]} />
 
-      <h1 className="mt-3 text-[28px] font-bold tracking-tight">{category.label}</h1>
+      <h1 className="mt-4 text-[34px] font-semibold tracking-[-0.03em] sm:text-[40px]">{category.label}</h1>
+      <p className="mt-1 text-[15px] text-muted-foreground">
+        {products.length} {products.length === 1 ? "product" : "products"}
+      </p>
 
       {products.length === 0 ? (
-        <div className="mt-8 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border py-16 text-center">
+        <div className="mt-8 flex flex-col items-center gap-3 rounded-[28px] bg-card py-16 text-center">
           <PackageSearchIcon className="size-6 text-muted-foreground" />
           <p className="text-[15px] font-semibold">No sellers here yet</p>
           <p className="max-w-xs text-[13px] leading-relaxed text-muted-foreground">
@@ -63,14 +61,14 @@ function CategoryProductsView({ categoryId }: { categoryId: string }) {
           </p>
         </div>
       ) : (
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {products.map((product) => (
             <CatalogTile
               key={product.cropId}
               href={`/buyer/dashboard/sourcing/${categoryId}/${product.cropId}`}
               photo={product.photo}
               title={product.label}
-              subtitle={`${product.variantCount} ${product.variantCount === 1 ? "variant" : "variants"}`}
+              subtitle={`${product.gradeCount} ${product.gradeCount === 1 ? "grade" : "grades"} · ${product.sellerCount} ${product.sellerCount === 1 ? "seller" : "sellers"}`}
               meta={`from ${formatInr(product.minPrice)}`}
             />
           ))}

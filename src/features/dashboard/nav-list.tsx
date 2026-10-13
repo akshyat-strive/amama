@@ -17,7 +17,7 @@ import {
  * The sidebar: one white card floating on the mist page, and inside it
  * plain groups — a quiet label, then tight rows that sit flush against
  * each other so a group reads as one list, not scattered buttons. Only the
- * selected row carries colour, the macOS way: an olive fill with a white
+ * selected row carries colour, the macOS way: a green fill with a white
  * label and a yellow icon. Account items pin to the bottom.
  *
  * Collapsed, it's an icon rail: groups split by hairlines, labels in
@@ -83,7 +83,7 @@ function NavList({
 
   return (
     <TooltipProvider>
-      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[20px] bg-card">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[24px] bg-card">
         <nav aria-label="Main" className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 py-2 scrollbar-none">
           {regularGroups.map(({ group, items: groupItems }, index) => (
             <div key={group} className={cn(index > 0 && (expanded ? "mt-2.5" : "mt-1.5 border-t border-border pt-1.5"))}>

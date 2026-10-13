@@ -21,6 +21,7 @@ import { emptyBuyer, emptySeller, type OnboardingRole } from "@/features/onboard
 import { useVerification } from "@/features/verification/verification-context"
 import { SidebarToggle, TopbarActions, TopbarBrand } from "@/features/dashboard/topbar-parts"
 import { TopbarNotifications } from "@/features/trades/topbar-notifications"
+import { RaiseTicketButton } from "@/features/tickets/raise-ticket-button"
 import { TopbarSearch } from "@/features/trades/topbar-search"
 
 const SIDEBAR_STORAGE_KEY = "amama.dashboardSidebarOpen"
@@ -57,9 +58,9 @@ const TOPBAR_OFFSET = "pt-20"
  */
 const RAIL_WIDTH_MD = "md:w-16"
 
-/** What stays open while KYC is in review: the ticket itself, and
- *  settings. Everything else waits for approval. */
-const OPEN_BEFORE_APPROVAL = ["verification", "settings"]
+/** What stays open while KYC is in review: the KYC ticket, support
+ *  tickets and settings. Everything else waits for approval. */
+const OPEN_BEFORE_APPROVAL = ["verification", "tickets", "settings"]
 
 function DashboardShell({
   role,
@@ -152,6 +153,7 @@ function DashboardShell({
         <TopbarSearch perspective={role} email={person.email} basePath={tradeBase} />
 
         <TopbarActions>
+          <RaiseTicketButton role={role} />
           <TopbarNotifications perspective={role} email={person.email} basePath={tradeBase} />
           <LanguageSwitcher variant="inline" />
           <AccountMenu
@@ -241,7 +243,7 @@ function DashboardShell({
               extra room the sidebar doesn't get. */}
           <div
             className={cn(
-              "mx-auto w-full max-w-6xl px-4 pb-3 sm:px-6 md:ps-0",
+              "mx-auto w-full max-w-6xl px-2 pb-0 sm:px-6 sm:pb-3 md:ps-0",
               TOPBAR_OFFSET
             )}
           >

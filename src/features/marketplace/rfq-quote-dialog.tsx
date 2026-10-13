@@ -117,7 +117,7 @@ function QuoteFields({
         {total > 0 ? (
           <div className="flex items-baseline justify-between rounded-2xl bg-amama-subtle px-4 py-3">
             <span className="text-[12px] font-medium text-muted-foreground">Total quote value</span>
-            <span className="text-[18px] font-bold text-amama-deep">{formatRupees(total)}</span>
+            <span className="text-[18px] font-semibold text-amama-deep">{formatRupees(total)}</span>
           </div>
         ) : null}
 

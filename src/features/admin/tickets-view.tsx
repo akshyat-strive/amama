@@ -14,6 +14,8 @@ import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { StatusPill, type Tone } from "@/features/admin/review-ui"
 import { SubmissionCard } from "@/features/admin/review-queue-view"
 import { useUsers } from "@/features/admin/user-store"
+import { TicketsList } from "@/features/tickets/tickets-list"
+import { useTickets } from "@/features/tickets/ticket-store"
 import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
 import { countries } from "@/features/onboarding/countries"
 import type { ReviewStatus } from "@/features/verification/verification-context"
@@ -187,15 +189,45 @@ function TicketsWorkspace() {
   }
 
   if (!admin) return null
-  if (!admin.can("onboarding.review") && !seesAll) {
+  // KYC is SaleOps' queue; raised tickets and catalog requests are open to
+  // every role, scoped by level inside `RequestsPanel`.
+  const canKyc = admin.can("onboarding.review") || seesAll
+  const type: "kyc" | "requests" = searchParams.get("type") === "requests" || !canKyc ? "requests" : "kyc"
+  const typeSwitch = canKyc ? (
+    <div role="radiogroup" aria-label="Ticket type" className="flex rounded-full bg-card p-1">
+      {(
+        [
+          ["kyc", "KYC"],
+          ["requests", "Requests"],
+        ] as const
+      ).map(([value, label]) => (
+        <button
+          key={value}
+          type="button"
+          role="radio"
+          aria-checked={type === value}
+          onClick={() => setParams({ type: value === "kyc" ? null : value, status: null, tag: null, view: null })}
+          className={cn(
+            "h-8 rounded-full px-4 text-[13px] font-medium transition-colors",
+            type === value ? "bg-amama text-white" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  ) : null
+
+  if (type === "requests") {
     return (
       <div>
-        <h1 className="text-[28px] font-bold tracking-tight">Tickets</h1>
-        <AdminEmptyState
-          icon={Inbox}
-          title="KYC tickets aren't part of your role"
-          description="SaleOps reviews KYC. Ask your executive if you need to see these."
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="me-auto text-[34px] font-semibold tracking-[-0.03em]">Tickets</h1>
+          {typeSwitch}
+        </div>
+        <div className="mt-6">
+          <RequestsPanel />
+        </div>
       </div>
     )
   }
@@ -203,9 +235,10 @@ function TicketsWorkspace() {
 
   return (
     <div className={PAGE_TABS_SPACE}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-[28px] font-bold tracking-tight">Tickets</h1>
-        <div role="radiogroup" aria-label="View" className="flex rounded-full border border-border bg-card p-0.5">
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="me-auto text-[34px] font-semibold tracking-[-0.03em]">Tickets</h1>
+        {typeSwitch}
+        <div role="radiogroup" aria-label="View" className="flex rounded-full bg-card p-1">
           {VIEWS.map((option) => (
             <button
               key={option.value}
@@ -468,6 +501,28 @@ function TicketBoard({
         )
       })}
     </div>
+  )
+}
+
+/**
+ * Raised tickets and catalog requests, staff side. Executives and Master
+ * KAMs (who hold `overview.view`) see every one; anyone else sees what's
+ * assigned to them or what they raised.
+ */
+function RequestsPanel() {
+  const admin = useCurrentAdmin()
+  const users = useUsers()
+  const tickets = useTickets()
+  if (!admin) return null
+  const seesAll = admin.can("overview.view")
+  const visible = seesAll ? tickets : tickets.filter((ticket) => ticket.assigneeId === admin.user.id || ticket.raisedBy.id === admin.user.id)
+  return (
+    <TicketsList
+      tickets={visible}
+      me={{ kind: "staff", id: admin.user.id, name: admin.user.name, title: admin.role.name }}
+      staff={users.map((user) => ({ id: user.id, name: user.name }))}
+      emptyText={seesAll ? "No tickets raised yet." : "Nothing assigned to you."}
+    />
   )
 }
 

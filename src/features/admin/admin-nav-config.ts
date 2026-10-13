@@ -33,7 +33,7 @@ type AdminNavItem = DashboardNavItem & {
 const adminNavItems: AdminNavItem[] = [
   { label: "Home", href: "/internal", icon: HouseIcon, group: "overview" },
   { label: "Chat", href: "/internal/chat", icon: MessagesSquareIcon, group: "overview" },
-  { label: "Tickets", href: "/internal/tickets", icon: TicketIcon, group: "work", permission: ["onboarding.review", "onboarding.viewAll"] },
+  { label: "Tickets", href: "/internal/tickets", icon: TicketIcon, group: "work" },
   { label: "Deals", href: "/internal/deals", icon: HandshakeIcon, group: "work", permission: ["deals.work", "deals.viewAll"] },
   { label: "Contracts", href: "/internal/contracts", icon: FileSignatureIcon, group: "work", permission: ["deals.work", "deals.viewAll"] },
   { label: "Listings", href: "/internal/listings", icon: PackageSearchIcon, group: "work", permission: ["listings.moderate", "onboarding.viewAll", "deals.viewAll"] },

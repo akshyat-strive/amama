@@ -30,15 +30,15 @@ function AdminPanel({
   action?: React.ReactNode
 }) {
   return (
-    <section className={cn("overflow-hidden rounded-[20px] border border-border bg-muted", className)}>
-      <header className="flex items-start justify-between gap-3 px-5 py-4">
+    <section className={cn("overflow-hidden rounded-[24px] bg-card", className)}>
+      <header className="flex items-start justify-between gap-3 px-6 pt-5 pb-4">
         <div className="min-w-0">
-          <h2 className="text-[15px] font-semibold text-foreground">{title}</h2>
+          <h2 className="text-[17px] font-semibold tracking-[-0.02em] text-foreground">{title}</h2>
           {subtitle ? <p className="mt-0.5 text-[13px] text-muted-foreground">{subtitle}</p> : null}
         </div>
         {action}
       </header>
-      <div className="border-t border-border bg-card">{children}</div>
+      <div className="border-t border-border">{children}</div>
     </section>
   )
 }

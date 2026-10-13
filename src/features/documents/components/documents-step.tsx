@@ -41,7 +41,7 @@ import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import { saveProfile } from "@/features/onboarding/profile-store"
 import { effectiveSteps, previousStep, stepIndex } from "@/features/onboarding/steps"
 import type { OnboardingRole } from "@/features/onboarding/types"
-import { submitApplication } from "@/features/verification/kyc-store"
+import { startApplication, submitApplication } from "@/features/verification/kyc-store"
 import { useVerification } from "@/features/verification/verification-context"
 
 const icons: Record<string, LucideIcon> = {
@@ -70,8 +70,9 @@ const iconNameById = Object.fromEntries(
  * `getRequiredDocuments` — the one place that knows what country, entity
  * type and seller sub-type imply. Submitting creates the KYC ticket and
  * lands the applicant in their dashboard, locked to that ticket until a
- * KAM approves it. There's no Skip: skipping KYC just moves the rejection
- * later.
+ * KAM approves it. Skip starts the application without submitting it:
+ * the dashboard opens locked to Verification and Support, where the
+ * documents can be uploaded later.
  *
  * Files go to IndexedDB as they're picked (see `DocumentUploadCard`), and
  * the picks are saved to this browser's document draft, so leaving mid-form
@@ -117,36 +118,51 @@ function DocumentsStep({ role }: { role: OnboardingRole }) {
 
   const handleChange = React.useCallback((id: DocumentId, file: UploadedFile | null) => setUpload(id, file), [setUpload])
 
+  /** What's been picked so far, with any pre-IndexedDB data URL drafts
+   *  stored as real files now so the reviewer can open them. */
+  const collectUploads = () =>
+    Promise.all(
+      documents.map(async (entry) => {
+        const upload = uploads[entry.id]
+        if (!upload) return { id: entry.id, required: entry.required, file: null }
+        let fileId = upload.fileId ?? null
+        if (!fileId && upload.dataUrl) fileId = await putFile(await (await fetch(upload.dataUrl)).blob())
+        return { id: entry.id, required: entry.required, file: { name: upload.name, size: upload.size, fileId } }
+      })
+    )
+
+  const applicant = () => ({
+    email: session!.accountId,
+    fullName: current.fullName,
+    companyName: role === "buyer" ? draft.buyer.companyName : draft.seller.farmName,
+    entityType: current.entityType,
+    sellerSubType: role === "seller" ? draft.seller.sellerSubType : undefined,
+    country: current.country,
+  })
+
   const handleSubmit = async () => {
     if (!canContinue || !session) return
     setSubmitting(true)
-    // Drafts saved before files moved to IndexedDB carry a data URL
-    // instead — store those bytes now so the reviewer can open them.
-    const picked = await Promise.all(
-      documents
-        .filter((entry) => uploads[entry.id])
-        .map(async (entry) => {
-          const upload = uploads[entry.id]
-          let fileId = upload.fileId ?? null
-          if (!fileId && upload.dataUrl) fileId = await putFile(await (await fetch(upload.dataUrl)).blob())
-          return { id: entry.id, required: entry.required, file: { name: upload.name, size: upload.size, fileId } }
-        })
-    )
+    const picked = (await collectUploads()).filter((entry) => entry.file !== null) as {
+      id: string
+      required: boolean
+      file: { name: string; size: number; fileId: string | null }
+    }[]
     saveProfile(role, current)
-    submitApplication({
-      role,
-      applicant: {
-        email: session.accountId,
-        fullName: current.fullName,
-        companyName: role === "buyer" ? draft.buyer.companyName : draft.seller.farmName,
-        entityType: current.entityType,
-        sellerSubType: role === "seller" ? draft.seller.sellerSubType : undefined,
-        country: current.country,
-      },
-      documents: picked,
-    })
+    submitApplication({ role, applicant: applicant(), documents: picked })
     clearDraft()
     router.push(`/${role}/dashboard`)
+  }
+
+  /** Skipping still opens the dashboard — locked to KYC and support until
+   *  the documents are uploaded from the Verification page and approved. */
+  const handleSkip = async () => {
+    if (!session || submitting) return
+    setSubmitting(true)
+    saveProfile(role, current)
+    startApplication({ role, applicant: applicant(), documents: await collectUploads() })
+    clearDraft()
+    router.push(`/${role}/dashboard/verification`)
   }
 
   return (
@@ -156,6 +172,7 @@ function DocumentsStep({ role }: { role: OnboardingRole }) {
       backHref={back?.href ?? "/"}
       title={t("onboarding.documents.title")}
       description={t("onboarding.documents.description")}
+      onSkip={() => void handleSkip()}
       footer={
         <Button size="xl" className="w-full" disabled={!canContinue} onClick={() => void handleSubmit()}>
           Submit for review

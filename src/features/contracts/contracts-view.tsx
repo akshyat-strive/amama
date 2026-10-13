@@ -118,7 +118,7 @@ function ContractsView({ viewer, identity }: { viewer: ChatParty; identity: { id
 function ContractsSkeleton() {
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">Contracts</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Contracts</h1>
       <div className="mt-6 h-40 animate-pulse rounded-3xl bg-muted" />
     </div>
   )
@@ -180,7 +180,7 @@ function ContractsWorkspace({
 
   return (
     <div className={PAGE_TABS_SPACE}>
-      <h1 className="text-[28px] font-bold tracking-tight">Contracts</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Contracts</h1>
 
       <PageTabs
         label="Contract lists"
@@ -612,7 +612,7 @@ function ContractDetail({
       {/* Who's actually party to this — the identifiable info a reader
           scans for first, given its own big, legible name each rather
           than folded into one small sentence. */}
-      <div className="my-4 flex w-full items-center justify-between text-[18px] font-bold tracking-tight text-slate-900">
+      <div className="my-4 flex w-full items-center justify-between text-[18px] font-semibold tracking-tight text-slate-900">
         <span className="flex-1 leading-4 text-left">{contract.buyerName}</span>
         
         {/* Center exchange bridge aligned horizontally across baseline */}

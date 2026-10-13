@@ -6,7 +6,7 @@ import { AlertCircleIcon, BadgeCheckIcon, FileTextIcon, HourglassIcon, type Luci
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { StatusPill } from "@/features/admin/review-ui"
 import { useI18n } from "@/features/i18n/i18n-context"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
@@ -20,7 +20,7 @@ import {
   documentStatus,
   useDocumentLabel,
 } from "@/features/verification/components/kyc-ticket-parts"
-import { addApplicantComment, uploadDocumentVersion } from "@/features/verification/kyc-store"
+import { addApplicantComment, submitStartedApplication, uploadDocumentVersion } from "@/features/verification/kyc-store"
 import type { KycDocument } from "@/features/verification/kyc-types"
 import { kycTicketId } from "@/features/verification/ticket"
 import { useVerification } from "@/features/verification/verification-context"
@@ -67,8 +67,16 @@ function ApplicantKycTicket({ role }: { role: OnboardingRole }) {
     toast.success(`${labelOf(document).label} uploaded`)
   }
 
+  const missingRequired = application.documents.filter((document) => document.required && document.versions.length === 0).length
   const header =
-    status === "approved"
+    status === "not-submitted"
+      ? {
+          icon: FileTextIcon,
+          tone: "bg-muted text-foreground",
+          title: "Finish your KYC",
+          description: "Upload the documents below, then send them for review. The rest of amama opens once your account manager approves them.",
+        }
+      : status === "approved"
       ? { icon: BadgeCheckIcon, tone: "bg-amama-subtle text-amama-deep", title: "You're verified", description: "Your KYC is approved. Everything below is kept on record." }
       : status === "changes-requested"
         ? { icon: AlertCircleIcon, tone: "bg-status-warning/15 text-status-warning", title: t("review.changesTitle"), description: t("review.changesDescription") }
@@ -77,9 +85,25 @@ function ApplicantKycTicket({ role }: { role: OnboardingRole }) {
   return (
     <div className="flex flex-col gap-5">
       <StatusHeader {...header}>
+        {status === "not-submitted" ? (
+          <div className="mt-5 flex flex-wrap items-center gap-3 rounded-[20px] bg-card px-4 py-3">
+            <p className="me-auto text-[14px] text-muted-foreground">
+              {missingRequired > 0 ? `${missingRequired} required document${missingRequired === 1 ? "" : "s"} still to upload` : "Everything required is uploaded."}
+            </p>
+            <Button
+              disabled={missingRequired > 0}
+              onClick={() => {
+                submitStartedApplication(role, application.userId)
+                toast.success("Sent for review")
+              }}
+            >
+              Submit for review
+            </Button>
+          </div>
+        ) : null}
         <KycProgress
           ticket={kycTicketId(role, application.email)}
-          stage={status === "approved" ? 2 : 0}
+          stage={status === "approved" ? 2 : status === "not-submitted" ? -1 : 0}
           needsAction={status === "changes-requested"}
           labels={[t("review.stepSubmitted"), t("review.stepReview"), t("review.stepVerified")]}
         />
@@ -105,7 +129,9 @@ function ApplicantKycTicket({ role }: { role: OnboardingRole }) {
                       <p className="text-[14px] font-semibold">{labelOf(document).label}</p>
                       <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted-foreground">
                         {document.reviewStatus === "missing"
-                          ? `${document.requestedBy?.name ?? "Your KAM"} asked for this.${document.hint ? ` ${document.hint}.` : ""}`
+                          ? document.requestedBy
+                            ? `${document.requestedBy.name} asked for this.${document.hint ? ` ${document.hint}.` : ""}`
+                            : `${labelOf(document).hint || "Still to upload"}${document.required ? "" : " · optional"}`
                           : document.reviewNote ?? "Please upload this again."}
                       </p>
                     </div>
@@ -195,7 +221,7 @@ function StatusHeader({
           <Icon className="size-5" strokeWidth={2.25} />
         </span>
         <div className="min-w-0">
-          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-balance">{title}</h1>
+          <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.028em] text-balance">{title}</h1>
           <p className="mt-1 max-w-2xl text-[14.5px] leading-relaxed text-pretty text-muted-foreground">{description}</p>
         </div>
       </div>

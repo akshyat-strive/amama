@@ -25,7 +25,7 @@ function AdminSettingsView() {
 
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">Settings</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Settings</h1>
 
       <AdminPanel title="Session" className="mt-6">
         <div className="flex items-center justify-between gap-4 px-5 py-4">

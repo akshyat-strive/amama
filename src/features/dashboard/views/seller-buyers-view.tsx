@@ -98,14 +98,14 @@ function SellerBuyersView() {
 
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">Buyers</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Buyers</h1>
 
       {matches.length === 0 ? (
         <div className="mt-8 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border py-16 text-center">
           <span className="grid size-12 place-items-center rounded-full bg-amama-subtle text-amama-deep">
             <UsersIcon className="size-5" strokeWidth={2.25} />
           </span>
-          <h2 className="text-[17px] font-bold">No buyers yet</h2>
+          <h2 className="text-[17px] font-semibold">No buyers yet</h2>
           <p className="max-w-xs text-[14px] leading-relaxed text-muted-foreground">
             Add a listing and buyers sourcing that crop will show up here.
           </p>

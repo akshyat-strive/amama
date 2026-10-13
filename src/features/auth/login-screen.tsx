@@ -144,7 +144,7 @@ function LoginScreen({ role }: { role: OnboardingRole }) {
 
         <div className="flex flex-1 flex-col justify-end py-8">
           <div className="mx-auto w-full max-w-sm">
-            <h1 className="mt-2 text-[28px] font-bold leading-tight tracking-tight text-balance sm:text-[32px]">
+            <h1 className="mt-2 text-[30px] font-semibold leading-tight tracking-[-0.03em] text-balance sm:text-[32px]">
               {title}
             </h1>
             <p className="mt-2 text-[15px] leading-relaxed text-pretty text-muted-foreground">

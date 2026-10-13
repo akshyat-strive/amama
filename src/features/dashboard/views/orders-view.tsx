@@ -40,7 +40,7 @@ function OrdersView({ role }: { role: OnboardingRole }) {
 function OrdersSkeleton() {
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">Orders</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Orders</h1>
       <div className="mt-6 h-40 animate-pulse rounded-3xl bg-muted" />
     </div>
   )
@@ -102,7 +102,7 @@ function OrdersWorkspace({ role }: { role: OnboardingRole }) {
 
   return (
     <div className={PAGE_TABS_SPACE}>
-      <h1 className="text-[28px] font-bold tracking-tight">Orders</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Orders</h1>
 
       <PageTabs
         label="Order lists"
@@ -286,7 +286,7 @@ function LiveOrderDetail({ deal, role }: { deal: Deal; role: OnboardingRole }) {
   return (
     <div className="flex flex-col gap-4 pb-2">
       <div>
-        <h2 className="text-[17px] font-bold tracking-tight text-foreground">{deal.listingTitle}</h2>
+        <h2 className="text-[17px] font-semibold tracking-tight text-foreground">{deal.listingTitle}</h2>
         <p className="mt-1 text-[13px] text-muted-foreground">
           {role === "buyer" ? deal.sellerName : deal.buyerName}
           {deal.assignedKamName ? ` · Managed by ${deal.assignedKamName}` : ""}
@@ -294,7 +294,7 @@ function LiveOrderDetail({ deal, role }: { deal: Deal; role: OnboardingRole }) {
       </div>
       <div className="flex items-baseline justify-between rounded-2xl bg-muted px-4 py-3">
         <span className="text-[12px] font-medium text-muted-foreground">Order value</span>
-        <span className="text-[18px] font-bold text-amama-deep">
+        <span className="text-[18px] font-semibold text-amama-deep">
           {formatInr(deal.agreedPricePerTonneUsd * deal.agreedQuantityMt)}
         </span>
       </div>
@@ -307,7 +307,7 @@ function EtaOrderDetail({ order }: { order: DemoOrder }) {
   return (
     <div className="flex flex-col gap-4 pb-2">
       <div>
-        <h2 className="text-[17px] font-bold tracking-tight text-foreground">
+        <h2 className="text-[17px] font-semibold tracking-tight text-foreground">
           {order.crop} — {order.variety}
         </h2>
         <p className="mt-1 text-[13px] text-muted-foreground">{order.id}</p>

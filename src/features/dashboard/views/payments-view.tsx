@@ -51,7 +51,7 @@ function PaymentsView() {
 
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">Payments</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Payments</h1>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         <StatCard label="Paid out" value={formatInr(paid)} caption="Season to date" />

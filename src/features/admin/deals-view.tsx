@@ -114,7 +114,7 @@ function DealsView() {
 
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">Deals</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Deals</h1>
 
       <div className="mt-6 flex flex-col gap-8">
         {canViewAll ? (
@@ -356,7 +356,7 @@ function DealCard({
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <h2 className="truncate text-[15px] font-bold tracking-tight text-foreground">{deal.listingTitle}</h2>
+              <h2 className="truncate text-[15px] font-semibold tracking-tight text-foreground">{deal.listingTitle}</h2>
               <StatusPill tone={status.tone}>{status.label}</StatusPill>
             </div>
             <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
@@ -701,7 +701,7 @@ function DealDetail({ deal, myUserName }: { deal: Deal; myUserName: string }) {
       <div className="rounded-[20px] border border-border bg-card p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="truncate text-[16px] font-bold tracking-tight">{deal.listingTitle}</h2>
+            <h2 className="truncate text-[16px] font-semibold tracking-tight">{deal.listingTitle}</h2>
             <p className="mt-0.5 text-[13px] text-muted-foreground">
               {deal.buyerName} (buyer) ↔ {deal.sellerName} (seller)
             </p>

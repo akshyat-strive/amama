@@ -161,7 +161,7 @@ function ListingsModerationView() {
 
   return (
     <div className={PAGE_TABS_SPACE}>
-      <h1 className="text-[28px] font-bold tracking-tight">Listings</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Listings</h1>
 
       <PageTabs
         label="Listing review"

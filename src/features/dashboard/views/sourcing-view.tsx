@@ -8,8 +8,8 @@ import { StoreIcon, XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CATALOG_CATEGORIES, productLabel, slugify } from "@/features/marketplace/catalog"
-import { CategoryChips, CategoryRail, type CategoryRailItem } from "@/features/marketplace/category-rail"
+import { CATALOG_CATEGORIES, productLabel, slugify, gradeSlug } from "@/features/marketplace/catalog"
+import { CategoryTabs } from "@/features/marketplace/marketplace-ui"
 import { CatalogTile } from "@/features/marketplace/catalog-tile"
 import { formatInr } from "@/features/marketplace/currency"
 import { ListingCard } from "@/features/marketplace/listing-card"
@@ -26,18 +26,13 @@ const STICK_AT = 68
 type Sort = "name" | "price"
 const SORT_ITEMS: Record<Sort, string> = { name: "Name A–Z", price: "Lowest price" }
 
-/** Up to three distinct listing photos — the "cards in hand" a category
- *  rail item fans out. */
-function photosOf(listings: Listing[]): string[] {
-  return [...new Set(listings.map((listing) => listing.photo).filter(Boolean))].slice(0, 3)
-}
-
 /**
- * The marketplace: categories as fanned photo cards up top, which collapse
- * into a slim chip slider pinned under the topbar once scrolled past, and
- * a product grid that animates as the filter changes. Search is the
- * topbar's — pressing Enter there on this page lands back here with `?q=`,
- * which switches the grid to matching listings.
+ * The marketplace: categories as text tabs pinned under the topbar —
+ * readable however many there are — over a grid of product photo tiles.
+ * From a product, the drill-down goes to its grades, then to the sellers
+ * offering that grade, with breadcrumbs back up. Search is the topbar's —
+ * pressing Enter there on this page lands back here with `?q=`, which
+ * switches the grid to matching listings.
  */
 function SourcingWorkspace() {
   const router = useRouter()
@@ -133,11 +128,11 @@ function SourcingWorkspace() {
   }, [categories, mine])
   const activeId = selectedId === ALL || visible.some((entry) => entry.category.id === selectedId) ? selectedId : ALL
 
-  const railItems: CategoryRailItem[] = React.useMemo(() => {
-    const scoped = visible.flatMap((entry) => entry.listings)
+  const railItems = React.useMemo(() => {
+    const productCount = (group: Listing[]) => new Set(group.map((listing) => listing.cropId)).size
     return [
-      { id: ALL, label: "All", photos: visible.slice(0, 3).map((entry) => entry.listings[0].photo), count: scoped.length },
-      ...visible.map((entry) => ({ id: entry.category.id, label: entry.category.label, photos: photosOf(entry.listings), count: entry.listings.length })),
+      { id: ALL, label: "All", count: productCount(visible.flatMap((entry) => entry.listings)) },
+      ...visible.map((entry) => ({ id: entry.category.id, label: entry.category.label, count: productCount(entry.listings) })),
     ]
   }, [visible])
 
@@ -158,27 +153,14 @@ function SourcingWorkspace() {
       categoryId: group[0].categoryId,
       label: productLabel(cropId),
       photo: group[0].photo,
-      variantCount: new Set(group.map((listing) => slugify(listing.variety))).size,
+      gradeCount: new Set(group.map((listing) => gradeSlug(listing.grade))).size,
       sellerCount: new Set(group.map((listing) => listing.sellerId)).size,
       minPrice: Math.min(...group.map((listing) => listing.pricePerTonneUsd)),
     }))
     return rows.sort((a, b) => b.fit - a.fit || (sort === "price" ? a.minPrice - b.minPrice : a.label.localeCompare(b.label)))
   }, [listings, activeId, visible, sort, fit, preferences, mine, isInterest])
 
-  /* The full rail scrolls away; its compact twin pins under the topbar. */
-  const railRef = React.useRef<HTMLDivElement>(null)
   const resultsRef = React.useRef<HTMLDivElement>(null)
-  const [pinned, setPinned] = React.useState(false)
-  React.useEffect(() => {
-    const node = railRef.current
-    if (!node) return
-    const observer = new IntersectionObserver(
-      ([entry]) => setPinned(!entry.isIntersecting && entry.boundingClientRect.top < STICK_AT),
-      { rootMargin: `-${STICK_AT}px 0px 0px 0px`, threshold: 0 }
-    )
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [flatMode])
 
   const clearQuery = () => {
     const params = new URLSearchParams(searchParams.toString())
@@ -187,15 +169,12 @@ function SourcingWorkspace() {
     router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false })
   }
 
-  const selectCategory = (id: string) => {
-    setSelectedId(id)
-    if (pinned) resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-  }
+  const selectCategory = (id: string) => setSelectedId(id)
 
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-[28px] font-bold tracking-tight">Marketplace</h1>
+        <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Marketplace</h1>
         <div className="flex items-center gap-2">
           {canScope && !flatMode ? (
             <div role="radiogroup" aria-label="Products shown" className="flex rounded-full border border-border bg-card p-0.5">
@@ -260,22 +239,10 @@ function SourcingWorkspace() {
         <EmptyState message="No sellers have listed anything yet." />
       ) : (
         <>
-          <div ref={railRef} className="mt-3">
-            <CategoryRail items={railItems} selectedId={activeId} onSelect={selectCategory} />
-          </div>
-
-          <div className="sticky z-20 h-0" style={{ top: STICK_AT }}>
-            <div
-              className={cn(
-                "absolute inset-x-0 top-0 transition-[opacity,transform] duration-200",
-                pinned ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0"
-              )}
-            >
-              <div aria-hidden className="pointer-events-none absolute -inset-x-4 -bottom-4 bg-gradient-to-b from-card via-card/90 to-transparent" style={{ top: -STICK_AT }} />
-              <div className="relative">
-                <CategoryChips items={railItems} selectedId={activeId} onSelect={selectCategory} />
-              </div>
-            </div>
+          {/* Categories as words, pinned under the topbar while the
+              products scroll. */}
+          <div className="sticky z-20 -mx-2 mt-4 bg-background/90 px-2 py-1 backdrop-blur sm:-mx-1 sm:px-1" style={{ top: STICK_AT }}>
+            <CategoryTabs items={railItems} selectedId={activeId} onSelect={selectCategory} />
           </div>
 
           <div ref={resultsRef} className="mt-4 flex scroll-mt-32 items-center justify-between gap-2">
@@ -318,7 +285,7 @@ type ProductRow = {
   categoryId: string
   label: string
   photo: string
-  variantCount: number
+  gradeCount: number
   sellerCount: number
   minPrice: number
   gradeMatch: boolean
@@ -343,7 +310,7 @@ function ProductGrid({ products }: { products: ProductRow[] }) {
               subtitle={
                 product.gradeMatch
                   ? `Your grade · ${product.sellerCount} ${product.sellerCount === 1 ? "seller" : "sellers"}`
-                  : `${product.variantCount} ${product.variantCount === 1 ? "variant" : "variants"} · ${product.sellerCount} ${product.sellerCount === 1 ? "seller" : "sellers"}`
+                  : `${product.gradeCount} ${product.gradeCount === 1 ? "grade" : "grades"} · ${product.sellerCount} ${product.sellerCount === 1 ? "seller" : "sellers"}`
               }
               meta={`from ${formatInr(product.minPrice)}/t`}
             />
@@ -356,7 +323,7 @@ function ProductGrid({ products }: { products: ProductRow[] }) {
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border py-16 text-center">
+    <div className="mt-6 flex flex-col items-center gap-3 rounded-[28px] bg-card py-16 text-center">
       <span className="grid size-12 place-items-center rounded-full bg-amama-subtle text-amama-deep">
         <StoreIcon className="size-5" strokeWidth={2.25} />
       </span>

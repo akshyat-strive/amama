@@ -25,7 +25,7 @@ function CredsView() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="text-[28px] font-bold tracking-tight">Demo credentials</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Demo credentials</h1>
 
       <AdminPanel title="Every seeded account" subtitle={`${users.length} accounts`} className="mt-6">
         <div className="flex flex-col gap-2 border-b border-border px-5 py-4">

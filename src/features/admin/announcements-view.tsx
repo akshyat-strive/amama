@@ -29,7 +29,7 @@ function AnnouncementsView() {
 
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">Announcements</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Announcements</h1>
 
       <div className="mt-6 overflow-hidden rounded-[20px] border border-border bg-card lg:h-[calc(100vh-220px)]">
         <StaffChatThread

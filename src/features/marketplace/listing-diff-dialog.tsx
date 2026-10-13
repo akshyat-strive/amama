@@ -52,7 +52,7 @@ function SnapshotCard({
         <CropImage photo={listing.photo} width={320} alt={cropLabel} sizes="320px" />
       </div>
       <div className="flex flex-col gap-1.5 p-4">
-        <p className="text-[15px] font-bold text-foreground">{cropLabel}</p>
+        <p className="text-[15px] font-semibold text-foreground">{cropLabel}</p>
         <p className={cn("text-[13px] text-muted-foreground", isChanged("variety") && "font-bold text-status-warning")}>
           {listing.variety}
         </p>

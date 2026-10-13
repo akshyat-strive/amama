@@ -8,7 +8,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-sans);
   --font-heading: var(--font-sans);
   --color-amama: var(--amama);
   --color-amama-hover: var(--amama-hover);
@@ -71,45 +71,46 @@
 
 :root {
   /*
-   * Apple-like ground: a mist page, white cards, graphite type. Olive is
-   * the one brand colour — primary actions, the selected item, the logo.
-   * Orangish yellow is the accent and only ever sits on olive (an icon on
-   * the selected nav row, a button on an olive card); on white it's
-   * graphite or olive instead.
+   * Apple's ground, as in public/visual.html: a white page, mist tiles,
+   * graphite type. Deep green is the one brand colour — primary actions,
+   * the selected item, the logo. Bright yellow is the accent and only
+   * ever sits on deep green (the icon on a selected nav row, a button on
+   * a green card); on white it's graphite or green instead.
    *
-   * The `amama-*` names are kept so every existing class picks up the new
-   * palette: `amama` / `amama-deep` are both olive now, `amama-subtle` its
-   * wash.
+   * The `amama-*` names are kept so every existing class picks up the
+   * palette: `amama` / `amama-deep` are both deep green, `amama-subtle`
+   * its wash.
    */
-  --amama: #556b2f;
-  --amama-hover: #4a5d28;
+  --amama: #0b7a43;
+  --amama-hover: #096838;
   --amama-foreground: #ffffff;
-  --amama-deep: #556b2f;
-  --amama-deep-hover: #46582a;
-  --amama-subtle: #eef1e3;
-  --sun: #f2b33d;
-  --sun-hover: #e5a42a;
+  --amama-deep: #0b7a43;
+  --amama-deep-hover: #085f34;
+  --amama-subtle: #e4f3ea;
+  --sun: #ffd60a;
+  --sun-hover: #f5c800;
   --sun-foreground: #1d1d1f;
   --graphite: #1d1d1f;
-  --surface-base: #f5f5f7;
-  --surface-card: #ffffff;
-  --surface-elevated: #f5f5f7;
-  /* The same family as the page, so a white card's edge reads as the card
-     itself rather than a drawn outline; inside a card it's a hairline. */
-  --surface-border: #ececf0;
+  --surface-base: #ffffff;
+  --surface-card: #f5f5f7;
+  /* Apple's tonal fill — a chip or hover inside a mist tile. */
+  --surface-elevated: #e8e8ed;
+  /* Barely off the mist tile, so a tile's edge reads as the tile itself
+     rather than a drawn outline; between rows inside it, a hairline. */
+  --surface-border: #e9e9ee;
   --text-primary: #1d1d1f;
   --text-secondary: #6e6e73;
   --text-disabled: #a1a1a6;
-  --status-success: #3d7d3a;
+  --status-success: #1e8e3e;
   --status-warning: #d98a1c;
-  --status-error: #d93025;
-  --status-info: #3a6ea5;
+  --status-error: #e30000;
+  --status-info: #2f6fb3;
 
   --background: var(--surface-base);
   --foreground: var(--text-primary);
   --card: var(--surface-card);
   --card-foreground: var(--text-primary);
-  --popover: var(--surface-card);
+  --popover: #ffffff;
   --popover-foreground: var(--text-primary);
   --primary: var(--amama-deep);
   --primary-foreground: oklch(1 0 0);
@@ -127,9 +128,9 @@
   --chart-1: var(--amama);
   --chart-2: var(--sun);
   --chart-3: var(--graphite);
-  --chart-4: #9aa86b;
+  --chart-4: #6fbf8b;
   --chart-5: var(--status-error);
-  --radius: 0.5rem;
+  --radius: 0.75rem;
   --sidebar: var(--surface-card);
   --sidebar-foreground: var(--text-primary);
   --sidebar-primary: var(--amama);
@@ -141,27 +142,27 @@
 }
 
 .dark {
-  --amama: #8a9e4f;
-  --amama-hover: #9bb05c;
-  --amama-foreground: #111111;
-  --amama-deep: #7d9146;
-  --amama-deep-hover: #8ea353;
-  --amama-subtle: #2a3119;
-  --sun: #f2b33d;
-  --sun-hover: #f5c05c;
+  --amama: #30b46c;
+  --amama-hover: #3fc47b;
+  --amama-foreground: #06140c;
+  --amama-deep: #22a35d;
+  --amama-deep-hover: #2db769;
+  --amama-subtle: #12301f;
+  --sun: #ffd60a;
+  --sun-hover: #ffe04a;
   --sun-foreground: #1d1d1f;
   --graphite: #f5f5f7;
   --surface-base: #000000;
   --surface-card: #1c1c1e;
   --surface-elevated: #2c2c2e;
-  --surface-border: #2c2c2e;
+  --surface-border: #26262a;
   --text-primary: #f5f5f7;
   --text-secondary: #a1a1a6;
   --text-disabled: #636366;
-  --status-success: #5fae5a;
-  --status-warning: #f0a33a;
-  --status-error: #ff6b5e;
-  --status-info: #6ea2d8;
+  --status-success: #30d158;
+  --status-warning: #ff9f0a;
+  --status-error: #ff453a;
+  --status-info: #64a0e6;
 
   --background: var(--surface-base);
   --foreground: var(--text-primary);
@@ -184,7 +185,7 @@
   --chart-1: var(--amama);
   --chart-2: var(--sun);
   --chart-3: var(--graphite);
-  --chart-4: #6f7f3c;
+  --chart-4: #2c7a4b;
   --chart-5: var(--status-error);
   --sidebar: var(--surface-card);
   --sidebar-foreground: var(--text-primary);
@@ -214,8 +215,15 @@
   }
   body {
     @apply bg-background text-foreground;
-    letter-spacing: -0.011em;
+    letter-spacing: -0.012em;
     -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  /* Apple's headline voice: semibold, tight tracking. */
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.022em;
   }
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
@@ -346,7 +354,7 @@ html[lang="kn"] {
       #ff4d8d 0%,
       transparent 70%
     ),
-    radial-gradient(42% 56% at 32% 76%, #8a9e4f 0%, transparent 72%);
+    radial-gradient(42% 56% at 32% 76%, #0b7a43 0%, transparent 72%);
   animation: upload-aurora-b 2s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 

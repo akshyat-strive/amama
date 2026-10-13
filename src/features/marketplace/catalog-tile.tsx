@@ -6,9 +6,10 @@ import { ArrowUpRightIcon, type LucideIcon } from "lucide-react"
 import { CropImage } from "@/features/marketplace/crop-image"
 
 /**
- * One tile in the catalog drill-down (category → product → variant): the
- * photo carries the price as an overlay chip, the name and a one-line
- * subtitle sit under it, and the whole tile lifts slightly on hover.
+ * A product in the marketplace: the photo carries the starting price as a
+ * chip, the name and a one-line subtitle sit under it. Products are the
+ * one level shown as pictures — grades are specs and sellers are people
+ * (see `marketplace-ui.tsx`).
  */
 function CatalogTile({
   href,
@@ -28,9 +29,9 @@ function CatalogTile({
   return (
     <Link
       href={href}
-      className="group block rounded-[22px] border border-border bg-card p-1.5 transition-[transform,box-shadow,border-color] duration-200 outline-none hover:-translate-y-0.5 hover:border-foreground/15 focus-visible:ring-2 focus-visible:ring-amama-deep/40"
+      className="group block rounded-[28px] bg-card p-2 transition-colors duration-200 outline-none hover:bg-[#ededf1] focus-visible:ring-2 focus-visible:ring-amama-deep/40 dark:hover:bg-muted"
     >
-      <div className="relative aspect-4/3 w-full overflow-hidden rounded-[16px] bg-amama-subtle">
+      <div className="relative aspect-4/3 w-full overflow-hidden rounded-[22px] bg-amama-subtle">
         {photo ? (
           <CropImage
             photo={photo}
@@ -44,15 +45,15 @@ function CatalogTile({
           </div>
         ) : null}
         {meta ? (
-          <span className="absolute bottom-2 left-2 rounded-full bg-card/92 px-2.5 py-1 text-[11.5px] font-semibold text-foreground shadow-sm backdrop-blur tabular-nums">
+          <span className="absolute bottom-2.5 left-2.5 rounded-full bg-background/92 px-2.5 py-1 text-[12px] font-semibold text-foreground backdrop-blur tabular-nums">
             {meta}
           </span>
         ) : null}
       </div>
-      <div className="flex items-start justify-between gap-2 px-1.5 pt-2.5 pb-1.5">
+      <div className="flex items-start justify-between gap-2 px-2 pt-3 pb-2">
         <div className="min-w-0">
-          <p className="truncate text-[14px] font-semibold text-foreground sm:text-[15px]">{title}</p>
-          {subtitle ? <p className="truncate text-[12px] text-muted-foreground">{subtitle}</p> : null}
+          <p className="truncate text-[16px] font-semibold tracking-[-0.016em] text-foreground">{title}</p>
+          {subtitle ? <p className="truncate text-[13px] text-muted-foreground">{subtitle}</p> : null}
         </div>
         <ArrowUpRightIcon aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
       </div>

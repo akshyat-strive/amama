@@ -10,7 +10,7 @@ import { AdminEmptyState } from "@/features/admin/admin-ui"
 function FinanceView() {
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">Finance</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Finance</h1>
       <AdminEmptyState
         icon={WalletIcon}
         title="Coming soon"

@@ -29,7 +29,7 @@ function ListingsView() {
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-[28px] font-bold tracking-tight">My listings</h1>
+        <h1 className="text-[34px] font-semibold tracking-[-0.03em]">My listings</h1>
         <div className="flex shrink-0 items-center gap-2">
           <WishlistSwitch checked={wishlistOnly} onCheckedChange={setWishlistOnly} />
           <Link href="/seller/dashboard/listings/new" className={cn(buttonVariants({ size: "sm" }), "h-9 px-4")}>
@@ -44,7 +44,7 @@ function ListingsView() {
           <span className="grid size-12 place-items-center rounded-full bg-amama-subtle text-amama-deep">
             <SproutIcon className="size-5" strokeWidth={2.25} />
           </span>
-          <h2 className="text-[17px] font-bold">{wishlistOnly ? "Nothing saved" : "No listings yet"}</h2>
+          <h2 className="text-[17px] font-semibold">{wishlistOnly ? "Nothing saved" : "No listings yet"}</h2>
           <p className="max-w-xs text-[14px] leading-relaxed text-muted-foreground">
             {wishlistOnly
               ? "Save a listing from your catalog to follow up on it later."

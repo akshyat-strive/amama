@@ -208,7 +208,7 @@ function SellerShipmentsView() {
 function ShipmentsSkeleton() {
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">Shipments</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Shipments</h1>
       <div className="mt-6 h-40 animate-pulse rounded-3xl bg-muted" />
     </div>
   )
@@ -259,7 +259,7 @@ function SellerShipmentsWorkspace() {
   if (trackedShipments.length === 0) {
     return (
       <div>
-        <h1 className="text-[28px] font-bold tracking-tight">Shipments</h1>
+        <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Shipments</h1>
         <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border px-5 py-16 text-center">
           <ShipIcon aria-hidden className="size-6 text-muted-foreground" />
           <p className="text-[15px] font-semibold">No shipments yet</p>
@@ -273,7 +273,7 @@ function SellerShipmentsWorkspace() {
 
   return (
     <div className={PAGE_TABS_SPACE}>
-      <h1 className="text-[28px] font-bold tracking-tight">Shipments</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Shipments</h1>
 
       <PageTabs
         label="Shipment lists"

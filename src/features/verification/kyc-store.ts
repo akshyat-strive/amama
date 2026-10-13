@@ -99,6 +99,61 @@ function submitApplication({ role, applicant, documents }: SubmitInput) {
   store.set((applications) => [...applications.filter((entry) => !(entry.role === role && entry.userId === userId)), application])
 }
 
+/**
+ * Skipping the documents step: the application exists, with every
+ * document listed — uploaded ones carried over, the rest waiting — but
+ * nothing goes to a reviewer until `submitStartedApplication`.
+ */
+function startApplication({
+  role,
+  applicant,
+  documents,
+}: {
+  role: OnboardingRole
+  applicant: SubmitInput["applicant"]
+  documents: { id: string; required: boolean; file: UploadedVersion | null }[]
+}) {
+  const at = now()
+  const userId = applicant.email.trim().toLowerCase()
+  const application: KycApplication = {
+    userId,
+    role,
+    ...applicant,
+    email: userId,
+    reviewStatus: "not-submitted",
+    reviewerNote: null,
+    reviewedByAdminId: null,
+    reviewedByName: null,
+    submittedAt: null,
+    reviewedAt: null,
+    assigneeId: null,
+    documents: documents.map(({ id, required, file }) => ({
+      id,
+      required,
+      reviewStatus: file ? "pending" : "missing",
+      reviewNote: null,
+      reviewedBy: null,
+      requestedBy: null,
+      versions: file ? [{ id: localId("v"), ...file, uploadedAt: at }] : [],
+    })),
+    comments: [{ ...comment(systemAuthor, "Started KYC — documents still to upload"), at }],
+  }
+  store.set((applications) => [...applications.filter((entry) => !(entry.role === role && entry.userId === userId)), application])
+}
+
+/** Sends a started application to review once its documents are in. */
+function submitStartedApplication(role: OnboardingRole, userId: string) {
+  update(role, userId, (application) => {
+    const uploaded = application.documents.filter((document) => document.versions.length > 0)
+    return {
+      ...application,
+      submittedAt: now(),
+      documents: application.documents.filter((document) => document.versions.length > 0 || document.required),
+      comments: [...application.comments, comment(systemAuthor, `Submitted ${uploaded.length} documents for review`)],
+    }
+  })
+}
+
 /** A new upload for one document — a replacement for one sent back, or a
  *  document a KAM asked for. The earlier upload stays in the history. */
 function uploadDocumentVersion(role: OnboardingRole, userId: string, docId: string, file: UploadedVersion, applicantName: string) {
@@ -283,6 +338,8 @@ const useKycLoaded = store.useLoaded
 
 export {
   submitApplication,
+  startApplication,
+  submitStartedApplication,
   uploadDocumentVersion,
   addApplicantComment,
   addStaffComment,

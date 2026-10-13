@@ -62,7 +62,7 @@ function LogisticsView() {
   if (rows.length === 0) {
     return (
       <div>
-        <h1 className="text-[28px] font-bold tracking-tight">Logistics</h1>
+        <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Logistics</h1>
         <div className="mt-6">
           <AdminEmptyState icon={ShipIcon} title="No shipments logged yet" />
         </div>
@@ -77,7 +77,7 @@ function LogisticsView() {
 
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">Logistics</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Logistics</h1>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <AdminStatCard label="Shipments" value={String(rows.length)} />
@@ -149,7 +149,7 @@ function LogisticsView() {
 
       {openClaims.length > 0 && !selected ? (
         <div className="mt-8">
-          <h2 className="text-[17px] font-bold tracking-tight">Open claims</h2>
+          <h2 className="text-[17px] font-semibold tracking-tight">Open claims</h2>
           <div className="mt-3 flex flex-col gap-3">
             {openClaims.map(({ deal, shipment }) => (
               <ClaimRow key={shipment.id} deal={deal} shipment={shipment} onOpen={() => setSelectedId(shipment.id)} />
@@ -364,7 +364,7 @@ function ShipmentDetail({ deal, shipment }: { deal: Deal; shipment: Shipment }) 
     <div className="flex flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-[17px] font-bold tracking-tight text-foreground">{deal.listingTitle}</p>
+          <p className="truncate text-[17px] font-semibold tracking-tight text-foreground">{deal.listingTitle}</p>
           <p className="truncate text-[13px] text-muted-foreground">
             {deal.buyerName} ↔ {deal.sellerName}
           </p>

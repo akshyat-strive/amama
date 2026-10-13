@@ -27,7 +27,7 @@ function AdminProfileView() {
 
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">Profile</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Profile</h1>
 
       <AdminPanel title="Profile" className="mt-6">
         <div className="divide-y divide-border">

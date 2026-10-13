@@ -20,7 +20,7 @@ function SettingsView({ role }: { role: OnboardingRole }) {
 
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">Settings</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Settings</h1>
 
       <Panel
         title="Verification"

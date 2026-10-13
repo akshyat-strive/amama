@@ -15,6 +15,7 @@ import { seedAdminDemoData } from "@/features/admin/seed-data"
 import { FullPageLoader } from "@/components/ui/full-page-loader"
 import { SidebarToggle, TopbarActions, TopbarBrand } from "@/features/dashboard/topbar-parts"
 import { TopbarNotifications } from "@/features/trades/topbar-notifications"
+import { RaiseTicketButton } from "@/features/tickets/raise-ticket-button"
 import { TopbarSearch } from "@/features/trades/topbar-search"
 
 /** Same rail-width constant and rationale as `DashboardShell` — see there
@@ -83,6 +84,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         <TopbarSearch perspective="internal" email="" basePath="/internal/trade-desk" />
 
         <TopbarActions>
+          <RaiseTicketButton role="admin" />
           <TopbarNotifications perspective="internal" email="" basePath="/internal/trade-desk" />
           <LanguageSwitcher variant="inline" />
           <AccountMenu
@@ -137,7 +139,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <main className="min-w-0 flex-1 overflow-y-auto">
-          <div className="mx-auto w-full px-4 pt-20 pb-3 sm:px-6 md:ps-0">{children}</div>
+          <div className="mx-auto w-full px-2 pt-20 pb-0 sm:px-6 sm:pb-3 md:ps-0">{children}</div>
         </main>
       </div>
     </div>

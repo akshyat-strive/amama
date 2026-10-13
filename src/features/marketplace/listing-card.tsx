@@ -72,7 +72,7 @@ function ListingCard({
           </div>
 
           <div className="mt-2 flex items-end justify-between gap-2">
-            <p className="text-[15px] font-bold tracking-tight text-foreground tabular-nums sm:text-[17px]">
+            <p className="text-[15px] font-semibold tracking-tight text-foreground tabular-nums sm:text-[17px]">
               {formatInr(listing.pricePerTonneUsd)}
               <span className="ms-0.5 text-[11.5px] font-medium text-muted-foreground">/t</span>
             </p>

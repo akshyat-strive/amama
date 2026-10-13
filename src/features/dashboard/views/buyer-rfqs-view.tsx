@@ -34,7 +34,7 @@ function BuyerRfqsView() {
 function RfqsSkeleton() {
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">RFQs</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">RFQs</h1>
       <div className="mt-6 h-40 animate-pulse rounded-3xl bg-muted" />
     </div>
   )
@@ -69,7 +69,7 @@ function BuyerRfqsWorkspace() {
 
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">RFQs</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">RFQs</h1>
 
       {mine.length === 0 ? (
         <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border px-5 py-16 text-center">
@@ -158,7 +158,7 @@ function RfqComparison({ rfq, myName }: { rfq: Rfq; myName: string }) {
     <div className="flex flex-1 flex-col gap-5">
       <div>
         <div className="flex items-start justify-between gap-3 pe-8">
-          <h2 className="min-w-0 text-[17px] font-bold tracking-tight text-foreground">{rfq.title}</h2>
+          <h2 className="min-w-0 text-[17px] font-semibold tracking-tight text-foreground">{rfq.title}</h2>
           <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-foreground">
             {STATUS_LABEL[rfq.status]}
           </span>

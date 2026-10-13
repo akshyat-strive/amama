@@ -1,89 +1,88 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { ArrowLeftIcon, PackageSearchIcon } from "lucide-react"
+import { PackageSearchIcon } from "lucide-react"
 
-import { catalogCategory, productLabel, slugify } from "@/features/marketplace/catalog"
-import { CatalogTile } from "@/features/marketplace/catalog-tile"
+import { catalogCategory, productLabel, gradeSlug } from "@/features/marketplace/catalog"
+import { CropImage } from "@/features/marketplace/crop-image"
 import { formatInr } from "@/features/marketplace/currency"
 import { useListings } from "@/features/marketplace/listing-store"
+import { GradeCard, MarketplaceBreadcrumbs } from "@/features/marketplace/marketplace-ui"
+import { gradesFor } from "@/features/onboarding/steps"
 
-/** Level 3 of the drill-down: every distinct variant of one product
- *  ("Apple" → Kashmiri Apple, Shimla Royal Gala), grouped by a normalized
- *  read of each listing's free-text `variety` (`slugify`) so two sellers
- *  spelling the same variety slightly differently still land in one
- *  tile. */
+/**
+ * Level 3 of the drill-down: the grades one product is offered at
+ * ("Cashew" → W-180, W-240, W-320), each as a spec card — the grade as a
+ * seal, price range, volume, sellers, origins — rather than another photo
+ * grid, so it reads as "these are grades" at a glance.
+ */
 function ProductVariantsView({ categoryId, productId }: { categoryId: string; productId: string }) {
   const category = catalogCategory(categoryId)
   const allListings = useListings()
   const listings = React.useMemo(
     () =>
       allListings.filter(
-        (listing) =>
-          listing.categoryId === categoryId &&
-          listing.cropId === productId &&
-          listing.moderationStatus !== "flagged" &&
-          !listing.deletedAt
+        (listing) => listing.categoryId === categoryId && listing.cropId === productId && listing.moderationStatus !== "flagged" && !listing.deletedAt
       ),
     [allListings, categoryId, productId]
   )
 
-  const variants = React.useMemo(() => {
-    const byVariant = new Map<string, typeof listings>()
+  const grades = React.useMemo(() => {
+    const byGrade = new Map<string, typeof listings>()
     for (const listing of listings) {
-      const key = slugify(listing.variety)
-      const group = byVariant.get(key)
-      if (group) group.push(listing)
-      else byVariant.set(key, [listing])
+      const key = gradeSlug(listing.grade)
+      byGrade.set(key, [...(byGrade.get(key) ?? []), listing])
     }
-    return Array.from(byVariant.entries())
-      .map(([slug, group]) => ({
-        slug,
-        // The first seller's own spelling/casing stands in for the group —
-        // arbitrary, but stable, and always a real seller's real words
-        // rather than a normalized-and-therefore-slightly-wrong label.
-        label: group[0].variety,
-        photo: group[0].photo,
-        sellerCount: group.length,
-        minPrice: Math.min(...group.map((listing) => listing.pricePerTonneUsd)),
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label))
-  }, [listings])
+    // Most-offered first, then the trade's own grade order.
+    const order = gradesFor(productId)
+    return [...byGrade.entries()]
+      .map(([slug, group]) => ({ slug, label: group[0].grade || "Ungraded", listings: group }))
+      .sort((a, b) => b.listings.length - a.listings.length || order.indexOf(a.label) - order.indexOf(b.label))
+  }, [listings, productId])
+
+  const name = productLabel(productId)
+  const minPrice = listings.length ? Math.min(...listings.map((listing) => listing.pricePerTonneUsd)) : 0
 
   return (
     <div>
-      <Link
-        href={`/buyer/dashboard/sourcing/${categoryId}`}
-        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeftIcon className="size-3.5" />
-        {category.label}
-      </Link>
+      <MarketplaceBreadcrumbs
+        trail={[
+          { label: "Marketplace", href: "/buyer/dashboard/sourcing" },
+          { label: category.label, href: `/buyer/dashboard/sourcing/${categoryId}` },
+          { label: name },
+        ]}
+      />
 
-      <h1 className="mt-3 text-[28px] font-bold tracking-tight">{productLabel(productId)}</h1>
-
-      {variants.length === 0 ? (
-        <div className="mt-8 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border py-16 text-center">
-          <PackageSearchIcon className="size-6 text-muted-foreground" />
-          <p className="text-[15px] font-semibold">No sellers here yet</p>
-          <p className="max-w-xs text-[13px] leading-relaxed text-muted-foreground">
-            Nobody has listed a variant of {productLabel(productId)} yet.
+      <header className="mt-5 flex items-center gap-5">
+        {listings[0]?.photo ? (
+          <div className="relative size-20 shrink-0 overflow-hidden rounded-[22px] sm:size-24">
+            <CropImage photo={listings[0].photo} alt={name} sizes="96px" />
+          </div>
+        ) : null}
+        <div className="min-w-0">
+          <h1 className="text-[34px] font-semibold tracking-[-0.03em] sm:text-[40px]">{name}</h1>
+          <p className="mt-1 text-[15px] text-muted-foreground">
+            {grades.length} {grades.length === 1 ? "grade" : "grades"} · {new Set(listings.map((listing) => listing.sellerId)).size} sellers
+            {listings.length ? ` · from ${formatInr(minPrice)}/t` : ""}
           </p>
         </div>
-      ) : (
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {variants.map((variant) => (
-            <CatalogTile
-              key={variant.slug}
-              href={`/buyer/dashboard/sourcing/${categoryId}/${productId}/${variant.slug}`}
-              photo={variant.photo}
-              title={variant.label}
-              subtitle={`${variant.sellerCount} ${variant.sellerCount === 1 ? "seller" : "sellers"}`}
-              meta={`from ${formatInr(variant.minPrice)}`}
-            />
-          ))}
+      </header>
+
+      {grades.length === 0 ? (
+        <div className="mt-8 flex flex-col items-center gap-3 rounded-[28px] bg-card py-16 text-center">
+          <PackageSearchIcon className="size-6 text-muted-foreground" />
+          <p className="text-[15px] font-semibold">No sellers here yet</p>
+          <p className="max-w-xs text-[13px] leading-relaxed text-muted-foreground">Nobody has listed {name} yet.</p>
         </div>
+      ) : (
+        <>
+          <h2 className="mt-10 text-[21px] font-semibold tracking-[-0.02em]">Pick a grade</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {grades.map((grade, index) => (
+              <GradeCard key={grade.slug} href={`/buyer/dashboard/sourcing/${categoryId}/${productId}/${grade.slug}`} grade={grade.label} listings={grade.listings} rank={index} total={grades.length} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   )

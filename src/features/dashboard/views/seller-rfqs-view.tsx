@@ -46,7 +46,7 @@ function SellerRfqsView() {
 function RfqsSkeleton() {
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">RFQs</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">RFQs</h1>
       <div className="mt-6 h-40 animate-pulse rounded-3xl bg-muted" />
     </div>
   )
@@ -136,7 +136,7 @@ function SellerRfqsWorkspace() {
   if (mine.length === 0 && discoverable.length === 0) {
     return (
       <div>
-        <h1 className="text-[28px] font-bold tracking-tight">RFQs</h1>
+        <h1 className="text-[34px] font-semibold tracking-[-0.03em]">RFQs</h1>
         <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border px-5 py-16 text-center">
           <ClipboardListIcon className="size-6 text-muted-foreground" />
           <p className="text-[15px] font-semibold">No RFQs yet</p>
@@ -151,7 +151,7 @@ function SellerRfqsWorkspace() {
 
   return (
     <div className={PAGE_TABS_SPACE}>
-      <h1 className="text-[28px] font-bold tracking-tight">RFQs</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">RFQs</h1>
 
       <PageTabs
         label="RFQ lists"
@@ -282,7 +282,7 @@ function RfqDetailSheet({
         {rfq ? (
           <div className="flex flex-col gap-4 pb-2">
             <div>
-              <h2 className="text-[17px] font-bold tracking-tight text-foreground">{rfq.title}</h2>
+              <h2 className="text-[17px] font-semibold tracking-tight text-foreground">{rfq.title}</h2>
               <p className="mt-1 text-[13px] text-muted-foreground">{rfq.buyerName}</p>
             </div>
 

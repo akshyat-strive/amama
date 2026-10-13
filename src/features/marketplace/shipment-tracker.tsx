@@ -313,7 +313,7 @@ function ShipmentTracker({ shipment, actions }: { shipment: Shipment; actions?: 
         {/* Top Row: Identity paired tightly with status pill */}
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 flex items-center gap-2">
-            <h3 className="truncate text-[16px] font-bold tabular-nums text-foreground">
+            <h3 className="truncate text-[16px] font-semibold tabular-nums text-foreground">
               {shipment.documentNumber || "Not booked yet"}
             </h3>
             <span className="text-muted-foreground/40">•</span>

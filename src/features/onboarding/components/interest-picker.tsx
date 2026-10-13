@@ -1,7 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { CheckIcon, ChevronRightIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { CheckIcon, ChevronRightIcon, CornerDownLeftIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react"
+import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import { CATALOG_CATEGORIES, slugify } from "@/features/marketplace/catalog"
@@ -15,15 +17,21 @@ import {
   type InterestNode,
   type InterestSegment,
 } from "@/features/onboarding/interests"
+import { cropImageUrl, crops } from "@/features/onboarding/steps"
 import type { BuyerDraft } from "@/features/onboarding/types"
+import { raiseTicket } from "@/features/tickets/ticket-store"
 
 /**
- * One search box for everything a buyer might want — a whole category, a
- * product, a seller's variety, or a single grade. Each result is the
- * breadcrumb that leads to it, and every step of that breadcrumb is
- * itself pickable: typing "w-240" offers `Nuts & Oilseeds › Cashew ›
- * W-240`, and the buyer can take just the grade, all cashew, or the whole
- * category from the same row. Anything not found can be added as new.
+ * How a buyer says what they buy:
+ *
+ * - A search combobox over every category, product, variety and grade,
+ *   each suggestion shown as the breadcrumb that leads to it — and every
+ *   step of that breadcrumb pickable on its own.
+ * - Below it, category tabs (All first) over a tray of product tiles with
+ *   photos, for browsing instead of typing.
+ * - Something the catalog doesn't have yet can be typed and added with
+ *   Enter. It joins the buyer's picks straight away, and a catalog-request
+ *   ticket goes to the executives to add it properly.
  */
 function InterestPicker({
   buyer,
@@ -34,85 +42,157 @@ function InterestPicker({
   onChange: (patch: Partial<BuyerDraft> | ((previous: BuyerDraft) => Partial<BuyerDraft>)) => void
   nameOf: (productId: string) => string
 }) {
+  const pathname = usePathname()
   const listings = useListings()
   const [query, setQuery] = React.useState("")
+  const [focused, setFocused] = React.useState(false)
+  const [highlight, setHighlight] = React.useState(0)
+  const [tab, setTab] = React.useState<string>("all")
   const inputRef = React.useRef<HTMLInputElement>(null)
 
   const index = React.useMemo(() => buildInterestIndex(listings, buyer, nameOf), [listings, buyer, nameOf])
   const byKey = React.useMemo(() => new Map(index.map((node) => [node.key, node])), [index])
   const picked = pickedKeys(buyer)
   const pickedSet = new Set(picked)
-  const results = React.useMemo(() => searchInterests(index, query), [index, query])
+  const results = React.useMemo(() => searchInterests(index, query, 8), [index, query])
   const canAdd = query.trim().length >= 2 && !namesExisting(index, query)
+  const showSuggestions = focused && query.trim().length > 0
 
   const toggle = (key: string) => onChange((previous) => togglePick(previous, key))
 
-  const add = (kind: "product" | "category" | "grade") => {
+  /** Adds typed text as a new product and asks the team to add it. */
+  const addNew = () => {
     const label = query.trim()
-    const key = kind === "grade" ? `grade:${label}` : `${kind}:${slugify(label)}`
+    if (label.length < 2) return
+    const key = `product:${slugify(label)}`
     if (!pickedSet.has(key)) toggle(key)
+    raiseTicket({
+      kind: "catalog-request",
+      title: `New product: ${label}`,
+      description: "Typed during onboarding; not in the catalog yet.",
+      tags: ["Catalog request", "Buyer"],
+      metadata: { page: pathname, pageTitle: "What do you buy?", refs: {} },
+      raisedBy: { id: buyer.email, name: buyer.fullName || buyer.email, kind: "buyer" },
+    })
+    toast.success(`${label} added — we'll add it to the catalog`)
     setQuery("")
-    inputRef.current?.focus()
+  }
+
+  // Product tiles and the tabs that group them.
+  const products = React.useMemo(() => index.filter((node) => node.kind === "product"), [index])
+  const tabs = React.useMemo(() => {
+    const heads = new Map<string, string>()
+    for (const node of products) heads.set(node.path[0].key, node.path[0].label)
+    const order = CATALOG_CATEGORIES.map((category) => `category:${category.id}`)
+    return [...heads].sort((a, b) => {
+      const rank = (key: string) => (order.indexOf(key) === -1 ? 99 : order.indexOf(key))
+      return rank(a[0]) - rank(b[0])
+    })
+  }, [products])
+  const shown = tab === "all" ? products : products.filter((node) => node.path[0].key === tab)
+
+  const photoFor = (productId: string) => {
+    const crop = crops.find((entry) => entry.id === productId)
+    if (crop) return cropImageUrl(crop.photo, 360)
+    const listing = listings.find((entry) => entry.cropId === productId && entry.photo)
+    if (!listing) return null
+    return listing.photo.startsWith("photo-") ? cropImageUrl(listing.photo, 360) : listing.photo
   }
 
   return (
-    <div>
+    <div className="flex flex-col gap-5">
       <div className="relative">
         <label htmlFor="interest-search" className="sr-only">
           Search a category, product, variety or grade
         </label>
-        <SearchIcon aria-hidden className="pointer-events-none absolute start-4 top-1/2 size-[18px] -translate-y-1/2 text-muted-foreground" />
-        <input
-          ref={inputRef}
-          id="interest-search"
-          type="search"
-          autoComplete="off"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key !== "Enter") return
-            event.preventDefault()
-            if (results[0]) toggle(results[0].key)
-            else if (canAdd) add("product")
-          }}
-          placeholder="Cashew, W-240, spices, Kashmiri apple…"
-          className="h-12 w-full rounded-2xl border border-border bg-card ps-11 pe-11 text-[15px] outline-none transition-colors placeholder:text-muted-foreground focus:border-amama-deep [&::-webkit-search-cancel-button]:hidden"
-        />
-        {query ? (
-          <button
-            type="button"
-            aria-label="Clear search"
-            onClick={() => {
-              setQuery("")
-              inputRef.current?.focus()
+        <div className="flex h-12 items-center gap-2.5 rounded-xl border border-input bg-background px-4 transition-[border-color,box-shadow] focus-within:border-amama-deep focus-within:ring-2 focus-within:ring-amama-deep/20">
+          <SearchIcon aria-hidden className="size-[18px] shrink-0 text-muted-foreground" />
+          <input
+            ref={inputRef}
+            id="interest-search"
+            role="combobox"
+            aria-expanded={showSuggestions}
+            aria-controls="interest-suggestions"
+            aria-autocomplete="list"
+            autoComplete="off"
+            value={query}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setTimeout(() => setFocused(false), 120)}
+            onChange={(event) => {
+              setQuery(event.target.value)
+              setHighlight(0)
             }}
-            className="absolute end-2 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+            onKeyDown={(event) => {
+              if (event.key === "ArrowDown") {
+                event.preventDefault()
+                setHighlight((value) => Math.min(value + 1, results.length - 1))
+              } else if (event.key === "ArrowUp") {
+                event.preventDefault()
+                setHighlight((value) => Math.max(value - 1, 0))
+              } else if (event.key === "Escape") {
+                setQuery("")
+              } else if (event.key === "Enter") {
+                event.preventDefault()
+                if (results[highlight]) toggle(results[highlight].key)
+                else if (canAdd) addNew()
+              }
+            }}
+            placeholder="Search cashew, W-240, spices, Kashmiri apple…"
+            className="h-full min-w-0 flex-1 bg-transparent text-[16px] outline-none placeholder:text-muted-foreground"
+          />
+          {query ? (
+            <button type="button" aria-label="Clear search" onClick={() => setQuery("")} className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-card">
+              <XIcon className="size-4" />
+            </button>
+          ) : null}
+        </div>
+
+        {showSuggestions ? (
+          <div
+            id="interest-suggestions"
+            role="listbox"
+            className="absolute inset-x-0 top-[calc(100%+6px)] z-30 overflow-hidden rounded-2xl bg-popover ring-1 ring-black/10"
           >
-            <XIcon className="size-4" />
-          </button>
+            {results.map((node, position) => (
+              <SuggestionRow
+                key={node.key}
+                node={node}
+                query={query}
+                highlighted={position === highlight}
+                picked={pickedSet}
+                onToggle={toggle}
+              />
+            ))}
+            {canAdd ? (
+              <button
+                type="button"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={addNew}
+                className={cn("flex w-full items-center gap-2.5 px-4 py-3 text-start text-[14px] hover:bg-card", results.length > 0 && "border-t border-border")}
+              >
+                <PlusIcon aria-hidden className="size-4 text-amama-deep" />
+                <span className="min-w-0 flex-1">
+                  Add <span className="font-semibold">“{query.trim()}”</span>
+                  <span className="block text-[12.5px] text-muted-foreground">Not in the catalog yet — we&apos;ll add it</span>
+                </span>
+                {results.length === 0 ? <CornerDownLeftIcon aria-hidden className="size-4 text-muted-foreground" /> : null}
+              </button>
+            ) : null}
+            {results.length === 0 && !canAdd ? <p className="px-4 py-3 text-[13.5px] text-muted-foreground">Already picked.</p> : null}
+          </div>
         ) : null}
       </div>
 
-      <p aria-live="polite" className="sr-only">
-        {query ? `${results.length} matches` : ""} {picked.length} picked
-      </p>
-
       {picked.length > 0 ? (
-        <ul aria-label="Your picks" className="mt-3 flex flex-wrap gap-1.5">
+        <ul aria-label="Your picks" className="-mt-1 flex flex-wrap gap-1.5">
           {picked.map((key) => {
             const node = byKey.get(key)
-            const trail = node ? node.path.slice(-2).map((step) => step.label) : [key.split(":").slice(1).join(":")]
-            const label = trail.join(" › ") + (node?.note ? ` · ${node.note}` : "")
+            const label = (node ? node.path.slice(-2).map((step) => step.label) : [key.split(":").slice(1).join(":")]).join(" › ") + (node?.note ? ` · ${node.note}` : "")
             return (
               <li key={key}>
-                <span className="inline-flex h-8 items-center gap-0.5 rounded-full border border-amama-deep bg-amama-subtle ps-3 pe-1 text-[13px] font-medium text-amama-deep">
+                <span className="inline-flex h-8 items-center gap-0.5 rounded-full bg-amama ps-3 pe-1 text-[13px] font-medium text-white">
                   {label}
-                  <button
-                    type="button"
-                    aria-label={`Remove ${label}`}
-                    onClick={() => toggle(key)}
-                    className="grid size-6 place-items-center rounded-full hover:bg-amama-deep/10"
-                  >
+                  <button type="button" aria-label={`Remove ${label}`} onClick={() => toggle(key)} className="grid size-6 place-items-center rounded-full text-sun hover:bg-white/15">
                     <XIcon aria-hidden className="size-3.5" />
                   </button>
                 </span>
@@ -122,162 +202,139 @@ function InterestPicker({
         </ul>
       ) : null}
 
-      {query ? (
-        <ul aria-label="Matches" className="mt-3 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
-          {results.map((node) => (
-            <ResultRow key={node.key} node={node} query={query} picked={pickedSet} onToggle={toggle} />
+      <div>
+        <div role="tablist" aria-label="Categories" className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 scrollbar-none">
+          {[["all", "All"] as const, ...tabs].map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={tab === key}
+              onClick={() => setTab(key)}
+              className={cn(
+                "h-9 shrink-0 rounded-full px-4 text-[14px] font-medium transition-colors",
+                tab === key ? "bg-graphite text-white" : "bg-card text-foreground hover:bg-muted"
+              )}
+            >
+              {label}
+            </button>
           ))}
-          {canAdd ? (
-            <li className="flex flex-wrap items-center gap-x-2 gap-y-1.5 bg-muted/40 px-3 py-2.5 text-[13.5px]">
-              <span className="text-muted-foreground">
-                Add <span className="font-semibold text-foreground">“{query.trim()}”</span> as
-              </span>
-              {(["product", "category", "grade"] as const).map((kind) => (
-                <button
-                  key={kind}
-                  type="button"
-                  onClick={() => add(kind)}
-                  className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-3 font-medium hover:bg-muted"
-                >
-                  <PlusIcon aria-hidden className="size-3.5 text-muted-foreground" />a {kind}
-                </button>
-              ))}
-            </li>
-          ) : null}
-          {results.length === 0 && !canAdd ? <li className="px-4 py-3 text-[13.5px] text-muted-foreground">Already picked.</li> : null}
-        </ul>
-      ) : (
-        <BrowseList index={index} picked={pickedSet} onToggle={toggle} />
-      )}
+        </div>
+
+        <div className="mt-3 rounded-[24px] bg-card p-3">
+          <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            {shown.map((node) => {
+              const on = pickedSet.has(node.key)
+              const photo = photoFor(node.key.slice("product:".length))
+              const category = CATALOG_CATEGORIES.find((entry) => `category:${entry.id}` === node.path[0].key)
+              const Icon = category?.icon
+              return (
+                <li key={node.key}>
+                  <button
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggle(node.key)}
+                    className={cn(
+                      "group/tile relative flex w-full flex-col overflow-hidden rounded-[18px] bg-background text-start transition-[box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/40",
+                      on && "ring-2 ring-amama-deep"
+                    )}
+                  >
+                    <span className="relative block aspect-[4/3] w-full overflow-hidden bg-muted">
+                      {photo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={photo} alt="" loading="lazy" className="size-full object-cover transition-transform duration-500 group-hover/tile:scale-[1.04]" />
+                      ) : (
+                        <span className="grid size-full place-items-center bg-gradient-to-br from-amama-subtle to-muted text-amama-deep">
+                          {Icon ? <Icon aria-hidden className="size-8" strokeWidth={1.6} /> : null}
+                        </span>
+                      )}
+                      {on ? (
+                        <span className="absolute end-2 top-2 grid size-6 place-items-center rounded-full bg-amama text-sun">
+                          <CheckIcon className="size-3.5" strokeWidth={3} />
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="truncate px-3 py-2.5 text-[14px] font-medium">{node.label}</span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      </div>
     </div>
   )
 }
 
-/** One match: its breadcrumb, each step a pick of its own, and a toggle
- *  for the match itself at the end. */
-function ResultRow({
+/** A suggestion as its breadcrumb — each step pickable on its own. */
+function SuggestionRow({
   node,
   query,
+  highlighted,
   picked,
   onToggle,
 }: {
   node: InterestNode
   query: string
+  highlighted: boolean
   picked: Set<string>
   onToggle: (key: string) => void
 }) {
   const on = picked.has(node.key)
   return (
-    <li className="flex items-center gap-2 py-1.5 ps-1.5 pe-2">
-      <span className="flex min-w-0 flex-1 flex-wrap items-center gap-y-0.5">
+    <div role="option" aria-selected={highlighted} className={cn("flex items-center gap-2 px-2 py-1.5", highlighted && "bg-card")}>
+      <span className="flex min-w-0 flex-1 flex-wrap items-center">
         {node.path.map((step, position) => (
           <React.Fragment key={step.key}>
             {position > 0 ? <ChevronRightIcon aria-hidden className="size-3.5 shrink-0 text-muted-foreground/60" /> : null}
-            <SegmentButton step={step} query={query} last={position === node.path.length - 1} picked={picked.has(step.key)} onToggle={onToggle} />
+            <Segment step={step} query={query} last={position === node.path.length - 1} picked={picked.has(step.key)} onToggle={onToggle} />
           </React.Fragment>
         ))}
         {node.note ? <span className="ms-1.5 text-[12.5px] text-muted-foreground">{node.note}</span> : null}
       </span>
       <button
         type="button"
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => onToggle(node.key)}
         aria-label={on ? `Remove ${node.label}` : `Add ${node.label}`}
         aria-pressed={on}
-        onClick={() => onToggle(node.key)}
         className={cn(
-          "grid size-8 shrink-0 place-items-center rounded-full border transition-colors",
-          on ? "border-amama-deep bg-amama-deep text-white" : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+          "grid size-8 shrink-0 place-items-center rounded-full transition-colors",
+          on ? "bg-amama text-sun" : "border border-input text-muted-foreground hover:text-foreground"
         )}
       >
         {on ? <CheckIcon className="size-4" strokeWidth={2.5} /> : <PlusIcon className="size-4" />}
       </button>
-    </li>
+    </div>
   )
 }
 
-function SegmentButton({
-  step,
-  query,
-  last,
-  picked,
-  onToggle,
-}: {
-  step: InterestSegment
-  query?: string
-  last: boolean
-  picked: boolean
-  onToggle: (key: string) => void
-}) {
+function Segment({ step, query, last, picked, onToggle }: { step: InterestSegment; query: string; last: boolean; picked: boolean; onToggle: (key: string) => void }) {
+  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
+  const pattern = words.length ? new RegExp(`(${words.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "gi") : null
   return (
     <button
       type="button"
-      aria-pressed={picked}
+      onMouseDown={(event) => event.preventDefault()}
       onClick={() => onToggle(step.key)}
+      aria-pressed={picked}
       className={cn(
-        "rounded-full px-2.5 py-1 text-[13.5px] transition-colors",
-        picked
-          ? "bg-amama-subtle font-semibold text-amama-deep"
-          : last
-            ? "font-medium text-foreground hover:bg-muted"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+        "rounded-full px-2.5 py-1 text-[14px] transition-colors",
+        picked ? "bg-amama-subtle font-semibold text-amama-deep" : last ? "font-medium text-foreground hover:bg-muted" : "text-muted-foreground hover:bg-muted hover:text-foreground"
       )}
     >
-      <Highlight text={step.label} query={query} />
+      {pattern
+        ? step.label.split(pattern).map((part, position) =>
+            words.includes(part.toLowerCase()) ? (
+              <mark key={position} className="bg-transparent font-semibold text-inherit">
+                {part}
+              </mark>
+            ) : (
+              part
+            )
+          )
+        : step.label}
     </button>
-  )
-}
-
-/** Bolds each typed word where it appears in a label. */
-function Highlight({ text, query }: { text: string; query?: string }) {
-  const words = (query ?? "").trim().toLowerCase().split(/\s+/).filter(Boolean)
-  if (words.length === 0) return <>{text}</>
-  const pattern = new RegExp(`(${words.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "gi")
-  return (
-    <>
-      {text.split(pattern).map((part, position) =>
-        words.includes(part.toLowerCase()) ? (
-          <mark key={position} className="bg-transparent font-semibold text-inherit underline decoration-amama-deep/40 underline-offset-2">
-            {part}
-          </mark>
-        ) : (
-          part
-        )
-      )}
-    </>
-  )
-}
-
-/** Before anything is typed: each category with its products, so the
- *  common picks are one tap away and the search box is for the rest. */
-function BrowseList({ index, picked, onToggle }: { index: InterestNode[]; picked: Set<string>; onToggle: (key: string) => void }) {
-  const rows = React.useMemo(() => {
-    const products = index.filter((node) => node.kind === "product")
-    const order = CATALOG_CATEGORIES.map((category) => `category:${category.id}`)
-    const groups = new Map<string, { head: InterestSegment; products: InterestSegment[] }>()
-    for (const node of products) {
-      const head = node.path[0]
-      const group = groups.get(head.key) ?? { head, products: [] }
-      if (node.path.length > 1) group.products.push(node)
-      groups.set(head.key, group)
-    }
-    const rank = (key: string) => {
-      const position = order.indexOf(key)
-      return position === -1 ? order.length - 1 : position
-    }
-    return [...groups.values()].sort((a, b) => rank(a.head.key) - rank(b.head.key))
-  }, [index])
-
-  return (
-    <ul aria-label="Browse" className="mt-3 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
-      {rows.map((row) => (
-        <li key={row.head.key} className="flex flex-wrap items-center gap-y-0.5 py-1.5 ps-1.5 pe-2">
-          <SegmentButton step={row.head} last={row.products.length === 0} picked={picked.has(row.head.key)} onToggle={onToggle} />
-          {row.products.length > 0 ? <ChevronRightIcon aria-hidden className="size-3.5 shrink-0 text-muted-foreground/60" /> : null}
-          {row.products.map((product) => (
-            <SegmentButton key={product.key} step={product} last picked={picked.has(product.key)} onToggle={onToggle} />
-          ))}
-        </li>
-      ))}
-    </ul>
   )
 }
 

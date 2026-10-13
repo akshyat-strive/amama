@@ -34,7 +34,7 @@ function TeamManagementView() {
 
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">Team</h1>
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Team</h1>
       <div className="mt-6 flex flex-col gap-6">
         <OrgPanel users={users} roles={roles} canManage={canManageUsers} />
         {canManageRoles ? <RolesPanel roles={roles} users={users} /> : null}

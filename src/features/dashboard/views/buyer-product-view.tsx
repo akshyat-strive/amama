@@ -3,10 +3,11 @@
 import * as React from "react"
 import Link from "next/link"
 import { AnimatePresence, motion } from "motion/react"
-import { ArrowLeftIcon, BadgeCheckIcon, MessageCircleIcon, PackageSearchIcon, XIcon } from "lucide-react"
+import { BadgeCheckIcon, MessageCircleIcon, PackageSearchIcon, XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { productLabel, slugify } from "@/features/marketplace/catalog"
+import { catalogCategory, productLabel, slugify, gradeSlug } from "@/features/marketplace/catalog"
+import { MarketplaceBreadcrumbs } from "@/features/marketplace/marketplace-ui"
 import { buyerIdentity } from "@/features/marketplace/identity"
 import { ConversationThread } from "@/features/marketplace/conversation-thread"
 import {
@@ -161,13 +162,19 @@ function BuyerProductView({ listingId }: { listingId: string }) {
           plain text, the way a widget's own title bar does. */}
       <div className="flex flex-col rounded-3xl bg-muted lg:w-[380px] lg:shrink-0 lg:overflow-hidden">
         <div className="flex shrink-0 items-center justify-between gap-2 p-3">
-          <Link
-            href="/buyer/dashboard/sourcing"
-            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeftIcon className="size-3.5" />
-            Marketplace
-          </Link>
+          <div className="min-w-0 text-[13px] [&_ol]:text-[13px]">
+            <MarketplaceBreadcrumbs
+              trail={[
+                { label: "Marketplace", href: "/buyer/dashboard/sourcing" },
+                { label: catalogCategory(listing.categoryId).label, href: `/buyer/dashboard/sourcing/${listing.categoryId}` },
+                { label: productLabel(listing.cropId), href: `/buyer/dashboard/sourcing/${listing.categoryId}/${listing.cropId}` },
+                {
+                  label: listing.grade || "Ungraded",
+                  href: `/buyer/dashboard/sourcing/${listing.categoryId}/${listing.cropId}/${gradeSlug(listing.grade)}`,
+                },
+              ]}
+            />
+          </div>
           {/* A buyer only ever sees a positive verdict here, never
               "pending"/"flagged" — same rule the marketplace cards follow. */}
           {listing.moderationStatus === "verified" ? (

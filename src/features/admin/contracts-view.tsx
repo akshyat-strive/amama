@@ -16,7 +16,7 @@ function AdminContractsView() {
   if (!admin.can("deals.work") && !admin.can("deals.viewAll")) {
     return (
       <div>
-        <h1 className="text-[28px] font-bold tracking-tight">Contracts</h1>
+        <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Contracts</h1>
         <div className="mt-6">
           <AdminEmptyState
             icon={FileSignatureIcon}

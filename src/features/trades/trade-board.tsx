@@ -318,7 +318,7 @@ function Board({ trades, perspective, basePath }: { trades: W.Trade[]; perspecti
   return (
     <div className={PAGE_TABS_SPACE}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-[28px] font-bold tracking-tight">Trades</h1>
+        <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Trades</h1>
         {perspective === "internal" ? (
           <Link
             href={`${basePath}/changes`}

@@ -328,7 +328,7 @@ function AdminHomeView() {
 
   return (
     <div>
-      <h1 className="text-[28px] font-bold tracking-tight">
+      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">
         <span className="opacity-60">Good Afternoon</span> {admin.user.name.split(" ")[0]}
       </h1>
 

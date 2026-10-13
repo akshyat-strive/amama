@@ -7,8 +7,8 @@ import type { OnboardingRole } from "@/features/onboarding/types"
 import { ApplicantKycTicket } from "@/features/verification/components/applicant-ticket"
 import { useVerification } from "@/features/verification/verification-context"
 
-/** Pages that stay open before approval — the ticket and settings. */
-const OPEN_ROUTES = ["/verification", "/settings"]
+/** Pages that stay open before approval — KYC, support tickets, settings. */
+const OPEN_ROUTES = ["/verification", "/tickets", "/settings"]
 
 /**
  * Sits inside the dashboard shell, so the sidebar and topbar are there

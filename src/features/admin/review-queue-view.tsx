@@ -125,7 +125,7 @@ function SubmissionCard({ submission }: { submission: KycApplication }) {
             <Initials name={name} />
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                <h2 className="truncate text-[15px] font-bold tracking-tight text-foreground">{name}</h2>
+                <h2 className="truncate text-[15px] font-semibold tracking-tight text-foreground">{name}</h2>
                 <StatusPill tone={status.tone}>{status.label}</StatusPill>
               </div>
               <p className="mt-0.5 truncate text-[12px] text-muted-foreground">

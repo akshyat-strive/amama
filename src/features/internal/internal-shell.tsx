@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { PanelLeftIcon, SearchIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { RaiseTicketButton } from "@/features/tickets/raise-ticket-button"
 import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { AccountMenu } from "@/features/dashboard/account-menu"
@@ -116,6 +117,7 @@ function InternalShell({ children }: { children: React.ReactNode }) {
               <kbd className="ms-auto hidden shrink-0 font-mono text-[10px] sm:block">⌘K</kbd>
             </button>
 
+            <RaiseTicketButton role="admin" />
             <NotificationBell />
             <AccountMenu
               name={admin.user.name}

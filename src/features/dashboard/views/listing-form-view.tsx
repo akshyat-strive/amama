@@ -252,7 +252,7 @@ function ListingFormView({ listingId }: { listingId?: string }) {
         {editing ? "Back to listing" : "Your catalog"}
       </Link>
 
-      <h1 className="mt-3 text-[28px] font-bold tracking-tight">
+      <h1 className="mt-3 text-[34px] font-semibold tracking-[-0.03em]">
         {editing ? "Edit listing" : "Add a listing"}
       </h1>
 

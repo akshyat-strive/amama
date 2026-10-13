@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowLeftIcon } from "lucide-react"
+import { ArrowLeftIcon, SkipForwardIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { AmamaWordmark } from "@/components/brand/amama-wordmark"
@@ -29,6 +29,8 @@ type StepShellProps = {
    * and set, e.g. the final "you're done" screen).
    */
   skipHref?: string
+  /** A skip that does something first, instead of just navigating. */
+  onSkip?: () => void
   className?: string
 }
 
@@ -97,6 +99,7 @@ function StepShell({
   footer,
   footerNote,
   skipHref,
+  onSkip,
   className,
 }: StepShellProps) {
   const { t } = useI18n()
@@ -104,7 +107,7 @@ function StepShell({
   return (
     // Fixed to the viewport on a desktop, so a long step scrolls inside the
     // left column and the photo stays put beside it.
-    <div className="min-h-dvh bg-card lg:grid lg:h-dvh lg:grid-cols-[4fr_3fr] lg:overflow-hidden">
+    <div className="min-h-dvh bg-background lg:grid lg:h-dvh lg:grid-cols-[4fr_3fr] lg:overflow-hidden">
       <div className="flex min-h-dvh flex-col lg:min-h-0 lg:overflow-y-auto lg:px-16 xl:px-24">
         {/* The brand mark on every width — level with the fixed language
             switcher on a phone, top-left of the step on a desktop. */}
@@ -118,7 +121,7 @@ function StepShell({
             `[en]` language switcher pinned to the same corner on every
             screen — there's no outer gutter for it to float in otherwise.
             On a desktop the switcher floats over the photo instead. */}
-        <header className="sticky top-0 z-20 bg-card/85 backdrop-blur-sm lg:hidden">
+        <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-sm lg:hidden">
           <div className="mx-auto flex w-full max-w-lg items-center gap-3 ps-4 pe-28 py-3">
             <BackLink href={backHref} className="-ms-2" />
             <StepProgress step={step} totalSteps={totalSteps} />
@@ -142,7 +145,7 @@ function StepShell({
                 Step {step} of {totalSteps}
               </span>
             </div>
-            <h1 className="text-[28px] font-bold leading-tight tracking-tight text-balance text-foreground sm:text-[32px] lg:text-[36px]">
+            <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.03em] text-balance text-foreground sm:text-[32px] lg:text-[36px]">
               {title}
             </h1>
             {description ? (
@@ -156,19 +159,19 @@ function StepShell({
           {/* On a phone: inset from the edges rather than a full-bleed bar,
               rounded only where it meets the page content. On a desktop:
               the buttons sit inline right under the step — Continue first,
-              Skip as a quieter text button beside it — still sticky for
+              Skip as the ringed secondary beside it — still sticky for
               steps taller than the viewport. */}
           <footer className="sticky bottom-0 z-20 px-3 sm:px-0">
-            <div className="mx-auto w-full max-w-lg rounded-t-[40px] border border-b-0 border-border/60 bg-card/95 px-5 pt-4 pb-0 backdrop-blur-sm lg:mx-0 lg:max-w-[560px] lg:rounded-none lg:border-0 lg:bg-card lg:px-0 lg:pt-8 lg:shadow-none lg:backdrop-blur-none">
+            <div className="mx-auto w-full max-w-lg rounded-t-[40px] border border-b-0 border-border bg-background/95 px-5 pt-4 pb-0 backdrop-blur-sm lg:mx-0 lg:max-w-[560px] lg:rounded-none lg:border-0 lg:bg-background lg:px-0 lg:pt-8 lg:shadow-none lg:backdrop-blur-none">
               <div className="flex items-stretch gap-2 lg:flex-row-reverse lg:items-center lg:justify-end lg:gap-3">
-                {skipHref ? (
-                  <Link
-                    href={skipHref}
-                    className={cn(
-                      buttonVariants({ variant: "outline", size: "xl" }),
-                      "lg:border-transparent lg:bg-transparent lg:px-5 lg:text-muted-foreground lg:shadow-none lg:hover:bg-muted lg:hover:text-foreground"
-                    )}
-                  >
+                {onSkip ? (
+                  <button type="button" onClick={onSkip} className={cn(buttonVariants({ variant: "outline", size: "xl" }), "lg:px-7")}>
+                    <SkipForwardIcon aria-hidden className="size-5" />
+                    {t("common.skip")}
+                  </button>
+                ) : skipHref ? (
+                  <Link href={skipHref} className={cn(buttonVariants({ variant: "outline", size: "xl" }), "lg:px-7")}>
+                    <SkipForwardIcon aria-hidden className="size-5" />
                     {t("common.skip")}
                   </Link>
                 ) : null}

@@ -8,16 +8,18 @@ import { cn } from "@/lib/utils"
  * Pinterest-flavoured button: full pill, semibold label, chunky touch target,
  * and a springy press that scales down instead of nudging down a pixel.
  *
- * Contrast notes:
- * - `default` / `brand` sit on olive (#556B2F) with white text → 6.4:1 (AA).
- * - `sun` is orangish yellow (#F2B33D) with graphite text → 9.6:1. It's
- *   for buttons placed *on* an olive surface; on white use `default`.
- * - `dark` is graphite with white text, Apple's secondary emphasis.
+ * Apple's set, as in public/visual.html:
+ * - `default` / `brand`: deep green (#0B7A43) with white text → 5.4:1 (AA).
+ * - `outline`: the secondary — transparent with a 1px green ring and green
+ *   text, filling green on hover. Never a bare text link.
+ * - `secondary`: tonal grey fill.
+ * - `sun`: bright yellow with graphite text, only *on* a green surface.
+ * - `dark`: graphite with white text.
  */
 const buttonVariants = cva(
   [
     "group/button relative inline-flex shrink-0 select-none items-center justify-center",
-    "rounded-full border border-transparent bg-clip-padding font-semibold whitespace-nowrap",
+    "rounded-full border border-transparent bg-clip-padding font-medium tracking-[-0.016em] whitespace-nowrap",
     "outline-none transition-[background-color,color,box-shadow,transform,opacity] duration-150 ease-out",
     "focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
     "motion-reduce:transition-none",
@@ -33,9 +35,9 @@ const buttonVariants = cva(
         brand: "bg-amama text-amama-foreground hover:bg-amama-hover",
         sun: "bg-sun text-sun-foreground hover:bg-sun-hover",
         dark: "bg-graphite text-white hover:bg-graphite/85 dark:text-black",
-        secondary: "bg-[#e8e8ed] text-foreground hover:bg-[#dedee3] dark:bg-secondary dark:hover:bg-muted",
+        secondary: "bg-muted text-foreground hover:bg-[#dcdce1] dark:hover:bg-[#3a3a3c]",
         outline:
-          "border border-border bg-transparent text-foreground hover:bg-muted",
+          "border-amama-deep bg-transparent text-amama-deep hover:bg-amama-deep hover:text-white dark:border-amama dark:text-amama",
         ghost: "text-foreground hover:bg-muted",
         destructive:
           "bg-destructive text-white hover:bg-[color:theme(colors.destructive.hover)] focus-visible:ring-destructive/30",

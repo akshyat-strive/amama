@@ -176,9 +176,6 @@ function ChatViewInner() {
       open={!!selected}
       onClose={clear}
       listAction={<ChatTabSwitch tab={shownTab} onChange={switchTab} />}
-      emptyDescription={
-        shownTab === "external" ? "Buyer–seller threads the desk is part of open here." : "Your team and direct messages open here."
-      }
       list={
         (shownTab === "external" ? conversationRows : staffChannels).length === 0 ? (
           <p className="px-3 py-4 text-[13px] text-muted-foreground">
@@ -213,7 +210,7 @@ function ChatViewInner() {
                   label={channel.title}
                   icon={channel.id === STAFF_GROUP_CHANNEL_ID ? UsersIcon : undefined}
                   active={selected?.id === channel.id}
-                  tone={channel.id === STAFF_GROUP_CHANNEL_ID ? "olive" : "graphite"}
+                  tone={channel.id === STAFF_GROUP_CHANNEL_ID ? "green" : "graphite"}
                 />
               }
             />
@@ -233,7 +230,7 @@ function ChatViewInner() {
           </div>
         ) : selected?.kind === "staff" ? (
           <div className="flex min-w-0 items-center gap-2.5">
-            <ChatAvatar label={selected.title} icon={selected.id === STAFF_GROUP_CHANNEL_ID ? UsersIcon : undefined} tone={selected.id === STAFF_GROUP_CHANNEL_ID ? "olive" : "graphite"} />
+            <ChatAvatar label={selected.title} icon={selected.id === STAFF_GROUP_CHANNEL_ID ? UsersIcon : undefined} tone={selected.id === STAFF_GROUP_CHANNEL_ID ? "green" : "graphite"} />
             <div className="min-w-0">
               <p className="truncate text-[14.5px] font-semibold">{selected.title}</p>
               <p className="truncate text-[12px] text-muted-foreground">{selected.subtitle}</p>

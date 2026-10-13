@@ -69,7 +69,7 @@ function ForgotPasswordScreen({ role }: { role: OnboardingRole }) {
                 <span className="grid size-12 place-items-center rounded-full bg-amama-subtle text-amama-deep">
                   <MailCheckIcon className="size-5" strokeWidth={2.25} />
                 </span>
-                <h1 className="mt-4 text-[28px] font-bold leading-tight tracking-tight text-balance sm:text-[32px]">
+                <h1 className="mt-4 text-[30px] font-semibold leading-tight tracking-[-0.03em] text-balance sm:text-[32px]">
                   {t("auth.checkEmailTitle")}
                 </h1>
                 <p className="mt-2 text-[15px] leading-relaxed text-pretty text-muted-foreground">
@@ -84,7 +84,7 @@ function ForgotPasswordScreen({ role }: { role: OnboardingRole }) {
               </>
             ) : (
               <>
-                <h1 className="text-[28px] font-bold leading-tight tracking-tight text-balance sm:text-[32px]">
+                <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.03em] text-balance sm:text-[32px]">
                   {t("auth.resetTitle")}
                 </h1>
                 <p className="mt-2 text-[15px] leading-relaxed text-pretty text-muted-foreground">

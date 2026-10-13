@@ -146,6 +146,12 @@ export function slugify(text: string): string {
   return slug || "variant"
 }
 
+/** A grade's URL segment — "+" kept as "plus", so "Grade A+" and
+ *  "Grade A" stay two grades instead of collapsing into one slug. */
+export function gradeSlug(grade: string): string {
+  return slugify((grade || "ungraded").replace(/\+/g, " plus"))
+}
+
 /** A product name typed as a new `cropId` — de-duplicated against whatever
  *  `cropId`s are already in use, the same way a filename picker avoids
  *  clobbering an existing file. */

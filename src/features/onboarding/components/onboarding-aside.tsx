@@ -142,7 +142,7 @@ function ProfilePreview({ role }: { role: OnboardingRole }) {
   return (
     <div className="max-w-md rounded-[28px] bg-card p-5 text-foreground">
       <div className="flex items-center gap-3">
-        <span className="grid size-12 shrink-0 place-items-center rounded-full bg-amama-subtle text-[16px] font-bold text-amama-deep">
+        <span className="grid size-12 shrink-0 place-items-center rounded-full bg-amama-subtle text-[16px] font-semibold text-amama-deep">
           {initials || <Bar className="size-5 rounded-full" />}
         </span>
         <div className="min-w-0 flex-1">

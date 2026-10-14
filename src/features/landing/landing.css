@@ -91,3 +91,34 @@
     display: none;
   }
 }
+
+/* The hanging container: the rope swings, the container lags a beat
+ * behind, and the whole rig eases in from above on load. */
+@keyframes hang-sway {
+  0%, 100% { transform: rotate(-2.2deg); }
+  50% { transform: rotate(2.2deg); }
+}
+@keyframes hang-lag {
+  0%, 100% { transform: rotate(0.9deg); }
+  50% { transform: rotate(-0.9deg); }
+}
+@keyframes hang-in {
+  from { transform: translate3d(0, -60px, 0); }
+  to { transform: none; }
+}
+.landing .hang-sway {
+  animation: hang-sway 6.4s ease-in-out infinite;
+}
+.landing .hang-lag {
+  animation: hang-lag 6.4s ease-in-out -0.7s infinite;
+}
+.landing .hang-in {
+  animation: hang-in 1.4s var(--ease) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing .hang-sway,
+  .landing .hang-lag,
+  .landing .hang-in {
+    animation: none;
+  }
+}

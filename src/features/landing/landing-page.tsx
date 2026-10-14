@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils"
 import { AmamaWordmark } from "@/components/brand/amama-wordmark"
 import { CorridorFigure } from "@/features/landing/corridor-figure"
 import { MacMockup } from "@/features/landing/mac-mockup"
+import { HangingContainer } from "@/features/landing/hero-containers"
+import { HeroBackdrop } from "@/features/landing/hero-backdrop"
 import { PixelHalftone } from "@/features/landing/pixel-halftone"
 import { WAREHOUSE_STAGES, WarehouseFigure } from "@/features/landing/warehouse-figure"
 import "@/features/landing/landing.css"
@@ -140,27 +142,24 @@ function Nav() {
 
 function Hero() {
   return (
-    <section aria-labelledby="hero-title" className="overflow-hidden pb-[72px] pt-6 text-center sm:pt-10">
-      {/* The warehouse fills the top of the hero; the claim and the way in
-          sit centred beneath it. */}
-      <Wrap>
-        <figure className="mx-auto max-w-[800px]">
-          <WarehouseFigure />
-          <figcaption className="mt-6 grid grid-cols-2 gap-x-6 gap-y-5 text-start sm:hidden">
-            {WAREHOUSE_STAGES.map((stage) => (
-              <div key={stage.n}>
-                <p className="text-[14px]">
-                  <span className="text-[#6e6e73]">{stage.n} </span>
-                  <span className="font-semibold">{stage.title}</span>
-                </p>
-                <p className="text-[12.5px] text-[#6e6e73]">{stage.detail}</p>
-              </div>
-            ))}
-          </figcaption>
-        </figure>
-      </Wrap>
+    <section aria-labelledby="hero-title" className="relative isolate flex min-h-[calc(100svh-52px)] flex-col overflow-hidden text-center">
+      {/* The yard behind everything, softened where the words sit. */}
+      <div aria-hidden className="absolute inset-0 -z-10">
+        <HeroBackdrop />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_110%_46%_at_50%_80%,#fff_48%,transparent_88%)] sm:bg-[radial-gradient(ellipse_62%_46%_at_50%_84%,#fff_38%,transparent_78%)]" />
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white to-transparent" />
+      </div>
 
-      <Wrap className="mt-12 sm:mt-16">
+      {/* The lift, centred. The rope runs off the top of the page. */}
+      <div
+        aria-hidden
+        className="pointer-events-none relative mx-auto h-[calc(var(--w)*1.06+70px)] w-[calc(var(--w)+48px)] shrink-0 overflow-hidden [--w:clamp(170px,24vw,300px)]"
+      >
+        <HangingContainer className="hang-in absolute start-6 top-[calc(var(--w)*-0.892+66px)] w-[var(--w)]" />
+      </div>
+
+      {/* The claim and the way in, at the bottom centre. */}
+      <Wrap className="mt-auto pt-12 pb-14 sm:pb-20">
         <h1 id="hero-title" className="head mx-auto max-w-[900px] text-[44px] leading-[1.04] tracking-[-0.03em] text-balance sm:text-[64px] lg:text-[80px]">
           Farm to port to buyer.
           <span className="block text-[#6e6e73]">One ledger.</span>
@@ -177,8 +176,54 @@ function Hero() {
           On the amama team? <Link href={ENTRIES.team.href} className="text-[#1d1d1f] underline-offset-4 hover:underline">Sign in here ›</Link>
         </p>
       </Wrap>
-      <Wrap className="mt-[72px] sm:mt-[96px]">
-        <MacMockup />
+    </section>
+  )
+}
+
+/** The Mumbai DC, drawn out: what happens to a lot once it arrives. */
+function Inside() {
+  return (
+    <section id="inside" aria-labelledby="inside-title" className="py-[80px] sm:py-[112px] lg:py-[140px]">
+      <Wrap>
+        <Title id="inside-title" lead="Inside the DC." rest="Every lot, accounted for." />
+        <figure className="mt-16 rounded-[28px] bg-[#f5f5f7] px-4 py-8 sm:px-12 sm:py-12">
+          <figcaption className="flex flex-wrap items-baseline justify-between gap-2 px-2 text-[13px] text-[#6e6e73] sm:px-0">
+            <span>
+              <span className="text-[#1d1d1f]">Fig. 2</span> The amama warehouse, Mumbai
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span aria-hidden className="size-1.5 rounded-full bg-[#25d366]" /> Live floor
+            </span>
+          </figcaption>
+          <div className="mx-auto mt-8 max-w-[820px]">
+            <WarehouseFigure />
+          </div>
+          <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-6 px-2 sm:hidden">
+            {WAREHOUSE_STAGES.map((stage) => (
+              <div key={stage.n}>
+                <dt className="text-[14px]">
+                  <span className="text-[#6e6e73]">{stage.n} </span>
+                  <span className="font-semibold">{stage.title}</span>
+                </dt>
+                <dd className="text-[12.5px] text-[#6e6e73]">{stage.detail}</dd>
+              </div>
+            ))}
+          </dl>
+        </figure>
+      </Wrap>
+    </section>
+  )
+}
+
+/** The product, in a window. */
+function Product() {
+  return (
+    <section id="product" aria-labelledby="product-title" className="bg-[#f5f5f7] py-[80px] sm:py-[112px] lg:py-[140px]">
+      <Wrap>
+        <Title id="product-title" lead="One window." rest="Every deal." className="text-center" />
+        <div className="mt-16">
+          <MacMockup />
+        </div>
       </Wrap>
     </section>
   )
@@ -545,6 +590,8 @@ function LandingPage() {
         <Hero />
         <Numbers />
         <HowItWorks />
+        <Inside />
+        <Product />
         <Platform />
         <Audiences />
         <Plans />

@@ -10,6 +10,7 @@ import { buyerIdentity, sellerIdentity } from "@/features/marketplace/identity"
 import { ConversationThread, type ThreadMessage } from "@/features/marketplace/conversation-thread"
 import { sendMessage, toThreadMessages, useConversations } from "@/features/marketplace/conversation-store"
 import { latestDealForConversation, useDeals } from "@/features/marketplace/deal-store"
+import { RequestKamButton } from "@/features/marketplace/kam-assist"
 import { sendToKam, useKamThread } from "@/features/marketplace/kam-thread-store"
 import { useListings } from "@/features/marketplace/listing-store"
 import { ProposeDealDialog } from "@/features/marketplace/propose-deal-dialog"
@@ -41,7 +42,7 @@ function MessagesView({ role }: { role: OnboardingRole }) {
 }
 
 function MessagesSkeleton() {
-  return <div className="h-[calc(100dvh-92px)] w-full animate-pulse rounded-[20px] bg-card md:w-[380px]" />
+  return <div className="h-[calc(100dvh-76px)] w-full animate-pulse rounded-[20px] bg-card md:w-[380px]" />
 }
 
 function MessagesViewInner({ role }: { role: OnboardingRole }) {
@@ -75,6 +76,7 @@ function MessagesViewInner({ role }: { role: OnboardingRole }) {
       messages: kamMessages.map((message) => ({
         from: message.from === "you" ? "me" : "kam",
         text: message.text,
+        at: message.at,
       })),
     }
     const real: UiThread[] = myConversations.map((conversation) => {
@@ -154,11 +156,22 @@ function MessagesViewInner({ role }: { role: OnboardingRole }) {
           ) : null
         }
         windowActions={
-          canPropose ? (
-            <Button size="sm" variant="secondary" onClick={() => setProposing(true)}>
-              <HandshakeIcon />
-              Propose deal
-            </Button>
+          activeConversation ? (
+            <div className="flex items-center gap-1.5">
+              {canPropose ? (
+                <Button size="sm" variant="secondary" onClick={() => setProposing(true)}>
+                  <HandshakeIcon />
+                  Propose deal
+                </Button>
+              ) : null}
+              <RequestKamButton
+                conversationId={activeConversation.id}
+                listingTitle={activeConversation.listingTitle}
+                party={role === "buyer" ? "buyer" : "seller"}
+                partyId={identity.id}
+                partyName={identity.name}
+              />
+            </div>
           ) : null
         }
         windowBody={
@@ -168,6 +181,7 @@ function MessagesViewInner({ role }: { role: OnboardingRole }) {
               onSend={handleSend}
               viewer={role}
               viewerName={identity.name}
+              counterpartName={active.name}
               conversationId={!active.isKam ? active.id : undefined}
               composerParties={
                 activeConversation

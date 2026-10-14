@@ -2,258 +2,280 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { AlertCircleIcon, BadgeCheckIcon, FileTextIcon, HourglassIcon, type LucideIcon } from "lucide-react"
+import { FileTextIcon, SendIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { StatusPill } from "@/features/admin/review-ui"
-import { useI18n } from "@/features/i18n/i18n-context"
+import { ButtonGroup } from "@/components/ui/button-group"
+import { COLUMN_HEIGHT } from "@/components/ui/column-card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { useChatSelection } from "@/features/chat/chat-layout"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
+import { DocumentsColumn } from "@/features/verification/components/applicant-documents"
+import { TicketDetailColumn, TicketListColumn } from "@/features/verification/components/applicant-tickets"
+import { formatBytes, useDocumentLabel } from "@/features/verification/components/kyc-ticket-parts"
+import { UploadDocumentDialog, type PickedUpload } from "@/features/verification/components/upload-document-dialog"
 import {
-  Composer,
-  FilePreview,
-  Timeline,
-  UploadVersionButton,
-  VersionHistory,
-  documentStatus,
-  useDocumentLabel,
-} from "@/features/verification/components/kyc-ticket-parts"
-import { addApplicantComment, submitStartedApplication, uploadDocumentVersion } from "@/features/verification/kyc-store"
-import type { KycDocument } from "@/features/verification/kyc-types"
-import { kycTicketId } from "@/features/verification/ticket"
+  addApplicantComment,
+  discardDraftUpdate,
+  stageDocumentUpdate,
+  submitDraftUpdates,
+  submitStartedApplication,
+  uploadDocumentVersion,
+  uploadTarget,
+} from "@/features/verification/kyc-store"
+import type { KycApplication } from "@/features/verification/kyc-types"
 import { useVerification } from "@/features/verification/verification-context"
 
 /**
- * The applicant's side of their KYC ticket: where it stands, what amama
- * needs from them, every document with its upload history, and the
- * conversation with their KAM. Shown in place of every dashboard page
- * until approval, and at Verification for good.
+ * The applicant's KYC, as full-height white columns like the chat:
+ * Documents on the left — what's on file, what needs action, what's ready
+ * to send — and the account's KYC tickets beside it, each opening into its
+ * own column with the documents on it and the conversation with the KAM.
+ * On a phone it's one column at a time. Shown in place of every dashboard
+ * page until approval, and at Verification for good.
  */
 function ApplicantKycTicket({ role }: { role: OnboardingRole }) {
-  const { t } = useI18n()
-  const { applicationFor } = useVerification()
+  return (
+    <React.Suspense fallback={null}>
+      <KycWorkspace role={role} />
+    </React.Suspense>
+  )
+}
+
+function KycWorkspace({ role }: { role: OnboardingRole }) {
+  const { applicationFor, isLoaded } = useVerification()
+  const application = applicationFor(role)
+  if (!isLoaded()) return null
+  if (!application) return <NotStarted role={role} />
+  return <Workspace role={role} application={application} />
+}
+
+function Workspace({ role, application }: { role: OnboardingRole; application: KycApplication }) {
   const { draft } = useOnboarding()
   const labelOf = useDocumentLabel()
-  const application = applicationFor(role)
-  const [docId, setDocId] = React.useState<string | null>(null)
-  const name = (role === "buyer" ? draft.buyer.fullName : draft.seller.fullName) || application?.fullName || "You"
+  const { selectedId, select, clear } = useChatSelection("ticket")
+  const [pane, setPane] = React.useState<"documents" | "tickets">("documents")
+  const [uploadFor, setUploadFor] = React.useState<string | null>(null)
+  const [finalising, setFinalising] = React.useState(false)
+  const name = (role === "buyer" ? draft.buyer.fullName : draft.seller.fullName) || application.fullName || "You"
+  const selected = application.tickets.find((ticket) => ticket.id === selectedId) ?? null
+  const openTickets = application.tickets.filter((ticket) => ticket.status !== "resolved").length
 
-  if (!application) {
-    return (
-      <StatusHeader
-        icon={FileTextIcon}
-        tone="bg-muted text-muted-foreground"
-        title={t("review.notSubmittedTitle")}
-        description={t("review.notSubmittedDescription")}
-      >
-        <Link href={`/${role}/onboarding/country`} className={cn(buttonVariants({ size: "lg" }), "mt-6")}>
-          {t("review.finishOnboarding")}
-        </Link>
-      </StatusHeader>
-    )
+  const switcher = (
+    <ButtonGroup
+      label="Show"
+      size="sm"
+      className="lg:hidden"
+      value={pane}
+      onChange={setPane}
+      options={[
+        { value: "documents", label: "Documents" },
+        { value: "tickets", label: openTickets > 0 ? `Tickets · ${openTickets}` : "Tickets" },
+      ]}
+    />
+  )
+
+  const uploading = uploadFor ? application.documents.find((document) => document.id === uploadFor) ?? null : null
+  const target = uploading ? uploadTarget(application, uploading.id) : null
+  const staged = uploading ? application.drafts.find((entry) => entry.docId === uploading.id) : undefined
+  const current = uploading?.versions.at(-1)
+
+  const handleUpload = (upload: PickedUpload) => {
+    if (!uploading || !target) return
+    const { label } = labelOf(uploading)
+    if (target.kind === "draft") {
+      stageDocumentUpdate(role, application.userId, uploading.id, upload)
+      toast.success(`${label} added to your changes`, { description: "Finalise & submit when you're done." })
+      return
+    }
+    uploadDocumentVersion(role, application.userId, uploading.id, upload, name)
+    toast.success(target.kind === "ticket" ? `${label} sent to ${target.ticket.id}` : `${label} saved`)
   }
 
-  const status = application.reviewStatus
-  const owed = application.documents.filter((document) => document.reviewStatus === "rejected" || document.reviewStatus === "missing")
-  const labelForId = (id: string) => {
-    const document = application.documents.find((entry) => entry.id === id)
-    return document ? labelOf(document).label : null
+  const finalise = (note: string) => {
+    const id = submitDraftUpdates(role, application.userId, name, note)
+    setFinalising(false)
+    toast.success(id ? `Ticket ${id} raised` : "Changes submitted", { description: "Your KAM will review them." })
+    if (id) {
+      setPane("tickets")
+      select(id)
+    }
   }
-
-  const upload = (document: KycDocument) => (file: { name: string; size: number; fileId: string }) => {
-    uploadDocumentVersion(role, application.userId, document.id, file, name)
-    toast.success(`${labelOf(document).label} uploaded`)
-  }
-
-  const missingRequired = application.documents.filter((document) => document.required && document.versions.length === 0).length
-  const header =
-    status === "not-submitted"
-      ? {
-          icon: FileTextIcon,
-          tone: "bg-muted text-foreground",
-          title: "Finish your KYC",
-          description: "Upload the documents below, then send them for review. The rest of amama opens once your account manager approves them.",
-        }
-      : status === "approved"
-      ? { icon: BadgeCheckIcon, tone: "bg-amama-subtle text-amama-deep", title: "You're verified", description: "Your KYC is approved. Everything below is kept on record." }
-      : status === "changes-requested"
-        ? { icon: AlertCircleIcon, tone: "bg-status-warning/15 text-status-warning", title: t("review.changesTitle"), description: t("review.changesDescription") }
-        : { icon: HourglassIcon, tone: "bg-amama-subtle text-amama-deep", title: t("review.pendingTitle"), description: t("review.pendingDescription") }
 
   return (
-    <div className="flex flex-col gap-5">
-      <StatusHeader {...header}>
-        {status === "not-submitted" ? (
-          <div className="mt-5 flex flex-wrap items-center gap-3 rounded-[20px] bg-card px-4 py-3">
-            <p className="me-auto text-[14px] text-muted-foreground">
-              {missingRequired > 0 ? `${missingRequired} required document${missingRequired === 1 ? "" : "s"} still to upload` : "Everything required is uploaded."}
-            </p>
-            <Button
-              disabled={missingRequired > 0}
-              onClick={() => {
-                submitStartedApplication(role, application.userId)
-                toast.success("Sent for review")
-              }}
-            >
-              Submit for review
-            </Button>
-          </div>
-        ) : null}
-        <KycProgress
-          ticket={kycTicketId(role, application.email)}
-          stage={status === "approved" ? 2 : status === "not-submitted" ? -1 : 0}
-          needsAction={status === "changes-requested"}
-          labels={[t("review.stepSubmitted"), t("review.stepReview"), t("review.stepVerified")]}
+    <div className={cn("flex gap-3", COLUMN_HEIGHT)}>
+      <DocumentsColumn
+        application={application}
+        className={cn("flex-1", selected || pane === "tickets" ? "hidden lg:flex" : "flex")}
+        switcher={switcher}
+        onUpload={setUploadFor}
+        onOpenTicket={(id) => {
+          setPane("tickets")
+          select(id)
+        }}
+        onFinalise={() => setFinalising(true)}
+        onSubmitFirst={() => {
+          submitStartedApplication(role, application.userId)
+          toast.success("Sent for review")
+        }}
+        onDiscardDraft={(docId) => discardDraftUpdate(role, application.userId, docId)}
+      />
+      <TicketListColumn
+        application={application}
+        selectedId={selected?.id ?? null}
+        onSelect={select}
+        switcher={switcher}
+        className={cn("w-full shrink-0 lg:w-[380px] 2xl:w-[340px]", selected ? "hidden 2xl:flex" : pane === "tickets" ? "flex" : "hidden lg:flex")}
+      />
+      {selected ? (
+        <TicketDetailColumn
+          key={selected.id}
+          application={application}
+          ticket={selected}
+          className="flex w-full shrink-0 lg:w-[460px] xl:w-[520px] 2xl:w-[500px]"
+          onBack={clear}
+          onClose={clear}
+          onUpload={setUploadFor}
+          onSend={(text, docId) => addApplicantComment(role, application.userId, text, docId, name, selected.id)}
         />
-      </StatusHeader>
-
-      {application.reviewerNote ? (
-        <blockquote className="rounded-2xl border border-status-warning/30 bg-status-warning/5 px-4 py-3 text-[14px] leading-relaxed">
-          <span className="font-semibold">{application.reviewedByName ?? "Your KAM"}:</span> {application.reviewerNote}
-        </blockquote>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:items-start">
-        <div className="flex flex-col gap-5">
-          {owed.length > 0 ? (
-            <section aria-label="Needs your attention" className="overflow-hidden rounded-[20px] border border-status-warning/40 bg-card">
-              <h2 className="border-b border-border bg-status-warning/5 px-4 py-3 text-[14px] font-semibold">
-                Needs your attention · {owed.length}
-              </h2>
-              <ul className="divide-y divide-border">
-                {owed.map((document) => (
-                  <li key={document.id} className="flex flex-wrap items-start gap-3 px-4 py-3.5">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[14px] font-semibold">{labelOf(document).label}</p>
-                      <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted-foreground">
-                        {document.reviewStatus === "missing"
-                          ? document.requestedBy
-                            ? `${document.requestedBy.name} asked for this.${document.hint ? ` ${document.hint}.` : ""}`
-                            : `${labelOf(document).hint || "Still to upload"}${document.required ? "" : " · optional"}`
-                          : document.reviewNote ?? "Please upload this again."}
-                      </p>
-                    </div>
-                    <UploadVersionButton documentId={document.id} label={document.versions.length > 0 ? "Upload new version" : "Upload"} onUploaded={upload(document)} />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
+      {uploading && target ? (
+        <UploadDocumentDialog
+          open
+          onOpenChange={(open) => !open && setUploadFor(null)}
+          documentId={uploading.id}
+          title={`${current || staged ? "Update" : "Upload"} ${labelOf(uploading).label}`}
+          destination={
+            target.kind === "ticket"
+              ? `Goes straight to ${target.ticket.id} — ${target.ticket.assignee?.name ?? "your KAM"} reviews it next.`
+              : target.kind === "direct"
+                ? "Saved to your application. Submit everything for review when you're ready."
+                : "Added to your changes. Nothing is sent until you finalise and submit."
+          }
+          context={
+            uploading.reviewNote && uploading.reviewStatus !== "approved" ? (
+              <>
+                <span className="font-semibold">{uploading.requestedBy?.name ?? uploading.reviewedBy?.name ?? "Your KAM"}:</span> {uploading.reviewNote}
+              </>
+            ) : current ? (
+              <span className="text-muted-foreground">
+                Replaces <span className="font-medium text-foreground">{current.name}</span> (v{uploading.versions.length}, {formatBytes(current.size)}). The old copy stays on record.
+              </span>
+            ) : labelOf(uploading).hint ? (
+              <span className="text-muted-foreground">{labelOf(uploading).hint}</span>
+            ) : undefined
+          }
+          submitLabel={target.kind === "ticket" ? "Submit" : target.kind === "direct" ? "Save" : "Add to changes"}
+          onSubmit={handleUpload}
+        />
+      ) : null}
 
-          <section aria-label="Your documents" className="overflow-hidden rounded-[20px] border border-border bg-background">
-            <h2 className="border-b border-border px-4 py-3 text-[14px] font-semibold">Your documents</h2>
-            <ul className="divide-y divide-border">
-              {application.documents.map((document) => {
-                const current = document.versions.at(-1)
-                const { label } = labelOf(document)
-                const style = documentStatus[document.reviewStatus]
-                return (
-                  <li key={document.id} className="flex items-start gap-3 px-4 py-3">
-                    <span
-                      aria-hidden
-                      className={cn(
-                        "mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg",
-                        document.reviewStatus === "approved" ? "bg-amama-subtle text-amama-deep" : "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      <FileTextIcon className="size-4" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13.5px] font-semibold">
-                        {label}
-                        {document.required ? null : <span className="font-normal text-muted-foreground"> · optional</span>}
-                      </p>
-                      {current ? <FilePreview version={current} title={label} /> : <p className="text-[12px] text-muted-foreground">Not uploaded yet</p>}
-                      <VersionHistory document={document} title={label} />
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1.5">
-                      <StatusPill tone={style.tone}>{style.label}</StatusPill>
-                      {status !== "approved" && document.reviewStatus === "pending" ? (
-                        <UploadVersionButton documentId={document.id} label="Replace" variant="quiet" onUploaded={upload(document)} />
-                      ) : null}
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          </section>
-        </div>
-
-        <section aria-label="Conversation with amama" className="overflow-hidden rounded-[20px] border border-border bg-background lg:sticky lg:top-20">
-          <h2 className="border-b border-border px-4 py-3 text-[14px] font-semibold">Conversation</h2>
-          <div className="max-h-[480px] overflow-y-auto">
-            <Timeline comments={application.comments} labelFor={labelForId} viewer="applicant" />
-          </div>
-          {status !== "approved" ? (
-            <Composer
-              placeholder="Ask your KAM a question or explain an upload…"
-              documents={application.documents.map((document) => ({ id: document.id, label: labelOf(document).label }))}
-              docId={docId}
-              onDocChange={setDocId}
-              onSend={(text, about) => addApplicantComment(role, application.userId, text, about, name)}
-            />
-          ) : null}
-        </section>
-      </div>
+      <FinaliseDialog application={application} open={finalising} onOpenChange={setFinalising} onSubmit={finalise} />
     </div>
   )
 }
 
-function StatusHeader({
-  icon: Icon,
-  tone,
-  title,
-  description,
-  children,
+/** "Finalise & submit": the changes going in, an optional note for the
+ *  KAM, and what happens next. */
+function FinaliseDialog({
+  application,
+  open,
+  onOpenChange,
+  onSubmit,
 }: {
-  icon: LucideIcon
-  tone: string
-  title: string
-  description: string
-  children?: React.ReactNode
+  application: KycApplication
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSubmit: (note: string) => void
 }) {
+  const labelOf = useDocumentLabel()
+  const [note, setNote] = React.useState("")
+  // Keep showing what was submitted while the dialog animates out.
+  const [drafts, setDrafts] = React.useState(application.drafts)
+  if (application.drafts.length > 0 && application.drafts !== drafts) setDrafts(application.drafts)
+  const kam = application.tickets.find((ticket) => ticket.assignee?.id === application.assigneeId)?.assignee?.name
+
   return (
-    <header>
-      <div className="flex items-start gap-4">
-        <span aria-hidden className={cn("grid size-11 shrink-0 place-items-center rounded-full", tone)}>
-          <Icon className="size-5" strokeWidth={2.25} />
-        </span>
-        <div className="min-w-0">
-          <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.028em] text-balance">{title}</h1>
-          <p className="mt-1 max-w-2xl text-[14.5px] leading-relaxed text-pretty text-muted-foreground">{description}</p>
-        </div>
-      </div>
-      {children}
-    </header>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) setNote("")
+        onOpenChange(next)
+      }}
+    >
+      <DialogContent className="gap-5 sm:max-w-lg">
+        <DialogHeader className="pe-10">
+          <DialogTitle className="text-[19px] font-semibold tracking-[-0.02em]">Finalise & submit</DialogTitle>
+          <DialogDescription className="text-[13px]">
+            This raises a new KYC ticket{kam ? ` for ${kam}, your KAM,` : ""} to review. Your current documents stay valid until the new ones are approved.
+          </DialogDescription>
+        </DialogHeader>
+        <ul className="flex flex-col gap-1.5">
+          {drafts.map((entry) => {
+            const document = application.documents.find((candidate) => candidate.id === entry.docId)
+            if (!document) return null
+            return (
+              <li key={entry.docId} className="flex items-center gap-3 rounded-2xl bg-card px-3 py-2.5">
+                <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-xl bg-background text-amama-deep">
+                  <FileTextIcon className="size-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13.5px] font-semibold">{labelOf(document).label}</span>
+                  <span className="block truncate text-[12px] text-muted-foreground">
+                    {entry.version.name} · {formatBytes(entry.version.size)}
+                  </span>
+                </span>
+                <span className="shrink-0 text-[12px] text-muted-foreground tabular-nums">v{document.versions.length + 1}</span>
+              </li>
+            )
+          })}
+        </ul>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[13px] font-semibold">
+            Note for your KAM <span className="font-normal text-muted-foreground">(optional)</span>
+          </span>
+          <Textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            rows={3}
+            placeholder="What changed — a renewed licence, a new bank account…"
+            className="resize-none rounded-xl bg-card text-[13.5px]"
+          />
+        </label>
+        <DialogFooter className="gap-2">
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={() => onSubmit(note)} disabled={application.drafts.length === 0}>
+            <SendIcon />
+            Submit {drafts.length} change{drafts.length === 1 ? "" : "s"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
-/** Submitted, in review, verified — with the ticket number either side
- *  can quote. */
-function KycProgress({ ticket, stage, labels, needsAction }: { ticket: string; stage: number; labels: string[]; needsAction: boolean }) {
+/** Before onboarding is finished there's nothing to show but the way back. */
+function NotStarted({ role }: { role: OnboardingRole }) {
   return (
-    <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-border bg-background px-4 py-3">
-      <p className="text-[12.5px] text-muted-foreground">
-        Ticket <span className="font-mono font-medium text-foreground">{ticket}</span>
+    <section className={cn("flex flex-col items-center justify-center gap-3 rounded-[24px] bg-background p-8 text-center", COLUMN_HEIGHT)}>
+      <span aria-hidden className="grid size-14 place-items-center rounded-full bg-card text-muted-foreground">
+        <FileTextIcon className="size-6" />
+      </span>
+      <h1 className="text-[28px] font-semibold tracking-[-0.025em]">Finish onboarding first</h1>
+      <p className="max-w-md text-[14.5px] leading-relaxed text-pretty text-muted-foreground">
+        Your KYC starts with the documents step of onboarding. Once you submit them, everything about your verification lives here.
       </p>
-      <ol className="grid min-w-[240px] flex-1 grid-cols-3 gap-2">
-        {labels.map((label, index) => {
-          const done = index <= stage
-          const current = index === stage + 1
-          return (
-            <li key={label} className="flex flex-col gap-1.5">
-              <span
-                aria-hidden
-                className={cn("h-1.5 rounded-full", done ? "bg-amama-deep" : current ? (needsAction ? "bg-status-warning" : "bg-amama/40") : "bg-border")}
-              />
-              <span className={cn("text-[12px]", done || current ? "font-medium text-foreground" : "text-muted-foreground")}>{label}</span>
-            </li>
-          )
-        })}
-      </ol>
-    </div>
+      <Link href={`/${role}/onboarding/country`} className={cn(buttonVariants({ size: "lg" }), "mt-3")}>
+        Continue onboarding
+      </Link>
+    </section>
   )
 }
 

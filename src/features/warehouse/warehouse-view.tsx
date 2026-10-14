@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
+import { ColumnCard } from "@/components/ui/column-card"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import * as Wd from "@/features/tradechain/demo-world"
 import {
@@ -63,25 +64,28 @@ function WarehouseView() {
   const shown = filter === "all" ? inHere : inHere.filter((row) => row.status === filter)
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="me-auto text-[34px] font-semibold tracking-[-0.03em]">Warehouse</h1>
-        <select
-          value={warehouseId}
-          onChange={(event) => setWarehouseId(event.target.value)}
-          aria-label="Warehouse"
-          className="h-10 rounded-xl border border-input bg-background px-3 text-[14px] font-medium outline-none"
-        >
-          {WAREHOUSES.map((entry) => (
-            <option key={entry.id} value={entry.id}>
-              {entry.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <p className="mt-1 text-[15px] text-muted-foreground">{warehouse.address}</p>
-
-      <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <ColumnCard
+      title="Warehouse"
+      action={
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="hidden min-w-0 truncate text-[13px] text-muted-foreground md:block">{warehouse.address}</span>
+          <select
+            value={warehouseId}
+            onChange={(event) => setWarehouseId(event.target.value)}
+            aria-label="Warehouse"
+            title={warehouse.address}
+            className="h-9 shrink-0 rounded-xl bg-card px-3 text-[13.5px] font-medium outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/30"
+          >
+            {WAREHOUSES.map((entry) => (
+              <option key={entry.id} value={entry.id}>
+                {entry.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      }
+    >
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
         {[
           { label: "On hand", value: `${onHand.toFixed(0)} MT`, caption: `${Math.round((onHand / warehouse.capacityMt) * 100)}% of ${warehouse.capacityMt} MT` },
           { label: "At the dock", value: String(atDock), caption: "Lots waiting on our QC" },
@@ -98,7 +102,7 @@ function WarehouseView() {
         ))}
       </div>
 
-      <section aria-label="Inbound trucks" className="mt-6 rounded-[24px] bg-background p-2">
+      <section aria-label="Inbound trucks" className="mt-2 rounded-[24px] bg-card p-2">
         <header className="flex flex-wrap items-baseline justify-between gap-2 px-3 pt-2 pb-3">
           <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Trucks on the way</h2>
           <p className="text-[13px] text-muted-foreground">Road routes from each farm to {warehouse.city}</p>
@@ -120,7 +124,7 @@ function WarehouseView() {
         />
       </section>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3">
+      <div className="mt-5 flex flex-wrap items-center gap-3 px-1.5">
         <ButtonGroup
           label="Direction"
           value={tab}
@@ -148,125 +152,121 @@ function WarehouseView() {
       </div>
 
       {tab === "inbound" ? (
-        <div className="mt-4 overflow-hidden rounded-[24px] bg-background p-2">
-          <ul className="overflow-hidden rounded-[16px] bg-background">
-            {shown.map((row) => {
-              const open = openId === row.id
-              const seller = Wd.sellerById(row.sellerId)
-              const product = Wd.productById(row.productId)
-              const status = INBOUND_STATUS[row.status]
-              const verdict = VERDICT[row.amamaQc.verdict]
-              return (
-                <li key={row.id} className="border-b border-border last:border-b-0">
-                  <button
-                    type="button"
-                    aria-expanded={open}
-                    onClick={() => setOpenId(open ? null : row.id)}
-                    className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-4 py-3 text-start hover:bg-card sm:grid-cols-[8rem_minmax(0,1.3fr)_minmax(0,1fr)_6rem_8rem_1rem]"
-                  >
-                    <span className="hidden font-mono text-[12px] text-muted-foreground sm:block">{row.grn ?? row.lot}</span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-[14px] font-semibold">{seller?.entity ?? row.sellerId}</span>
-                      <span className="block truncate text-[12.5px] text-muted-foreground">
-                        {product?.label ?? row.productId} · {row.lot} · {seller?.district}, {seller?.state}
-                      </span>
-                    </span>
-                    <span className="hidden text-[12.5px] text-muted-foreground sm:block">
-                      {row.vehicle} · ETA {when(row.eta)}
-                    </span>
-                    <span className="hidden text-[13px] font-medium tabular-nums sm:block">{row.receivedMt ?? row.expectedMt} MT</span>
-                    <span className="flex flex-col items-end gap-1 sm:items-start">
-                      <span className={cn("rounded-lg px-2 py-0.5 text-[12px] font-semibold", status.className)}>{status.label}</span>
-                      {row.status !== "in-transit" ? <span className={cn("rounded-lg px-2 py-0.5 text-[11px] font-medium", verdict.className)}>QC {verdict.label.toLowerCase()}</span> : null}
-                    </span>
-                    <ChevronDownIcon aria-hidden className={cn("hidden size-4 text-muted-foreground transition-transform sm:block", open && "rotate-180")} />
-                  </button>
-                  {open ? (
-                    <div className="flex flex-col gap-2 bg-card p-3">
-                      <div className="grid gap-2 md:grid-cols-2">
-                        <QcCard title={`Farm QC · ${seller?.entity ?? "Grower"}`} report={row.farmQc} />
-                        <QcCard title={`amama QC · ${warehouse.city}`} report={row.amamaQc} />
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2 px-1 text-[12.5px] text-muted-foreground">
-                        <span className="me-auto">
-                          Trade {row.tradeId}
-                          {row.bay ? ` · bay ${row.bay}` : ""}
-                          {row.arrivedAt ? ` · arrived ${when(row.arrivedAt)}` : ""}
-                        </span>
-                        {canAct && row.status === "in-transit" ? (
-                          <Button size="sm" variant="outline" onClick={() => markArrived(row.id)}>
-                            Mark arrived
-                          </Button>
-                        ) : null}
-                        {canAct && row.status === "arrived" ? (
-                          <>
-                            <Button size="sm" variant="outline" onClick={() => recordAmamaQc(row.id, "hold", admin.user.name, null)}>
-                              Hold
-                            </Button>
-                            <Button size="sm" variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-white" onClick={() => recordAmamaQc(row.id, "rejected", admin.user.name, null)}>
-                              Reject
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                recordAmamaQc(row.id, "passed", admin.user.name, null)
-                                toast.success(`${row.lot} passed QC and moved to storage`)
-                              }}
-                            >
-                              Pass QC & store
-                            </Button>
-                          </>
-                        ) : null}
-                      </div>
-                    </div>
-                  ) : null}
-                </li>
-              )
-            })}
-            {shown.length === 0 ? <li className="px-4 py-10 text-center text-[14px] text-muted-foreground">Nothing here.</li> : null}
-          </ul>
-        </div>
-      ) : (
-        <div className="mt-4 overflow-hidden rounded-[24px] bg-background p-2">
-          <ul className="overflow-hidden rounded-[16px] bg-background">
-            {outHere.map((row) => {
-              const buyer = Wd.buyerById(row.buyerId)
-              const product = Wd.productById(row.productId)
-              return (
-                <li key={row.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-b border-border px-4 py-3 last:border-b-0 sm:grid-cols-[9rem_minmax(0,1.3fr)_minmax(0,1fr)_5rem_auto]">
-                  <span className="hidden font-mono text-[12px] text-muted-foreground sm:block">{row.container}</span>
+        <ul className="mt-3">
+          {shown.map((row) => {
+            const open = openId === row.id
+            const seller = Wd.sellerById(row.sellerId)
+            const product = Wd.productById(row.productId)
+            const status = INBOUND_STATUS[row.status]
+            const verdict = VERDICT[row.amamaQc.verdict]
+            return (
+              <li key={row.id}>
+                <button
+                  type="button"
+                  aria-expanded={open}
+                  onClick={() => setOpenId(open ? null : row.id)}
+                  className="chat-row grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 rounded-xl px-3 py-3 text-start transition-colors [--row-inset:0.75rem] hover:bg-card sm:grid-cols-[8rem_minmax(0,1.3fr)_minmax(0,1fr)_6rem_8rem_1rem]"
+                >
+                  <span className="hidden font-mono text-[12px] text-muted-foreground sm:block">{row.grn ?? row.lot}</span>
                   <span className="min-w-0">
-                    <span className="block truncate text-[14px] font-semibold">{buyer?.company ?? row.buyerId}</span>
+                    <span className="block truncate text-[14px] font-semibold">{seller?.entity ?? row.sellerId}</span>
                     <span className="block truncate text-[12.5px] text-muted-foreground">
-                      {product?.label ?? row.productId} · Trade {row.tradeId}
+                      {product?.label ?? row.productId} · {row.lot} · {seller?.district}, {seller?.state}
                     </span>
                   </span>
                   <span className="hidden text-[12.5px] text-muted-foreground sm:block">
-                    → {row.port} · {when(row.dispatchedAt ?? row.scheduledAt)}
+                    {row.vehicle} · ETA {when(row.eta)}
                   </span>
-                  <span className="hidden text-[13px] font-medium tabular-nums sm:block">{row.qtyMt} MT</span>
-                  <span className="flex items-center justify-end gap-2">
-                    <span
-                      className={cn(
-                        "rounded-lg px-2 py-0.5 text-[12px] font-semibold",
-                        row.status === "dispatched" ? "bg-amama-subtle text-amama-deep" : row.status === "loading" ? "bg-status-warning/12 text-status-warning" : "bg-muted text-foreground"
-                      )}
-                    >
-                      {row.status === "dispatched" ? "Dispatched" : row.status === "loading" ? "Loading" : "Scheduled"}
-                    </span>
-                    {canAct && row.status !== "dispatched" ? (
-                      <Button size="sm" variant="outline" onClick={() => markDispatched(row.id)}>
-                        Dispatch
-                      </Button>
-                    ) : null}
+                  <span className="hidden text-[13px] font-medium tabular-nums sm:block">{row.receivedMt ?? row.expectedMt} MT</span>
+                  <span className="flex flex-col items-end gap-1 sm:items-start">
+                    <span className={cn("rounded-lg px-2 py-0.5 text-[12px] font-semibold", status.className)}>{status.label}</span>
+                    {row.status !== "in-transit" ? <span className={cn("rounded-lg px-2 py-0.5 text-[11px] font-medium", verdict.className)}>QC {verdict.label.toLowerCase()}</span> : null}
                   </span>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
+                  <ChevronDownIcon aria-hidden className={cn("hidden size-4 text-muted-foreground transition-transform sm:block", open && "rotate-180")} />
+                </button>
+                {open ? (
+                  <div className="mb-2 flex flex-col gap-2 rounded-[16px] bg-card p-2">
+                    <div className="grid gap-2 md:grid-cols-2">
+                      <QcCard title={`Farm QC · ${seller?.entity ?? "Grower"}`} report={row.farmQc} />
+                      <QcCard title={`amama QC · ${warehouse.city}`} report={row.amamaQc} />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 px-1 text-[12.5px] text-muted-foreground">
+                      <span className="me-auto">
+                        Trade {row.tradeId}
+                        {row.bay ? ` · bay ${row.bay}` : ""}
+                        {row.arrivedAt ? ` · arrived ${when(row.arrivedAt)}` : ""}
+                      </span>
+                      {canAct && row.status === "in-transit" ? (
+                        <Button size="sm" variant="outline" onClick={() => markArrived(row.id)}>
+                          Mark arrived
+                        </Button>
+                      ) : null}
+                      {canAct && row.status === "arrived" ? (
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => recordAmamaQc(row.id, "hold", admin.user.name, null)}>
+                            Hold
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-white" onClick={() => recordAmamaQc(row.id, "rejected", admin.user.name, null)}>
+                            Reject
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              recordAmamaQc(row.id, "passed", admin.user.name, null)
+                              toast.success(`${row.lot} passed QC and moved to storage`)
+                            }}
+                          >
+                            Pass QC & store
+                          </Button>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
+              </li>
+            )
+          })}
+          {shown.length === 0 ? <li className="px-4 py-10 text-center text-[14px] text-muted-foreground">Nothing here.</li> : null}
+        </ul>
+      ) : (
+        <ul className="mt-3">
+          {outHere.map((row) => {
+            const buyer = Wd.buyerById(row.buyerId)
+            const product = Wd.productById(row.productId)
+            return (
+              <li key={row.id} className="chat-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-3 py-3 [--row-inset:0.75rem] sm:grid-cols-[9rem_minmax(0,1.3fr)_minmax(0,1fr)_5rem_auto]">
+                <span className="hidden font-mono text-[12px] text-muted-foreground sm:block">{row.container}</span>
+                <span className="min-w-0">
+                  <span className="block truncate text-[14px] font-semibold">{buyer?.company ?? row.buyerId}</span>
+                  <span className="block truncate text-[12.5px] text-muted-foreground">
+                    {product?.label ?? row.productId} · Trade {row.tradeId}
+                  </span>
+                </span>
+                <span className="hidden text-[12.5px] text-muted-foreground sm:block">
+                  → {row.port} · {when(row.dispatchedAt ?? row.scheduledAt)}
+                </span>
+                <span className="hidden text-[13px] font-medium tabular-nums sm:block">{row.qtyMt} MT</span>
+                <span className="flex items-center justify-end gap-2">
+                  <span
+                    className={cn(
+                      "rounded-lg px-2 py-0.5 text-[12px] font-semibold",
+                      row.status === "dispatched" ? "bg-amama-subtle text-amama-deep" : row.status === "loading" ? "bg-status-warning/12 text-status-warning" : "bg-muted text-foreground"
+                    )}
+                  >
+                    {row.status === "dispatched" ? "Dispatched" : row.status === "loading" ? "Loading" : "Scheduled"}
+                  </span>
+                  {canAct && row.status !== "dispatched" ? (
+                    <Button size="sm" variant="outline" onClick={() => markDispatched(row.id)}>
+                      Dispatch
+                    </Button>
+                  ) : null}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
       )}
-    </div>
+    </ColumnCard>
   )
 }
 

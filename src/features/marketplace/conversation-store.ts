@@ -34,6 +34,20 @@ export type ConversationCard =
    *  `deal-store.ts`. Resolves in place once a contract exists: the same
    *  card starts showing who picked it up instead of an assign prompt. */
   | { kind: "contract-request"; dealId: string }
+  /** A buyer or seller bringing an account manager into the chat — at any
+   *  point, not only once a deal is agreed. Carries its own state and is
+   *  swapped in place (`replaceCard`) when a KAM joins. See `kam-assist.tsx`. */
+  | {
+      kind: "kam-assist"
+      requestId: string
+      topic: string
+      note: string | null
+      requestedBy: "buyer" | "seller"
+      requestedByName: string
+      requestedAt: string
+      joinedByName: string | null
+      joinedAt: string | null
+    }
   /** The contract a KAM opened off an agreed deal. */
   | { kind: "contract"; contractId: string }
   /** A term-sheet form and/or document checklist the KAM is asking one
@@ -384,6 +398,7 @@ function toThreadMessages(messages: ConversationMessage[], viewer: ChatParty) {
     diff: message.diff,
     card: message.card,
     senderName: message.fromName,
+    at: message.at,
   }))
 }
 

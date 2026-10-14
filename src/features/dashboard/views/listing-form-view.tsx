@@ -3,9 +3,10 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeftIcon, PackageSearchIcon } from "lucide-react"
+import { PackageSearchIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { ColumnCard, DetailColumnCard } from "@/components/ui/column-card"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -134,13 +135,15 @@ function ListingFormView({ listingId }: { listingId?: string }) {
 
   if (listingId && !editing) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border py-16 text-center">
-        <PackageSearchIcon className="size-6 text-muted-foreground" />
-        <p className="text-[15px] font-semibold">This listing no longer exists</p>
-        <Link href="/seller/dashboard/listings" className="text-[13px] font-medium text-amama-deep underline">
-          Back to your catalog
-        </Link>
-      </div>
+      <ColumnCard title="Listings">
+        <div className="flex flex-col items-center gap-3 rounded-[20px] bg-card py-16 text-center">
+          <PackageSearchIcon className="size-6 text-muted-foreground" />
+          <p className="text-[15px] font-semibold">This listing no longer exists</p>
+          <Link href="/seller/dashboard/listings" className="text-[13px] font-medium text-amama-deep underline">
+            Back to your catalog
+          </Link>
+        </div>
+      </ColumnCard>
     )
   }
 
@@ -243,20 +246,13 @@ function ListingFormView({ listingId }: { listingId?: string }) {
   }
 
   return (
-    <div className="mx-auto max-w-xl">
-      <Link
-        href={editing ? `/seller/dashboard/listings/${editing.id}` : "/seller/dashboard/listings"}
-        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeftIcon className="size-3.5" />
-        {editing ? "Back to listing" : "Your catalog"}
-      </Link>
-
-      <h1 className="mt-3 text-[34px] font-semibold tracking-[-0.03em]">
-        {editing ? "Edit listing" : "Add a listing"}
-      </h1>
-
-      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+    <DetailColumnCard
+      backHref={editing ? `/seller/dashboard/listings/${editing.id}` : "/seller/dashboard/listings"}
+      backLabel={editing ? "Listing" : "Listings"}
+      title={editing ? "Edit listing" : "Add a listing"}
+      meta={editing ? `${productLabel(editing.cropId)} · ${editing.variety}` : undefined}
+    >
+      <form onSubmit={handleSubmit} className="mx-auto flex max-w-xl flex-col gap-3">
         <FormSection title="Product">
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1.5 text-[13px] font-medium text-foreground">
@@ -439,21 +435,20 @@ function ListingFormView({ listingId }: { listingId?: string }) {
           />
         </FormSection>
 
-        <div className="flex flex-col items-start gap-2">
-          <Button type="submit" size="lg">
+        <div className="flex flex-col items-start gap-2 pt-1 pb-2">
+          <Button type="submit" size="lg" className="rounded-xl">
             {editing ? "Save changes" : "Publish listing"}
           </Button>
           {submitError ? <p className="text-[13px] font-medium text-destructive">{submitError}</p> : null}
         </div>
       </form>
-    </div>
+    </DetailColumnCard>
   )
 }
 
-/** One labelled group of related fields — the same bordered-card treatment
- *  the price fields already had, now applied consistently across the whole
- *  form so a seller can see at a glance which fields belong together
- *  instead of reading one long unbroken list of labels. */
+/** One labelled group of related fields, as a mist group inside the
+ *  form's white card — so a seller can see at a glance which fields
+ *  belong together instead of reading one long unbroken list of labels. */
 function FormSection({
   title,
   subtitle,
@@ -464,7 +459,7 @@ function FormSection({
   children: React.ReactNode
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-background p-4">
+    <div className="rounded-[20px] bg-card p-4">
       <p className="text-[13px] font-semibold text-foreground">{title}</p>
       {subtitle ? <p className="mt-0.5 text-[12px] text-muted-foreground">{subtitle}</p> : null}
       <div className="mt-3">{children}</div>

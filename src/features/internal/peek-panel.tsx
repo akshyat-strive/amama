@@ -45,7 +45,7 @@ function FieldList({
   className?: string
 }) {
   return (
-    <dl className={cn("divide-y divide-border", className)}>
+    <dl className={cn("divide-inset", className)}>
       {rows.map((row) => (
         <div key={row.label} className="flex items-baseline justify-between gap-4 py-2.5">
           <dt className="shrink-0 text-[12px] text-muted-foreground">{row.label}</dt>
@@ -108,7 +108,7 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
               { label: "Open gates", value: open.length === 0 ? "None" : `${open.length} mandatory document${open.length === 1 ? "" : "s"}` },
             ]}
           />
-          <div className="divide-y divide-border">
+          <div className="divide-inset">
             <LinkGroup label="Spec">
               <span className="text-[13px] leading-relaxed text-muted-foreground">{trade.spec}</span>
             </LinkGroup>
@@ -162,7 +162,7 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
               { label: "State", value: lot.state },
             ]}
           />
-          <div className="divide-y divide-border">
+          <div className="divide-inset">
             {lot.qcNote ? (
               <LinkGroup label="QC note">
                 <span className="text-[13px] leading-relaxed text-muted-foreground">{lot.qcNote}</span>
@@ -170,7 +170,7 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
             ) : null}
             {qc ? (
               <LinkGroup label="Measurements">
-                <div className="w-full divide-y divide-border">
+                <div className="w-full divide-inset">
                   {qc.measurements.map((m) => (
                     <div key={m.label} className="flex items-baseline justify-between gap-3 py-1.5">
                       <span className="text-[12px] text-muted-foreground">{m.label}</span>
@@ -239,7 +239,7 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
               { label: "State", value: <Pill tone={container.state === "gated-in" || container.state === "sailed" ? "ok" : "warn"}>{container.state}</Pill> },
             ]}
           />
-          <div className="divide-y divide-border">
+          <div className="divide-inset">
             {container.backupBookingRef ? (
               <LinkGroup label="Backup sailing">
                 <span className="text-[13px] text-muted-foreground">
@@ -275,7 +275,7 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
               { label: "Verified by", value: document.verifiedBy ? <EntityLink kind="user" id={document.verifiedBy} mono={false} /> : "—" },
             ]}
           />
-          <div className="divide-y divide-border">
+          <div className="divide-inset">
             <LinkGroup label="Why it exists">
               <span className="text-[13px] leading-relaxed text-muted-foreground">{document.why}</span>
             </LinkGroup>
@@ -315,7 +315,7 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
               { label: "Based", value: user.base },
             ]}
           />
-          <div className="divide-y divide-border">
+          <div className="divide-inset">
             <LinkGroup label="Remit">
               <span className="text-[13px] leading-relaxed text-muted-foreground">{role.remit}</span>
             </LinkGroup>
@@ -355,7 +355,7 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
               { label: "Lifetime", value: usd(buyer.lifetimeUsd) },
             ]}
           />
-          <div className="divide-y divide-border">
+          <div className="divide-inset">
             <LinkGroup label="Buys">
               {buyer.products.map((id) => (
                 <EntityLink key={id} kind="product" id={id} mono={false} className="text-[13px]" />
@@ -392,7 +392,7 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
               { label: "Onboarded", value: dt(seller.onboardedAt, false) },
             ]}
           />
-          <div className="divide-y divide-border">
+          <div className="divide-inset">
             <LinkGroup label="Grows">
               {seller.products.map((id) => (
                 <EntityLink key={id} kind="product" id={id} mono={false} className="text-[13px]" />
@@ -423,7 +423,7 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
               { label: "Carriage set point", value: `${product.setpointC} °C` },
             ]}
           />
-          <div className="divide-y divide-border">
+          <div className="divide-inset">
             <LinkGroup label={`${variants.length} variants`}>
               {variants.map((variant) => (
                 <EntityLink key={variant.id} kind="variant" id={variant.id} mono={false} className="text-[13px]" />
@@ -447,7 +447,7 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
               { label: "From", value: listings.length > 0 ? `${usd(Math.min(...listings.map((l) => l.priceUsdPerMt)))} / MT` : "—" },
             ]}
           />
-          <div className="divide-y divide-border">
+          <div className="divide-inset">
             {listings.length > 0 ? (
               <LinkGroup label="Offers">
                 {listings.map((listing) => (
@@ -498,7 +498,7 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
               { label: "Unread", value: conversation.unread },
             ]}
           />
-          <div className="divide-y divide-border">
+          <div className="divide-inset">
             <LinkGroup label="Participants">
               {conversation.participantIds.map((id) => {
                 const kind: W.EntityKind = id.startsWith("u-") ? "user" : id.startsWith("b-") ? "buyer" : "seller"
@@ -531,9 +531,9 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
               { label: "Trade", value: rfq.tradeId ? <EntityLink kind="trade" id={rfq.tradeId} /> : "—" },
             ]}
           />
-          <div className="divide-y divide-border">
+          <div className="divide-inset">
             <LinkGroup label="Specification">
-              <div className="w-full divide-y divide-border">
+              <div className="w-full divide-inset">
                 {rfq.specLines.map((line) => (
                   <div key={line.label} className="flex items-baseline justify-between gap-3 py-1.5">
                     <span className="text-[12px] text-muted-foreground">{line.label}</span>
@@ -607,7 +607,7 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
               { label: "PO", value: sheet.poId ? <EntityLink kind="po" id={sheet.poId} /> : "—" },
             ]}
           />
-          <div className="divide-y divide-border">
+          <div className="divide-inset">
             {sheet.clauses.map((clause) => (
               <div key={clause.id} className="py-3">
                 <div className="flex items-start justify-between gap-3">
@@ -650,7 +650,7 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
             ]}
           />
           {po.deviations.length > 0 ? (
-            <div className="divide-y divide-border">
+            <div className="divide-inset">
               <LinkGroup label="Deviations from the term sheet">
                 <div className="w-full space-y-1.5">
                   {po.deviations.map((deviation) => (
@@ -698,9 +698,9 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
               { label: "Our freight cost", value: usd(ourCost) },
             ]}
           />
-          <div className="divide-y divide-border">
+          <div className="divide-inset">
             <LinkGroup label={`${shipment.legs.length} legs`}>
-              <div className="w-full divide-y divide-border">
+              <div className="w-full divide-inset">
                 {shipment.legs.map((leg) => (
                   <div key={leg.id} className="flex items-baseline justify-between gap-3 py-1.5">
                     <span className="min-w-0 text-[12px] text-muted-foreground">
@@ -733,7 +733,7 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
               { label: "Output", value: stage.output },
             ]}
           />
-          <div className="divide-y divide-border">
+          <div className="divide-inset">
             <LinkGroup label="Trigger"><span className="text-[13px] text-muted-foreground">{stage.trigger}</span></LinkGroup>
             <LinkGroup label="System does"><span className="text-[13px] text-muted-foreground">{stage.systemAction}</span></LinkGroup>
             <LinkGroup label="Human does"><span className="text-[13px] text-muted-foreground">{stage.humanAction}</span></LinkGroup>
@@ -761,7 +761,7 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
           />
           <Prose>{event.summary}</Prose>
           {event.subject ? (
-            <div className="divide-y divide-border">
+            <div className="divide-inset">
               <LinkGroup label="Subject">
                 <EntityLink kind={event.subject.kind} id={event.subject.id} />
               </LinkGroup>
@@ -786,7 +786,7 @@ function PeekBody({ entityRef }: { entityRef: W.EntityRef }) {
           />
           <Prose>{notification.body}</Prose>
           {notification.subject ? (
-            <div className="divide-y divide-border">
+            <div className="divide-inset">
               <LinkGroup label="Subject">
                 <EntityLink kind={notification.subject.kind} id={notification.subject.id} />
               </LinkGroup>

@@ -4,6 +4,7 @@ import * as React from "react"
 import { CheckCircle2Icon, ClockIcon, HourglassIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { ColumnCard } from "@/components/ui/column-card"
 import { Panel, StatCard } from "@/features/dashboard/dashboard-ui"
 import {
   buildOrderBook,
@@ -50,10 +51,8 @@ function PaymentsView() {
     .reduce((sum, p) => sum + p.amountUsd, 0)
 
   return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Payments</h1>
-
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+    <ColumnCard title="Payments">
+      <div className="grid gap-2 rounded-[24px] bg-card p-2 sm:grid-cols-2">
         <StatCard label="Paid out" value={formatInr(paid)} caption="Season to date" />
         <StatCard
           label="Outstanding"
@@ -63,8 +62,8 @@ function PaymentsView() {
         />
       </div>
 
-      <Panel title="Payment history" className="mt-4" subtitle="Newest first">
-        <ul className="divide-y divide-border">
+      <Panel title="Payment history" className="mt-3 bg-card" subtitle="Newest first">
+        <ul className="divide-inset">
           {payments.map((payment) => {
             const meta = statusMeta[payment.status]
             const Icon = meta.icon
@@ -99,7 +98,7 @@ function PaymentsView() {
           })}
         </ul>
       </Panel>
-    </div>
+    </ColumnCard>
   )
 }
 

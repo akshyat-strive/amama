@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { LogOutIcon, RotateCcwIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { ColumnCard } from "@/components/ui/column-card"
 import { AdminPanel } from "@/features/admin/admin-ui"
 import { signOut } from "@/features/auth/local-auth"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
@@ -24,10 +25,8 @@ function AdminSettingsView() {
   }
 
   return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Settings</h1>
-
-      <AdminPanel title="Session" className="mt-6">
+    <ColumnCard title="Settings">
+      <AdminPanel title="Session">
         <div className="flex items-center justify-between gap-4 px-5 py-4">
           <p className="text-[13px] text-muted-foreground">Sign out and clear this browser&apos;s session.</p>
           <Button variant="outline" size="sm" onClick={handleSignOut}>
@@ -37,7 +36,7 @@ function AdminSettingsView() {
         </div>
       </AdminPanel>
 
-      <AdminPanel title="Demo data" className="mt-4">
+      <AdminPanel title="Demo data" className="mt-2">
         <div className="flex items-center justify-between gap-4 px-5 py-4">
           <p className="text-[13px] text-muted-foreground">
             Every account, KYC ticket, deal, shipment, contract and conversation lives in this browser. Reset to put
@@ -49,7 +48,7 @@ function AdminSettingsView() {
           </Button>
         </div>
       </AdminPanel>
-    </div>
+    </ColumnCard>
   )
 }
 

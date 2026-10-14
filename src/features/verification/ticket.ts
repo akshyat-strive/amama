@@ -1,4 +1,5 @@
 import type { OnboardingRole } from "@/features/onboarding/types"
+import type { KycApplication, KycTicket, KycTicketStatus } from "@/features/verification/kyc-types"
 
 /**
  * A short, stable reference for one account's KYC — the same number the
@@ -12,4 +13,21 @@ function kycTicketId(role: OnboardingRole, email: string): string {
   return `KYC-${role === "buyer" ? "B" : "S"}${String(hash % 100000).padStart(5, "0")}`
 }
 
-export { kycTicketId }
+/** The account's nth ticket: the first keeps the bare account number, so
+ *  references quoted before later tickets existed still resolve. */
+function kycTicketNumber(role: OnboardingRole, email: string, seq: number): string {
+  const base = kycTicketId(role, email)
+  return seq <= 1 ? base : `${base}-${seq}`
+}
+
+/** Where a ticket stands, from its items: anything the applicant still owes
+ *  means it's waiting on them; otherwise it's with the KAM — "in progress"
+ *  once someone owns it. */
+function deriveTicketStatus(application: Pick<KycApplication, "reviewerNote">, ticket: KycTicket): KycTicketStatus {
+  if (ticket.resolvedAt) return "resolved"
+  const owed = ticket.items.some((entry) => entry.status === "missing" || entry.status === "rejected" || entry.status === "update-requested")
+  if (owed || (ticket.origin === "onboarding" && application.reviewerNote !== null)) return "waiting"
+  return ticket.assignee ? "in-progress" : "open"
+}
+
+export { kycTicketId, kycTicketNumber, deriveTicketStatus }

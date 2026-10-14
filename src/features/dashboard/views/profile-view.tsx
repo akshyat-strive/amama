@@ -4,6 +4,7 @@ import Link from "next/link"
 
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { ColumnCard } from "@/components/ui/column-card"
 import { Panel } from "@/features/dashboard/dashboard-ui"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
@@ -35,11 +36,9 @@ function ProfileView({ role }: { role: OnboardingRole }) {
   // that are already fine.
 
   return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Profile</h1>
-
-      <Panel title="Profile" className="mt-6">
-        <div className="divide-y divide-border">
+    <ColumnCard title="Profile">
+      <Panel title="Account" className="bg-card">
+        <div className="divide-inset">
           <Field label="Name" value={person.fullName || "—"} />
           <Field label="Email" value={person.email || "—"} />
           <Field
@@ -88,20 +87,28 @@ function ProfileView({ role }: { role: OnboardingRole }) {
             </>
           )}
         </div>
-        <div className="flex items-center justify-between gap-4 border-t border-border px-5 py-3.5">
-          <Link
-            href={`/${role}/onboarding/${role === "buyer" ? "sourcing" : "produce"}?from=profile`}
-            className="text-[13px] font-medium text-amama-deep underline underline-offset-4"
-          >
-            Edit product list
-          </Link>
+      </Panel>
 
-          <Link href={`/${role}/dashboard/verification`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-            KYC documents
-          </Link>
+      <Panel title="Products and documents" className="mt-3 bg-card">
+        <div className="divide-inset">
+          <div className="flex items-center justify-between gap-4 px-5 py-3.5">
+            <span className="text-[13px] text-muted-foreground">{role === "buyer" ? "What you source" : "What you grow"}</span>
+            <Link
+              href={`/${role}/onboarding/${role === "buyer" ? "sourcing" : "produce"}?from=profile`}
+              className="text-[13px] font-medium text-amama-deep hover:underline"
+            >
+              Edit product list
+            </Link>
+          </div>
+          <div className="flex items-center justify-between gap-4 px-5 py-3.5">
+            <span className="text-[13px] text-muted-foreground">KYC documents</span>
+            <Link href={`/${role}/dashboard/verification`} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "rounded-xl")}>
+              Open
+            </Link>
+          </div>
         </div>
       </Panel>
-    </div>
+    </ColumnCard>
   )
 }
 

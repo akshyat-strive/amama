@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { LifeBuoyIcon, PlusIcon, XIcon } from "lucide-react"
+import { PlusIcon, TicketPlusIcon, XIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
@@ -109,9 +109,10 @@ function RaiseTicketInner({ role }: { role: "buyer" | "seller" | "admin" }) {
               type="button"
               onClick={start}
               aria-label="Raise a ticket"
-              className="grid size-9 shrink-0 place-items-center rounded-full text-foreground/75 transition-colors hover:bg-muted hover:text-foreground"
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
             >
-              <LifeBuoyIcon className="size-[18px]" />
+              <TicketPlusIcon aria-hidden className="size-[17px]" />
+              <span className="hidden sm:inline">Raise ticket</span>
             </button>
           }
         />

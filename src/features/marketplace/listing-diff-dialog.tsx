@@ -39,7 +39,7 @@ function SnapshotCard({
   const isChanged = (field: keyof Listing) => changed.includes(field)
 
   return (
-    <div className="w-full max-w-64 overflow-hidden rounded-3xl border border-border bg-background shadow-xl">
+    <div className="w-full max-w-64 overflow-hidden rounded-3xl bg-background shadow-xl">
       <p
         className={cn(
           "px-4 py-1.5 text-center text-[11px] font-bold tracking-wide uppercase",

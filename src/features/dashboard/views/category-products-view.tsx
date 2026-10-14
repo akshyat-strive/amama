@@ -3,11 +3,11 @@
 import * as React from "react"
 import { PackageSearchIcon } from "lucide-react"
 
+import { DetailColumnCard } from "@/components/ui/column-card"
 import { catalogCategory, productLabel, gradeSlug } from "@/features/marketplace/catalog"
 import { CatalogTile } from "@/features/marketplace/catalog-tile"
 import { formatInr } from "@/features/marketplace/currency"
 import { useListings } from "@/features/marketplace/listing-store"
-import { MarketplaceBreadcrumbs } from "@/features/marketplace/marketplace-ui"
 
 /** Level 2 of the drill-down: every product listed under one category
  *  ("Fruits" → Apple, Fresh fruit, Dried fruit), as photo tiles — each
@@ -44,16 +44,14 @@ function CategoryProductsView({ categoryId }: { categoryId: string }) {
   }, [listings])
 
   return (
-    <div>
-      <MarketplaceBreadcrumbs trail={[{ label: "Marketplace", href: "/buyer/dashboard/sourcing" }, { label: category.label }]} />
-
-      <h1 className="mt-4 text-[34px] font-semibold tracking-[-0.03em] sm:text-[40px]">{category.label}</h1>
-      <p className="mt-1 text-[15px] text-muted-foreground">
-        {products.length} {products.length === 1 ? "product" : "products"}
-      </p>
-
+    <DetailColumnCard
+      backHref="/buyer/dashboard/sourcing"
+      backLabel="Marketplace"
+      title={category.label}
+      meta={`${products.length} ${products.length === 1 ? "product" : "products"}`}
+    >
       {products.length === 0 ? (
-        <div className="mt-8 flex flex-col items-center gap-3 rounded-[28px] bg-card py-16 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-[20px] bg-card py-16 text-center">
           <PackageSearchIcon className="size-6 text-muted-foreground" />
           <p className="text-[15px] font-semibold">No sellers here yet</p>
           <p className="max-w-xs text-[13px] leading-relaxed text-muted-foreground">
@@ -61,7 +59,7 @@ function CategoryProductsView({ categoryId }: { categoryId: string }) {
           </p>
         </div>
       ) : (
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
           {products.map((product) => (
             <CatalogTile
               key={product.cropId}
@@ -74,7 +72,7 @@ function CategoryProductsView({ categoryId }: { categoryId: string }) {
           ))}
         </div>
       )}
-    </div>
+    </DetailColumnCard>
   )
 }
 

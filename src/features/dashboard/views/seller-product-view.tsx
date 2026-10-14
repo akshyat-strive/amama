@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "motion/react"
 import {
   ArrowLeftIcon,
+  ChevronLeftIcon,
   ChevronRightIcon,
   MessageCircleIcon,
   PackageSearchIcon,
@@ -17,6 +18,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { ColumnCard, OnWhite } from "@/components/ui/column-card"
 import {
   Dialog,
   DialogContent,
@@ -58,7 +60,7 @@ const moderationPill: Record<ModerationStatus, { label: string; className: strin
  *  in the dashboard — the topbar offset (80px) plus the content wrapper's
  *  own bottom padding (12px, `pb-3`) — only from `lg` up: below that the
  *  panels stack and the page scrolls normally. */
-const FULL_HEIGHT = "lg:h-[calc(100dvh-92px)]"
+const FULL_HEIGHT = "lg:h-[calc(100dvh-76px)]"
 
 /**
  * The seller's side of a single product: who's asked about it, and the
@@ -108,13 +110,15 @@ function SellerProductView({ listingId }: { listingId: string }) {
 
   if (!listing) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border py-16 text-center">
-        <PackageSearchIcon className="size-6 text-muted-foreground" />
-        <p className="text-[15px] font-semibold">This listing no longer exists</p>
-        <Link href="/seller/dashboard/listings" className="text-[13px] font-medium text-amama-deep underline">
-          Back to your catalog
-        </Link>
-      </div>
+      <ColumnCard title="Listings">
+        <div className="flex flex-col items-center gap-3 rounded-[20px] bg-card py-16 text-center">
+          <PackageSearchIcon className="size-6 text-muted-foreground" />
+          <p className="text-[15px] font-semibold">This listing no longer exists</p>
+          <Link href="/seller/dashboard/listings" className="text-[13px] font-medium text-amama-deep underline">
+            Back to your catalog
+          </Link>
+        </div>
+      </ColumnCard>
     )
   }
 
@@ -178,63 +182,71 @@ function SellerProductView({ listingId }: { listingId: string }) {
   )
 
   return (
-    <div className={cn("flex flex-col gap-4 pb-20 lg:flex-row lg:overflow-hidden lg:pb-0", FULL_HEIGHT)}>
-      <aside className="flex flex-col overflow-hidden rounded-[24px] border border-border bg-background lg:w-[380px] lg:shrink-0">
-        <header className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-4 py-3">
-          <Link
-            href="/seller/dashboard/listings"
-            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeftIcon className="size-3.5" />
-            Listings
-          </Link>
-          <span
-            className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
-              moderationPill[listing.moderationStatus].className
-            )}
-          >
-            <span className="size-1.5 rounded-full bg-current" />
-            {moderationPill[listing.moderationStatus].label}
-          </span>
-        </header>
-
-        <div className="p-4 [scrollbar-width:none] lg:flex-1 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden">
-          <ProductInfoPanel listing={listing} showSeller={false} />
-        </div>
-
-        {selected ? (
-          <div className="shrink-0 border-t border-border p-3">
-            <DealStatusFooter
-              deal={selectedDeal}
-              conversation={selected}
-              listing={listing}
-              role="seller"
-              myName={seller.name}
-              counterpartName={selected.buyerName}
-              className="pt-0"
-            />
-          </div>
-        ) : !listing.deletedAt ? (
-          <div className="flex shrink-0 items-center gap-2 border-t border-border p-3">
-            <Button
-              variant="outline"
-              onClick={() => setConfirmingRemove(true)}
-              className="h-10 rounded-full px-4 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            >
-              <Trash2Icon className="size-4" />
-              Remove
-            </Button>
+    <div className={cn("flex flex-col gap-3 pb-20 lg:flex-row lg:overflow-hidden lg:pb-0", FULL_HEIGHT)}>
+      <OnWhite>
+        <aside className="flex flex-col overflow-hidden rounded-[24px] bg-background p-2 lg:w-[380px] lg:shrink-0">
+          <header className="flex shrink-0 items-center gap-2.5 px-2 pt-1.5 pb-3">
             <Link
-              href={`/seller/dashboard/listings/${listing.id}/edit`}
-              className={cn(buttonVariants(), "h-10 flex-1 rounded-full")}
+              href="/seller/dashboard/listings"
+              aria-label="Back to listings"
+              title="Listings"
+              className="grid size-9 shrink-0 place-items-center rounded-xl text-foreground/75 transition-colors hover:bg-muted"
             >
-              <PenLineIcon className="size-4" />
-              Edit listing
+              <ChevronLeftIcon aria-hidden className="size-5 rtl:-scale-x-100" />
             </Link>
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-[17px] leading-tight font-semibold tracking-[-0.02em]">{cropLabel}</h1>
+              <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">{listing.variety}</p>
+            </div>
+            <span
+              className={cn(
+                "flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
+                moderationPill[listing.moderationStatus].className
+              )}
+            >
+              <span className="size-1.5 rounded-full bg-current" />
+              {moderationPill[listing.moderationStatus].label}
+            </span>
+          </header>
+          <div aria-hidden className="mx-3 h-px shrink-0 bg-border" />
+
+          <div className="px-2 pt-3 pb-2 [scrollbar-width:none] lg:min-h-0 lg:flex-1 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden">
+            <ProductInfoPanel listing={listing} showSeller={false} />
           </div>
-        ) : null}
-      </aside>
+
+          {selected ? (
+            <div className="shrink-0 px-2 pt-1 pb-1">
+              <DealStatusFooter
+                deal={selectedDeal}
+                conversation={selected}
+                listing={listing}
+                role="seller"
+                myName={seller.name}
+                counterpartName={selected.buyerName}
+                className="pt-0"
+              />
+            </div>
+          ) : !listing.deletedAt ? (
+            <div className="flex shrink-0 items-center gap-2 px-1 pt-2 pb-1">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmingRemove(true)}
+                className="h-10 rounded-xl px-4 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2Icon className="size-4" />
+                Remove
+              </Button>
+              <Link
+                href={`/seller/dashboard/listings/${listing.id}/edit`}
+                className={cn(buttonVariants(), "h-10 flex-1 rounded-xl")}
+              >
+                <PenLineIcon className="size-4" />
+                Edit listing
+              </Link>
+            </div>
+          ) : null}
+        </aside>
+      </OnWhite>
 
       <Dialog open={confirmingRemove} onOpenChange={setConfirmingRemove}>
         <DialogContent className="sm:max-w-sm">
@@ -258,7 +270,7 @@ function SellerProductView({ listingId }: { listingId: string }) {
       {/* Desktop: inline, side by side. */}
       <div
         className={cn(
-          "relative hidden overflow-hidden rounded-3xl border border-border bg-background lg:block lg:flex-1",
+          "relative hidden overflow-hidden rounded-[24px] bg-background lg:block lg:flex-1",
           FULL_HEIGHT
         )}
       >
@@ -277,7 +289,7 @@ function SellerProductView({ listingId }: { listingId: string }) {
             type="button"
             onClick={() => setMobileChatOpen(true)}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
-            className="fixed inset-x-4 bottom-4 z-20 flex items-center gap-3 rounded-3xl border border-border bg-background px-4 py-3 text-start shadow-lg lg:hidden"
+            className="fixed inset-x-4 bottom-4 z-20 flex items-center gap-3 rounded-3xl bg-background px-4 py-3 text-start shadow-lg lg:hidden"
           >
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-[13px] font-bold text-foreground/70">
               {selected ? selected.buyerName.charAt(0) : <UsersIcon className="size-4" />}
@@ -352,17 +364,18 @@ function BuyerList({
 }) {
   return (
     <div className="flex h-full flex-col">
-      <div className="shrink-0 border-b border-border bg-muted/40 px-5 py-3.5">
-        <p className="text-[14px] font-semibold text-foreground">Buyers</p>
-        <p className="text-[12px] text-muted-foreground">Everyone who&apos;s asked about {cropLabel}</p>
+      <div className="shrink-0 px-5 pt-4 pb-3">
+        <p className="text-[17px] font-semibold tracking-[-0.02em] text-foreground">Buyers</p>
+        <p className="text-[12.5px] text-muted-foreground">Everyone who&apos;s asked about {cropLabel}</p>
       </div>
+      <div aria-hidden className="mx-5 h-px shrink-0 bg-border" />
       {conversations.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
           <UsersIcon className="size-5 text-muted-foreground" />
           <p className="text-[13px] text-muted-foreground">No one&apos;s reached out yet.</p>
         </div>
       ) : (
-        <ul className="flex-1 divide-y divide-border overflow-y-auto">
+        <ul className="flex-1 overflow-y-auto p-2">
           {conversations.map((conversation) => {
             // Filtered, so a KAM's buyer-only message never previews here.
             const visible = toThreadMessages(conversation.messages, "seller")
@@ -372,7 +385,7 @@ function BuyerList({
                 <button
                   type="button"
                   onClick={() => onSelect(conversation.id)}
-                  className="flex w-full items-center gap-2.5 px-5 py-3.5 text-start transition-colors hover:bg-muted/50"
+                  className="chat-row flex w-full items-center gap-2.5 rounded-xl px-3 py-3 text-start transition-colors [--row-inset:3.25rem] hover:bg-card"
                 >
                   <span className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-[12px] font-bold text-foreground/70">
                     {conversation.buyerName.charAt(0)}

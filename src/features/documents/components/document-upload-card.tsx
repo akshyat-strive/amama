@@ -250,7 +250,7 @@ function DocumentUploadCard({
         : null
 
   return (
-    <div className="rounded-2xl border border-border bg-background p-3">
+    <div className="rounded-2xl bg-background p-3">
       <div className="mb-2.5 flex items-start gap-2.5">
         <span
           aria-hidden

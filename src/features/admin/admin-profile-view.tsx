@@ -2,6 +2,7 @@
 
 import { ShieldCheckIcon } from "lucide-react"
 
+import { ColumnCard } from "@/components/ui/column-card"
 import { AdminPanel } from "@/features/admin/admin-ui"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { isFullAccess } from "@/features/admin/permissions"
@@ -26,11 +27,9 @@ function AdminProfileView() {
   if (!admin) return null
 
   return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Profile</h1>
-
-      <AdminPanel title="Profile" className="mt-6">
-        <div className="divide-y divide-border">
+    <ColumnCard title="Profile">
+      <AdminPanel title="Profile">
+        <div className="divide-inset">
           <Field label="Name" value={admin.user.name} />
           <Field label="Email" value={admin.user.email} />
           <Field
@@ -40,7 +39,7 @@ function AdminProfileView() {
         </div>
       </AdminPanel>
 
-      <AdminPanel title="Role" className="mt-4">
+      <AdminPanel title="Role" className="mt-2">
         <div className="flex items-center gap-3 px-5 py-4">
           <span className="grid size-10 shrink-0 place-items-center rounded-full bg-amama-deep text-white">
             <ShieldCheckIcon className="size-4.5" />
@@ -55,7 +54,7 @@ function AdminProfileView() {
           </div>
         </div>
       </AdminPanel>
-    </div>
+    </ColumnCard>
   )
 }
 

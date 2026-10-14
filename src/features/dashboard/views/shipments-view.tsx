@@ -7,6 +7,7 @@ import { AlertTriangleIcon, CheckIcon, ShipIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { ColumnCard } from "@/components/ui/column-card"
 import { DetailPage } from "@/components/ui/detail-page"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import { buyerIdentity } from "@/features/marketplace/identity"
@@ -27,7 +28,7 @@ function ArrivalConfirmation({ deal, shipment }: { deal: Deal; shipment: Shipmen
 
   if (confirmed) {
     return (
-      <p className="flex items-center gap-1.5 rounded-2xl border border-border bg-background px-4 py-3 text-[13px] font-medium text-amama-deep">
+      <p className="flex items-center gap-1.5 rounded-2xl bg-card px-4 py-3 text-[13px] font-medium text-amama-deep">
         <CheckIcon className="size-4 shrink-0" />
         Delivery confirmed for {deal.listingTitle}
       </p>
@@ -36,7 +37,7 @@ function ArrivalConfirmation({ deal, shipment }: { deal: Deal; shipment: Shipmen
 
   if (raising) {
     return (
-      <div className="flex flex-col gap-2 rounded-2xl border border-border bg-background p-4">
+      <div className="flex flex-col gap-2 rounded-2xl bg-card p-4">
         <p className="text-[13px] font-bold text-foreground">Raise a claim — {deal.listingTitle}</p>
         <Textarea
           placeholder="What's wrong with the delivered cargo?"
@@ -72,7 +73,7 @@ function ArrivalConfirmation({ deal, shipment }: { deal: Deal; shipment: Shipmen
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background p-4">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-card p-4">
       <div className="min-w-0">
         <p className="truncate text-[13px] font-bold text-foreground">{deal.listingTitle}</p>
         <p className="mt-0.5 text-[12px] text-muted-foreground">Delivered — confirm it arrived as expected.</p>
@@ -112,10 +113,9 @@ function ShipmentsView() {
 
 function ShipmentsSkeleton() {
   return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Shipments</h1>
-      <div className="mt-6 h-40 animate-pulse rounded-3xl bg-muted" />
-    </div>
+    <ColumnCard title="Shipments">
+      <div className="h-40 animate-pulse rounded-[16px] bg-muted" />
+    </ColumnCard>
   )
 }
 
@@ -158,11 +158,9 @@ function ShipmentsWorkspace() {
   }
 
   return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Shipments</h1>
-
+    <ColumnCard title="Shipments">
       {trackedShipments.length === 0 ? (
-        <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border px-5 py-16 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-[20px] bg-card px-5 py-16 text-center">
           <ShipIcon aria-hidden className="size-6 text-muted-foreground" />
           <p className="text-[15px] font-semibold">No shipments yet</p>
           <p className="max-w-sm text-[13px] text-muted-foreground">
@@ -172,7 +170,7 @@ function ShipmentsWorkspace() {
       ) : (
         <>
           {arrived.length > 0 ? (
-            <section className="mt-6">
+            <section className="mb-6 px-1.5">
               <h2 className="text-[15px] font-semibold text-foreground">Arrived</h2>
               <p className="mt-0.5 text-[13px] text-muted-foreground">Confirm delivery, or raise a claim if something&apos;s wrong.</p>
               <div className="mt-3 flex flex-col gap-3">
@@ -183,10 +181,9 @@ function ShipmentsWorkspace() {
             </section>
           ) : null}
 
-          <section className={arrived.length > 0 ? "mt-8" : "mt-6"}>
-            <h2 className="text-[15px] font-semibold text-foreground">Your tracked shipments</h2>
-            <p className="mt-0.5 text-[13px] text-muted-foreground">Real-time updates from the team handling your deal.</p>
-            <ul className="mt-3 flex flex-col divide-y divide-border rounded-2xl border border-border bg-background px-3">
+          <section>
+            <h2 className="px-1.5 text-[15px] font-semibold text-foreground">Your tracked shipments</h2>
+            <ul className="mt-2 flex flex-col">
               {trackedShipments.map(({ shipment }) => (
                 <li key={shipment.id}>
                   <ShipmentRow shipment={shipment} onSelect={() => openShipment(shipment.id)} />
@@ -196,8 +193,7 @@ function ShipmentsWorkspace() {
           </section>
         </>
       )}
-
-    </div>
+    </ColumnCard>
   )
 }
 

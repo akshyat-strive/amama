@@ -14,11 +14,9 @@ import {
 } from "@/features/dashboard/nav-config"
 
 /**
- * The sidebar: one charcoal card, and inside it plain groups — a quiet
- * label, then rows. Radii are concentric: the 20px card with 8px padding
- * holds 12px rows, so every corner lines up. Only the selected row
- * carries colour: lime, with charcoal text. Account items pin to the
- * bottom.
+ * The sidebar: no card of its own — plain groups straight on the mist
+ * page, a quiet label, then compact rows. Only the selected row carries
+ * colour: lime, with charcoal text. Account items pin to the bottom.
  *
  * Collapsed, it's an icon rail: groups split by hairlines, labels in
  * tooltips.
@@ -83,12 +81,12 @@ function NavList({
 
   return (
     <TooltipProvider>
-      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[20px] bg-charcoal text-white">
-        <nav aria-label="Main" className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-2 scrollbar-none">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden text-foreground">
+        <nav aria-label="Main" className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden scrollbar-none">
           {regularGroups.map(({ group, items: groupItems }, index) => (
-            <div key={group} className={cn(index > 0 && (expanded ? "mt-3" : "mt-2 border-t border-white/10 pt-2"))}>
+            <div key={group} className={cn(index > 0 && (expanded ? "mt-3" : "mt-2 border-t border-foreground/10 pt-2"))}>
               {expanded && dashboardNavGroupLabels[group] ? (
-                <p className="px-3 pb-1 text-[11px] font-medium text-white/45">{dashboardNavGroupLabels[group]}</p>
+                <p className="px-3 pb-1 text-[11px] font-medium text-muted-foreground">{dashboardNavGroupLabels[group]}</p>
               ) : null}
               <div className={cn("flex flex-col gap-0.5", !expanded && "items-center")}>{groupItems.map(renderItem)}</div>
             </div>
@@ -96,7 +94,7 @@ function NavList({
         </nav>
 
         {footerGroup ? (
-          <div className="shrink-0 border-t border-white/10 p-2">
+          <div className="shrink-0 border-t border-foreground/10 pt-2">
             <div className={cn("flex flex-col gap-0.5", !expanded && "items-center")}>{footerGroup.items.map(renderItem)}</div>
           </div>
         ) : null}
@@ -121,18 +119,18 @@ function NavItemLink({
   onNavigate?: () => void
 }) {
   const className = cn(
-    "group/nav relative flex shrink-0 items-center text-[14px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-lime/60",
-    expanded ? "h-10 w-full gap-3 rounded-xl px-3" : "size-10 justify-center rounded-xl",
+    "group/nav relative flex shrink-0 items-center text-[13.5px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-amama-deep/40",
+    expanded ? "h-9 w-full gap-2.5 rounded-[10px] px-2.5" : "size-9 justify-center rounded-[10px]",
     locked
-      ? "cursor-not-allowed text-white/30"
+      ? "cursor-not-allowed text-foreground/30"
       : active
         ? "bg-lime font-semibold text-lime-foreground"
-        : "text-white/75 hover:bg-white/[0.08] hover:text-white"
+        : "text-foreground/70 hover:bg-foreground/[0.06] hover:text-foreground"
   )
 
   const body = (
     <>
-      <item.icon aria-hidden className="size-[18px] shrink-0" strokeWidth={2} />
+      <item.icon aria-hidden className="size-[17px] shrink-0" strokeWidth={2} />
       {expanded ? <span className="min-w-0 flex-1 truncate">{item.label}</span> : null}
       {locked && expanded ? <LockIcon aria-hidden className="size-3.5 shrink-0" /> : null}
       {attention && !locked ? (

@@ -15,4 +15,4 @@ function AmamaWordmark({ className }: { className?: string }) {
   )
 }
 
-export { AmamaWordmark }
+export { AmamaWordmark, PATH as AMAMA_PATH }

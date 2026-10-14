@@ -89,7 +89,7 @@ function StatCard({
   tone?: "brand" | "warning" | "plain"
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-background px-4 py-4">
+    <div className="rounded-2xl bg-background px-4 py-4">
       <p className="text-[13px] font-medium text-muted-foreground">{label}</p>
       <p
         className={cn(

@@ -70,7 +70,7 @@ function RfqCard({
               <>
                 <Link
                   href={rfqHref(rfq.id)}
-                  className="inline-flex h-9 items-center justify-center rounded-full bg-amama-deep px-4 text-center text-[13px] font-semibold text-white transition-colors hover:bg-amama-deep-hover"
+                  className="inline-flex h-9 items-center justify-center rounded-full bg-graphite px-4 text-center text-[13px] font-semibold text-white transition-colors hover:bg-black"
                 >
                   Compare quotes
                 </Link>

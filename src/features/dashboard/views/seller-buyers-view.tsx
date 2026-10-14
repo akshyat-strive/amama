@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { MessageCircleIcon, UsersIcon } from "lucide-react"
 
+import { ColumnCard } from "@/components/ui/column-card"
 import { productLabel } from "@/features/marketplace/catalog"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
 import { BUYER_LEADS } from "@/features/marketplace/buyer-leads"
@@ -97,11 +98,9 @@ function SellerBuyersView() {
   }, [conversations, allListings, seller.id, myCropIds, buyerProfiles])
 
   return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Buyers</h1>
-
+    <ColumnCard title="Buyers">
       {matches.length === 0 ? (
-        <div className="mt-8 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border py-16 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-[20px] bg-card py-16 text-center">
           <span className="grid size-12 place-items-center rounded-full bg-amama-subtle text-amama-deep">
             <UsersIcon className="size-5" strokeWidth={2.25} />
           </span>
@@ -111,13 +110,13 @@ function SellerBuyersView() {
           </p>
         </div>
       ) : (
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
           {matches.map((match) => (
             <BuyerMatchCard key={`${match.kind}-${match.id}`} match={match} />
           ))}
         </div>
       )}
-    </div>
+    </ColumnCard>
   )
 }
 
@@ -132,7 +131,7 @@ function BuyerMatchCard({ match }: { match: Match }) {
   const country = match.country ? countries.find((entry) => entry.code === match.country) : null
 
   return (
-    <div className="group relative rounded-2xl border border-border bg-background p-2 transition-colors sm:rounded-[28px] sm:p-3">
+    <div className="group relative rounded-2xl bg-card p-2 transition-colors hover:bg-[#ededf1] sm:rounded-[28px] sm:p-3 dark:hover:bg-muted">
       <Link href={match.href} className="contents">
         <div className="relative aspect-4/3 w-full overflow-hidden rounded-xl sm:rounded-2xl">
           <CropImage
@@ -157,7 +156,7 @@ function BuyerMatchCard({ match }: { match: Match }) {
             Sourcing {cropLabel}
           </span>
 
-          <div className="mt-2 flex items-center justify-center gap-1 rounded-full bg-amama-deep py-1.5 text-[11px] font-semibold text-white transition-colors group-hover:bg-amama-deep-hover sm:mt-3 sm:gap-1.5 sm:py-2 sm:text-[13px]">
+          <div className="mt-2 flex items-center justify-center gap-1 rounded-xl bg-graphite py-1.5 text-[11px] font-semibold text-white transition-colors group-hover:bg-black sm:mt-3 sm:gap-1.5 sm:py-2 sm:text-[13px]">
             <MessageCircleIcon className="size-3 sm:size-3.5" />
             View & contact
           </div>

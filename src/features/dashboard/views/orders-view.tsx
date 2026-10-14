@@ -40,8 +40,8 @@ function OrdersView({ role }: { role: OnboardingRole }) {
 function OrdersSkeleton() {
   return (
     <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Orders</h1>
-      <div className="mt-6 h-40 animate-pulse rounded-3xl bg-muted" />
+      <h1 className="page-title text-[28px] font-semibold tracking-[-0.025em]">Orders</h1>
+      <div className="mt-3 h-40 animate-pulse rounded-3xl bg-muted" />
     </div>
   )
 }
@@ -110,11 +110,11 @@ function OrdersWorkspace({ role }: { role: OnboardingRole }) {
 
   return (
     <div className={PAGE_TABS_SPACE}>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Orders</h1>
+      <h1 className="page-title text-[28px] font-semibold tracking-[-0.025em]">Orders</h1>
 
       <PageTabs
         label="Order lists"
-        className="mt-5"
+        className="mt-3"
         value={tab}
         onChange={setTab}
         tabs={[
@@ -127,7 +127,7 @@ function OrdersWorkspace({ role }: { role: OnboardingRole }) {
         liveOrders.length === 0 ? (
           <EmptyRow text="No agreed deals are being run as orders yet." />
         ) : (
-          <ul className="mt-4 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-background">
+          <ul className="mt-3 flex flex-col">
             {liveOrders.map((deal) => (
               <li key={deal.id}>
                 <LiveOrderRow deal={deal} role={role} onSelect={() => openOrder(deal.id)} />
@@ -138,7 +138,7 @@ function OrdersWorkspace({ role }: { role: OnboardingRole }) {
       ) : orders.length === 0 ? (
         <EmptyRow text="No orders yet." />
       ) : (
-        <ul className="mt-4 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-background">
+        <ul className="mt-3 flex flex-col">
           {orders.map((order) => (
             <li key={order.id}>
               <EtaOrderRow order={order} onSelect={() => openOrder(order.id)} />
@@ -152,7 +152,7 @@ function OrdersWorkspace({ role }: { role: OnboardingRole }) {
 
 function EmptyRow({ text }: { text: string }) {
   return (
-    <p className="mt-6 rounded-2xl border border-dashed border-border px-5 py-10 text-center text-[13px] text-muted-foreground">
+    <p className="mt-4 rounded-2xl bg-card px-5 py-10 text-center text-[13px] text-muted-foreground">
       {text}
     </p>
   )
@@ -172,7 +172,7 @@ function LiveOrderRow({ deal, role, onSelect }: { deal: Deal; role: OnboardingRo
     <button
       type="button"
       onClick={onSelect}
-      className="group grid w-full grid-cols-1 items-center gap-3 bg-white px-4 py-4 text-start transition-colors hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:grid-cols-[1.3fr_0.85fr_0.85fr_1fr]"
+      className="chat-row group grid w-full grid-cols-1 items-center gap-3 rounded-xl px-3 py-3.5 text-start transition-colors [--row-inset:0.75rem] hover:bg-card focus-visible:bg-card focus-visible:outline-none sm:grid-cols-[1.3fr_0.85fr_0.85fr_1fr]"
     >
       {/* Col 1: Identity & Stage */}
       <div className="min-w-0 space-y-1">
@@ -223,7 +223,7 @@ function EtaOrderRow({ order, onSelect }: { order: DemoOrder; onSelect: () => vo
     <button
       type="button"
       onClick={onSelect}
-      className="group grid w-full grid-cols-1 items-center gap-3 bg-white px-4 py-4 text-start transition-colors hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:grid-cols-[1.3fr_0.85fr_0.85fr_1fr]"
+      className="chat-row group grid w-full grid-cols-1 items-center gap-3 rounded-xl px-3 py-3.5 text-start transition-colors [--row-inset:0.75rem] hover:bg-card focus-visible:bg-card focus-visible:outline-none sm:grid-cols-[1.3fr_0.85fr_0.85fr_1fr]"
     >
       {/* Col 1: Identity & Status */}
       <div className="min-w-0 space-y-1">

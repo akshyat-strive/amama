@@ -6,6 +6,7 @@ import { CheckIcon, RotateCcwIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Textarea } from "@/components/ui/textarea"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { useOnWhite } from "@/components/ui/column-card"
 
 /**
  * One reviewable thing as an island: a muted shell carrying the header,
@@ -21,10 +22,12 @@ function ReviewGroup({
   children: React.ReactNode
   className?: string
 }) {
+  // Mist shell around a white tray inside a white column card.
+  const onWhite = useOnWhite()
   return (
-    <section className={cn("rounded-[24px] bg-background p-2", className)}>
+    <section className={cn("rounded-[24px] p-2", onWhite ? "bg-card" : "bg-background", className)}>
       {header ? <div className="px-3 pt-2 pb-3 sm:px-4">{header}</div> : null}
-      <div className="divide-y divide-border overflow-hidden rounded-[16px] bg-background">{children}</div>
+      <div className="divide-inset overflow-hidden rounded-[16px] bg-background">{children}</div>
     </section>
   )
 }
@@ -215,7 +218,7 @@ function Initials({ name, className }: { name: string; className?: string }) {
     <span
       aria-hidden
       className={cn(
-        "grid size-9 shrink-0 place-items-center rounded-full border border-border bg-background text-[12px] font-bold text-foreground/75",
+        "grid size-9 shrink-0 place-items-center rounded-full bg-background text-[12px] font-bold text-foreground/75",
         className
       )}
     >

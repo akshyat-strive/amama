@@ -2,9 +2,10 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowLeftIcon, UserRoundSearchIcon } from "lucide-react"
+import { ChevronLeftIcon, UserRoundSearchIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { ColumnCard, OnWhite } from "@/components/ui/column-card"
 import { productLabel } from "@/features/marketplace/catalog"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
 import { BUYER_LEADS } from "@/features/marketplace/buyer-leads"
@@ -24,7 +25,7 @@ import { useOnboarding } from "@/features/onboarding/onboarding-context"
 
 /** Same viewport-relative height every other product/lead + chat row in
  *  the dashboard uses. */
-const FULL_HEIGHT = "lg:h-[calc(100dvh-92px)]"
+const FULL_HEIGHT = "lg:h-[calc(100dvh-76px)]"
 
 /**
  * One buyer lead's own page — mirrors `BuyerProductView`'s shape (a fixed
@@ -54,13 +55,15 @@ function SellerBuyerLeadView({ leadId }: { leadId: string }) {
 
   if (!lead || !listing) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border py-16 text-center">
-        <UserRoundSearchIcon className="size-6 text-muted-foreground" />
-        <p className="text-[15px] font-semibold">This buyer isn&apos;t sourcing anything you sell anymore</p>
-        <Link href="/seller/dashboard/buyers" className="text-[13px] font-medium text-amama-deep underline">
-          Back to buyers
-        </Link>
-      </div>
+      <ColumnCard title="Buyers">
+        <div className="flex flex-col items-center gap-3 rounded-[20px] bg-card py-16 text-center">
+          <UserRoundSearchIcon className="size-6 text-muted-foreground" />
+          <p className="text-[15px] font-semibold">This buyer isn&apos;t sourcing anything you sell anymore</p>
+          <Link href="/seller/dashboard/buyers" className="text-[13px] font-medium text-amama-deep underline">
+            Back to buyers
+          </Link>
+        </div>
+      </ColumnCard>
     )
   }
 
@@ -92,61 +95,60 @@ function SellerBuyerLeadView({ leadId }: { leadId: string }) {
   }
 
   return (
-    <div className={cn("flex flex-col gap-4 pb-4 lg:flex-row lg:overflow-hidden lg:pb-0", FULL_HEIGHT)}>
-      <div className="flex flex-col rounded-3xl bg-muted lg:w-[380px] lg:shrink-0 lg:overflow-hidden">
-        <div className="flex shrink-0 items-center gap-2 p-3">
-          <Link
-            href="/seller/dashboard/buyers"
-            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeftIcon className="size-3.5" />
-            Buyers
-          </Link>
-        </div>
-
-        <div className="rounded-[18px] bg-card shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] lg:flex-1 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden">
-          <div className="p-4">
-            <p className="text-[20px] font-bold tracking-tight text-foreground">{lead.name}</p>
-            <p className="mt-1 text-[13px] text-muted-foreground">
-              {country ? `${countryCodeToFlag(country.code)} ${country.name}` : lead.country}
-            </p>
-
-            <p className="mt-4 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-              Sourcing
-            </p>
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {lead.sourcing.map((cropId) => (
-                <span
-                  key={cropId}
-                  className={cn(
-                    "rounded-full px-2.5 py-1 text-[11px] font-semibold",
-                    cropId === listing.cropId
-                      ? "bg-amama-subtle text-amama-deep"
-                      : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  {productLabel(cropId)}
-                </span>
-              ))}
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-border p-3">
-              <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-                What you&apos;d be pitching
+    <div className={cn("flex flex-col gap-3 pb-4 lg:flex-row lg:overflow-hidden lg:pb-0", FULL_HEIGHT)}>
+      <OnWhite>
+        <section aria-label={lead.name} className="flex flex-col rounded-[24px] bg-background p-2 lg:w-[380px] lg:shrink-0 lg:overflow-hidden">
+          <header className="flex shrink-0 items-center gap-2.5 px-2 pt-1.5 pb-3">
+            <Link
+              href="/seller/dashboard/buyers"
+              aria-label="Back to buyers"
+              title="Buyers"
+              className="grid size-9 shrink-0 place-items-center rounded-xl text-foreground/75 transition-colors hover:bg-muted"
+            >
+              <ChevronLeftIcon aria-hidden className="size-5 rtl:-scale-x-100" />
+            </Link>
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-[17px] leading-tight font-semibold tracking-[-0.02em]">{lead.name}</h1>
+              <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
+                {country ? `${countryCodeToFlag(country.code)} ${country.name}` : lead.country}
               </p>
-              <p className="mt-1 text-[14px] font-bold text-foreground">
+            </div>
+          </header>
+          <div aria-hidden className="mx-3 h-px shrink-0 bg-border" />
+
+          <div className="flex flex-col gap-3 px-2 pt-3 pb-2 [scrollbar-width:none] [-ms-overflow-style:none] lg:min-h-0 lg:flex-1 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden">
+            <section className="rounded-[20px] bg-card p-4">
+              <h2 className="text-[13px] font-semibold text-foreground">Sourcing</h2>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {lead.sourcing.map((cropId) => (
+                  <span
+                    key={cropId}
+                    className={cn(
+                      "rounded-full px-2.5 py-1 text-[11px] font-semibold",
+                      cropId === listing.cropId ? "bg-amama-subtle text-amama-deep" : "bg-background text-muted-foreground"
+                    )}
+                  >
+                    {productLabel(cropId)}
+                  </span>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-[20px] bg-card p-4">
+              <h2 className="text-[13px] font-semibold text-foreground">What you&apos;d be pitching</h2>
+              <p className="mt-1.5 text-[14px] font-semibold text-foreground">
                 {cropLabel} — {listing.variety}
               </p>
               <p className="text-[13px] text-muted-foreground">
                 {formatInr(listing.pricePerTonneUsd)} / tonne · {listing.quantityMt} MT
               </p>
-            </div>
+            </section>
           </div>
-        </div>
-      </div>
+        </section>
+      </OnWhite>
 
       <div
-        className={cn("overflow-hidden rounded-3xl border border-border bg-background lg:flex-1", FULL_HEIGHT)}
+        className={cn("overflow-hidden rounded-[24px] bg-background lg:flex-1", FULL_HEIGHT)}
       >
         <ConversationThread
           header={conversationHeader}

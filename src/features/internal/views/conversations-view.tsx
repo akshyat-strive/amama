@@ -254,7 +254,7 @@ function ConversationDetailView({ conversationId }: { conversationId: string }) 
 
       {days.map(([key, dayMessages]) => (
         <Group key={key} label={dayLabel(dayMessages[0].at)} count={dayMessages.length}>
-          <div className="flex flex-col divide-y divide-border">
+          <div className="flex flex-col divide-inset">
             {dayMessages.map((message) => (
               <MessageBlock key={message.id} message={message} />
             ))}

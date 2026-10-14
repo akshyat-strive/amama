@@ -1,5 +1,7 @@
 "use client"
 
+import type * as React from "react"
+
 import * as W from "@/features/tradechain/demo-world"
 import { useLiveWorld } from "@/features/tradechain/live-world"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
@@ -20,13 +22,24 @@ function useViewerEmail(perspective: TradePerspective): string {
   return ""
 }
 
-function TradesPage({ perspective }: { perspective: TradePerspective }) {
+/** `title` and `action` go in the list card's header — a seller's page
+ *  is "Orders", with its view switch beside it. */
+function TradesPage({ perspective, title, action }: { perspective: TradePerspective; title?: string; action?: React.ReactNode }) {
   useLiveWorld()
   const email = useViewerEmail(perspective)
-  return <TradeBoard trades={tradesFor(perspective, email)} perspective={perspective} basePath={BASE_PATH[perspective]} />
+  return (
+    <TradeBoard
+      trades={tradesFor(perspective, email)}
+      perspective={perspective}
+      basePath={BASE_PATH[perspective]}
+      title={title}
+      action={action}
+    />
+  )
 }
 
-function TradePage({ perspective, tradeId }: { perspective: TradePerspective; tradeId: string }) {
+/** `children` render inside the trade's card, below its sections. */
+function TradePage({ perspective, tradeId, children }: { perspective: TradePerspective; tradeId: string; children?: React.ReactNode }) {
   useLiveWorld()
   const email = useViewerEmail(perspective)
   const trade = canView(perspective, email, tradeId) ? W.tradeById(tradeId) : undefined
@@ -36,7 +49,9 @@ function TradePage({ perspective, tradeId }: { perspective: TradePerspective; tr
       perspective={perspective}
       basePath={BASE_PATH[perspective]}
       partyIds={partyIdsFor(perspective, email)}
-    />
+    >
+      {children}
+    </TradeDetail>
   )
 }
 

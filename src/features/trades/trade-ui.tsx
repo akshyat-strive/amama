@@ -1,6 +1,7 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { useOnWhite } from "@/components/ui/column-card"
 import type { Tone } from "@/features/trades/trade-format"
 
 const PILL_TONE: Record<Tone, string> = {
@@ -58,7 +59,9 @@ function Status({ tone, children, className }: { tone: Tone; children: React.Rea
 }
 
 /** One bordered block with a one-line header. Titles are labels, not
- *  sentences — explanations go behind an `InfoTip` passed as `info`. */
+ *  sentences — explanations go behind an `InfoTip` passed as `info`.
+ *  Inside a white column card it becomes a mist group with the body on
+ *  a white inner panel. */
 function Panel({
   title,
   info,
@@ -74,8 +77,23 @@ function Panel({
   className?: string
   flush?: boolean
 }) {
+  const onWhite = useOnWhite()
+  if (onWhite) {
+    return (
+      <section className={cn("min-w-0 rounded-[20px] bg-card p-2", className)}>
+        <header className="flex min-h-10 items-center justify-between gap-3 px-3 pt-1 pb-2">
+          <h2 className="flex min-w-0 items-center gap-1 text-[14px] font-semibold text-foreground">
+            <span className="truncate">{title}</span>
+            {info}
+          </h2>
+          {action}
+        </header>
+        <div className={cn("overflow-hidden rounded-[14px] bg-background", flush ? "py-1" : "p-4")}>{children}</div>
+      </section>
+    )
+  }
   return (
-    <section className={cn("overflow-hidden rounded-[20px] border border-border bg-background", className)}>
+    <section className={cn("overflow-hidden rounded-[20px] bg-background", className)}>
       <header className="flex min-h-12 items-center justify-between gap-3 px-5 pt-3.5 pb-3">
         <h2 className="flex min-w-0 items-center gap-1 text-[14px] font-semibold text-foreground">
           <span className="truncate">{title}</span>
@@ -130,8 +148,9 @@ function StatTile({
   info?: React.ReactNode
   tone?: "brand" | "warning" | "critical" | "plain"
 }) {
+  const onWhite = useOnWhite()
   return (
-    <div className="rounded-[20px] border border-border bg-background px-4 py-3.5">
+    <div className={cn("rounded-[20px] px-4 py-3.5", onWhite ? "bg-card" : "bg-background")}>
       <p className="flex items-center gap-0.5 text-[12.5px] text-muted-foreground">
         {label}
         {info}

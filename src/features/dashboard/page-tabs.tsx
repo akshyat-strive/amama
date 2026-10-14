@@ -113,13 +113,19 @@ function PageTabs<T extends string>({
 }) {
   const sentinel = React.useRef<HTMLDivElement>(null)
   const [stuck, setStuck] = React.useState(false)
+  // Inside a column card that scrolls itself, the tabs stick to the top
+  // of that card instead of under the topbar.
+  const [inCard, setInCard] = React.useState(false)
 
   React.useEffect(() => {
     const node = sentinel.current
     if (!node) return
+    const root = node.closest<HTMLElement>("[data-scroll-root]")
+    setInCard(!!root)
+    const offset = root ? 0 : STICK_AT
     const observer = new IntersectionObserver(
-      ([entry]) => setStuck(!entry.isIntersecting && entry.boundingClientRect.top < STICK_AT),
-      { rootMargin: `-${STICK_AT}px 0px 0px 0px`, threshold: 0 }
+      ([entry]) => setStuck(!entry.isIntersecting && entry.boundingClientRect.top < (entry.rootBounds?.top ?? offset)),
+      { root, rootMargin: `-${offset}px 0px 0px 0px`, threshold: 0 }
     )
     observer.observe(node)
     return () => observer.disconnect()
@@ -128,14 +134,18 @@ function PageTabs<T extends string>({
   return (
     <>
       <div ref={sentinel} aria-hidden className="h-0" />
-      <div className={cn("sticky z-20 hidden md:block", className)} style={{ top: STICK_AT }}>
+      <div className={cn("sticky z-20 hidden md:block", className)} style={{ top: inCard ? 0 : STICK_AT }}>
+        {/* The fade reaches back over the gutter beside the content, but
+            never past the scroller's end edge — that would make the whole
+            page scroll sideways by the difference. */}
         <div
           aria-hidden
           className={cn(
-            "pointer-events-none absolute -inset-x-4 -bottom-5 bg-gradient-to-b from-card via-card/90 to-transparent transition-opacity duration-200",
+            "pointer-events-none absolute -bottom-5 bg-gradient-to-b to-transparent transition-opacity duration-200",
+            inCard ? "-inset-x-2 from-background via-background/90" : "-start-4 -end-3 from-card via-card/90",
             stuck ? "opacity-100" : "opacity-0"
           )}
-          style={{ top: -STICK_AT }}
+          style={{ top: inCard ? -12 : -STICK_AT }}
         />
         <div className="relative">
           <TabButtons tabs={tabs} value={value} onChange={onChange} label={label} variant="pill" />

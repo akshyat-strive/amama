@@ -179,7 +179,7 @@ function PageHead({
 }) {
   return (
     <div className={cn("flex flex-wrap items-center gap-x-3 gap-y-2 px-1", className)}>
-      <h1 className="text-[28px] leading-none font-semibold tracking-[-0.028em]">{title}</h1>
+      <h1 className="page-title text-[28px] font-semibold tracking-[-0.025em]">{title}</h1>
       {meta ? <div className="flex flex-wrap items-center gap-1.5">{meta}</div> : null}
       {action ? <div className="ms-auto flex shrink-0 items-center gap-2">{action}</div> : null}
     </div>

@@ -1,11 +1,9 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   AlertTriangleIcon,
-  ArrowLeftIcon,
   BadgeCheckIcon,
   ChevronDownIcon,
   ChevronRightIcon,
@@ -21,6 +19,7 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { COLUMN_HEIGHT, DetailColumnCard, useBlockFill } from "@/components/ui/column-card"
 import * as W from "@/features/tradechain/demo-world"
 import {
   STAGE_DOMAIN,
@@ -29,7 +28,6 @@ import {
   documentsFor,
   exceptionStages,
   idSpine,
-  isColdChain,
   journeyLegs,
   openGates,
   paymentClock,
@@ -37,8 +35,6 @@ import {
   quantityLadder,
   shelfLifeClock,
   stageStateFor,
-  temperatureTrace,
-  tradeSetpoint,
   type Clock,
   type TradeDomain,
 } from "@/features/tradechain/trade-file"
@@ -46,7 +42,6 @@ import { CarrierLogo } from "@/features/marketplace/carrier-logo"
 import { IncotermInfoButton } from "@/features/marketplace/incoterm-picker"
 import { PAGE_TABS_SPACE, PageTabs, type PageTab } from "@/features/dashboard/page-tabs"
 import type { TradePerspective } from "@/features/trades/trade-access"
-import { LegTable, TemperatureChart } from "@/features/trades/temperature-chart"
 import {
   SCENARIO_TONE,
   TRADE_STATUS_LABEL,
@@ -59,7 +54,7 @@ import {
   portName,
   scenarioMeta,
 } from "@/features/trades/trade-format"
-import { ClockInfo, DocumentsInfo, ExcursionInfo, QuantityInfo, ScenarioInfo, SpineInfo } from "@/features/trades/trade-info"
+import { ClockInfo, DocumentsInfo, QuantityInfo, ScenarioInfo, SpineInfo } from "@/features/trades/trade-info"
 import { LegStepper, PhaseStepper } from "@/features/trades/trade-journey"
 import { ChangesTab } from "@/features/trades/trade-changes"
 import { DocumentRows, StagesPanel } from "@/features/trades/trade-stage-panel"
@@ -88,8 +83,9 @@ const BAR_TONE: Record<Clock["tone"], string> = {
 }
 
 function ClockTile({ clock }: { clock: Clock }) {
+  const fill = useBlockFill()
   return (
-    <div className="min-w-0 rounded-[18px] border border-border bg-background px-3 py-3 sm:rounded-[20px] sm:px-4 sm:py-3.5">
+    <div className={cn("min-w-0 rounded-[18px] px-3 py-3 sm:rounded-[20px] sm:px-4 sm:py-3.5", fill)}>
       <p className="flex items-center gap-0.5 truncate text-[11.5px] text-muted-foreground sm:text-[12.5px]">
         {clock.label}
         <ClockInfo label={clock.label} />
@@ -318,7 +314,7 @@ function OverviewTab({
           {attention.length === 0 ? (
             <p className="text-[13px] text-muted-foreground">All clear</p>
           ) : (
-            <ul className="divide-y divide-border">
+            <ul className="divide-inset">
               {attention.slice(0, 6).map((item) => (
                 <li key={item.key}>
                   <button
@@ -354,8 +350,9 @@ const MILESTONE_TONE: Record<W.ShipmentMilestone["state"], "ok" | "warn" | "crit
 
 function Disclosure({ label, count, children }: { label: string; count?: number; children: React.ReactNode }) {
   const [open, setOpen] = React.useState(false)
+  const fill = useBlockFill()
   return (
-    <section className="overflow-hidden rounded-[20px] border border-border bg-background">
+    <section className={cn("overflow-hidden rounded-[20px]", fill)}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -385,6 +382,7 @@ function cutoffMetAt(trade: W.Trade, label: string): string | null {
 
 function CutoffTiles({ trade }: { trade: W.Trade }) {
   const list = cutoffs(trade)
+  const fill = useBlockFill()
   if (list.length === 0) return null
   return (
     <div className="grid grid-cols-3 gap-3">
@@ -402,7 +400,7 @@ function CutoffTiles({ trade }: { trade: W.Trade }) {
                 : `${Math.round(hours / 24)} d`
         const tone = metAt ? "ok" : hours < 2 ? "crit" : hours < 24 ? "warn" : "brand"
         return (
-          <div key={cutoff.label} className="rounded-[16px] border border-border bg-background px-3.5 py-3">
+          <div key={cutoff.label} className={cn("min-w-0 rounded-[16px] px-3.5 py-3", fill)}>
             <p className="truncate text-[12px] text-muted-foreground">{cutoff.label === "Shipping instructions" ? "SI cut-off" : `${cutoff.label} cut-off`}</p>
             <p className={cn("text-[15px] font-semibold tabular-nums", TEXT_TONE[tone])}>{value}</p>
             <p className="truncate text-[11.5px] text-muted-foreground tabular-nums">
@@ -412,83 +410,6 @@ function CutoffTiles({ trade }: { trade: W.Trade }) {
         )
       })}
     </div>
-  )
-}
-
-function ColdChainPanel({ trade }: { trade: W.Trade }) {
-  const product = W.productById(trade.productId)
-  if (!isColdChain(trade)) {
-    return (
-      <Panel title="Cold chain">
-        <p className="text-[13px] text-muted-foreground">Ambient cargo · {product?.setpointC} °C · no temperature trail</p>
-      </Panel>
-    )
-  }
-  const trace = temperatureTrace(trade)
-  if (!trace) {
-    return (
-      <Panel title="Cold chain">
-        <p className="text-[13px] text-muted-foreground">Starts at harvest</p>
-      </Panel>
-    )
-  }
-  const excursions = W.EXCURSIONS.filter((excursion) => excursion.tradeId === trade.id)
-  const last = trace[trace.length - 1]
-  const debit = excursions.reduce((sum, excursion) => sum + excursion.shelfLifeDebitDays, 0)
-
-  return (
-    <>
-      <Panel
-        title="Temperature"
-        action={
-          <span className="flex items-center gap-3 text-[12px] text-muted-foreground tabular-nums">
-            <span>
-              Now <span className="font-semibold text-foreground">{last.tempC.toFixed(1)} °C</span>
-            </span>
-            <span>
-              Set <span className="font-semibold text-foreground">{tradeSetpoint(trade)} °C</span>
-            </span>
-          </span>
-        }
-      >
-        <TemperatureChart points={trace} />
-      </Panel>
-
-      <Panel
-        title="Excursions"
-        info={<ExcursionInfo />}
-        action={
-          excursions.length > 0 ? (
-            <span className="text-[12px] font-medium text-destructive tabular-nums">−{debit.toFixed(1)} d</span>
-          ) : null
-        }
-        flush={excursions.length > 0}
-      >
-        {excursions.length === 0 ? (
-          <p className="text-[13px] text-muted-foreground">None</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {excursions.map((excursion) => (
-              <li key={excursion.id} className="grid grid-cols-2 gap-x-4 gap-y-1 px-5 py-3 sm:grid-cols-[minmax(0,1.2fr)_repeat(3,minmax(0,1fr))]">
-                <span className="col-span-2 min-w-0 sm:col-span-1">
-                  <span className="block text-[13px] font-medium text-foreground">{formatStamp(excursion.startedAt)}</span>
-                  <span className="block truncate text-[12px] text-muted-foreground" title={excursion.cause}>
-                    {excursion.cause}
-                  </span>
-                </span>
-                <KeyValue label="Peak" value={`${excursion.peakTempC} °C`} />
-                <KeyValue label="Duration" value={`${excursion.durationMin} min`} />
-                <KeyValue label="Shelf life" value={<span className={excursion.shelfLifeDebitDays >= 3 ? "text-destructive" : "text-status-warning"}>−{excursion.shelfLifeDebitDays} d</span>} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </Panel>
-
-      <Disclosure label="Readings by leg">
-        <LegTable points={trace} />
-      </Disclosure>
-    </>
   )
 }
 
@@ -548,11 +469,10 @@ function ShipmentTab({ trade }: { trade: W.Trade }) {
         )}
       </Panel>
 
-      <ColdChainPanel trade={trade} />
 
       {shipment && shipment.milestones.length > 0 ? (
         <Disclosure label="Milestones" count={shipment.milestones.length}>
-          <ul className="divide-y divide-border">
+          <ul className="divide-inset">
             {shipment.milestones.map((milestone) => (
               <li key={milestone.key} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-0.5 px-5 py-2.5 sm:grid-cols-[minmax(0,1fr)_9rem_9rem]">
                 <span className="flex min-w-0 items-center gap-2 text-[13px] font-medium text-foreground">
@@ -610,7 +530,7 @@ function QualityTab({ trade, partyIds }: { trade: W.Trade; partyIds: string[] })
         {lots.length === 0 ? (
           <p className="text-[13px] text-muted-foreground">Created at stage 04</p>
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="divide-inset">
             {lots.map((lot) => {
               const seller = W.sellerById(lot.sellerId)
               const qc = W.qcRecordById(lot.qcRecordId)
@@ -651,7 +571,7 @@ function QualityTab({ trade, partyIds }: { trade: W.Trade; partyIds: string[] })
                             <th className="py-1 text-end font-normal">Spec</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-border">
+                        <tbody className="divide-inset">
                           {qc.measurements.map((measurement) => (
                             <tr key={measurement.label}>
                               <td className="py-1.5 pe-3 text-foreground">{measurement.label}</td>
@@ -779,7 +699,7 @@ function FinanceTab({ trade, perspective, partyIds }: { trade: W.Trade; perspect
       </Panel>
 
       <Panel title="Payments" info={<ClockInfo label="Payment" />} flush>
-        <ul className="divide-y divide-border">
+        <ul className="divide-inset">
           {rows.map((row) => (
             <li key={row.label} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-5 py-3 sm:grid-cols-[minmax(0,1fr)_10rem_10rem_6rem]">
               <span className="text-[13px] font-medium text-foreground">{row.label}</span>
@@ -803,7 +723,7 @@ function FinanceTab({ trade, perspective, partyIds }: { trade: W.Trade; perspect
           action={<span className="text-[12px] text-muted-foreground">{shipment.freightTerms}</span>}
           flush
         >
-          <ul className="divide-y divide-border">
+          <ul className="divide-inset">
             {shipment.charges.map((charge) => (
               <li key={charge.code} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-5 py-2.5 sm:grid-cols-[minmax(0,1fr)_6rem_6rem_7rem]">
                 <span className="min-w-0 truncate text-[13px] text-foreground">{charge.label}</span>
@@ -823,16 +743,21 @@ function FinanceTab({ trade, perspective, partyIds }: { trade: W.Trade; perspect
 
 /* ── page ─────────────────────────────────────────────────────────────── */
 
+/** Sellers follow their trades as orders; everyone else as trades. */
+const backLabelFor = (perspective: TradePerspective) => (perspective === "seller" ? "Orders" : "Trades")
+
 function Detail({
   trade,
   perspective,
   basePath,
   partyIds,
+  children,
 }: {
   trade: W.Trade
   perspective: TradePerspective
   basePath: string
   partyIds: string[]
+  children?: React.ReactNode
 }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -856,81 +781,63 @@ function Detail({
   const variant = W.variantById(trade.variantId)
 
   return (
-    <div className={PAGE_TABS_SPACE}>
-      <Link
-        href={basePath}
-        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeftIcon aria-hidden className="size-4" />
-        Trades
-      </Link>
+    <DetailColumnCard
+      backHref={basePath}
+      backLabel={backLabelFor(perspective)}
+      title={`${product?.label ?? "Trade"} · ${trade.id}`}
+      meta={`${variant?.label ?? ""} · ${trade.qtyContractedMt} MT · ${portName(trade.portOfLoading)} → ${portName(trade.portOfDischarge)}`}
+      status={<Status tone={TRADE_STATUS_TONE[trade.status]}>{TRADE_STATUS_LABEL[trade.status]}</Status>}
+    >
+      <div className={PAGE_TABS_SPACE}>
+        <PageTabs label="Trade sections" tabs={TABS} value={tab} onChange={(next) => navigate(next)} />
 
-      <div className="mt-2 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-        <div className="min-w-0">
-          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.028em]">
-            {product?.label} · {variant?.label}
-          </h1>
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[13px] text-muted-foreground">
-            <Mono className="text-[12.5px] text-foreground">{trade.id}</Mono>
-            <span aria-hidden>·</span>
-            <span>{trade.qtyContractedMt} MT</span>
-            <span aria-hidden>·</span>
-            <span>
-              {portName(trade.portOfLoading)} → {portName(trade.portOfDischarge)}
-            </span>
-          </p>
+        <div className="mt-4">
+          {tab === "overview" ? <OverviewTab trade={trade} perspective={perspective} partyIds={partyIds} onNavigate={navigate} /> : null}
+          {tab === "stages" ? (
+            <StagesPanel trade={trade} perspective={perspective} partyIds={partyIds} selected={stage} onSelect={(next) => navigate("stages", next)} />
+          ) : null}
+          {tab === "shipment" ? <ShipmentTab trade={trade} /> : null}
+          {tab === "quality" ? <QualityTab trade={trade} partyIds={partyIds} /> : null}
+          {tab === "finance" ? <FinanceTab trade={trade} perspective={perspective} partyIds={partyIds} /> : null}
+          {tab === "changes" ? <ChangesTab trade={trade} perspective={perspective} partyIds={partyIds} /> : null}
         </div>
-        <Status tone={TRADE_STATUS_TONE[trade.status]} className="mt-1.5">
-          {TRADE_STATUS_LABEL[trade.status]}
-        </Status>
-      </div>
 
-      <PageTabs label="Trade sections" className="mt-5" tabs={TABS} value={tab} onChange={(next) => navigate(next)} />
-
-      <div className="mt-4">
-        {tab === "overview" ? <OverviewTab trade={trade} perspective={perspective} partyIds={partyIds} onNavigate={navigate} /> : null}
-        {tab === "stages" ? (
-          <StagesPanel trade={trade} perspective={perspective} partyIds={partyIds} selected={stage} onSelect={(next) => navigate("stages", next)} />
-        ) : null}
-        {tab === "shipment" ? <ShipmentTab trade={trade} /> : null}
-        {tab === "quality" ? <QualityTab trade={trade} partyIds={partyIds} /> : null}
-        {tab === "finance" ? <FinanceTab trade={trade} perspective={perspective} partyIds={partyIds} /> : null}
-        {tab === "changes" ? <ChangesTab trade={trade} perspective={perspective} partyIds={partyIds} /> : null}
+        {children ? <div className="mt-4 flex flex-col gap-4">{children}</div> : null}
       </div>
-    </div>
+    </DetailColumnCard>
   )
 }
 
+/** A trade's own page: one white column with the trade's header, its
+ *  sections in tabs, then anything the caller adds below (`children`). */
 function TradeDetail({
   trade,
   perspective,
   basePath,
   partyIds,
+  children,
 }: {
   trade: W.Trade | undefined
   perspective: TradePerspective
   basePath: string
   partyIds: string[]
+  children?: React.ReactNode
 }) {
   if (!trade) {
     return (
-      <div>
-        <Link href={basePath} className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground">
-          <ArrowLeftIcon aria-hidden className="size-4" />
-          Trades
-        </Link>
-        <div className="mt-6">
-          <EmptyNote>
-            <PackageIcon aria-hidden className="mx-auto mb-2 size-5" />
-            Trade not found
-          </EmptyNote>
-        </div>
-      </div>
+      <DetailColumnCard backHref={basePath} backLabel={backLabelFor(perspective)} title="Not found">
+        <EmptyNote>
+          <PackageIcon aria-hidden className="mx-auto mb-2 size-5" />
+          Trade not found
+        </EmptyNote>
+      </DetailColumnCard>
     )
   }
   return (
-    <React.Suspense fallback={<div className="h-64 animate-pulse rounded-[20px] bg-muted" />}>
-      <Detail trade={trade} perspective={perspective} basePath={basePath} partyIds={partyIds} />
+    <React.Suspense fallback={<div className={cn("animate-pulse rounded-[24px] bg-background", COLUMN_HEIGHT)} />}>
+      <Detail trade={trade} perspective={perspective} basePath={basePath} partyIds={partyIds}>
+        {children}
+      </Detail>
     </React.Suspense>
   )
 }

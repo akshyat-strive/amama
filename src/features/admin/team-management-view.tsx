@@ -5,6 +5,7 @@ import { PlusIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { ColumnCard } from "@/components/ui/column-card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { AdminPanel } from "@/features/admin/admin-ui"
@@ -33,13 +34,12 @@ function TeamManagementView() {
   const canManageRoles = admin.can("roles.manage")
 
   return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Team</h1>
-      <div className="mt-6 flex flex-col gap-6">
+    <ColumnCard title="Team">
+      <div className="flex flex-col gap-2">
         <OrgPanel users={users} roles={roles} canManage={canManageUsers} />
         {canManageRoles ? <RolesPanel roles={roles} users={users} /> : null}
       </div>
-    </div>
+    </ColumnCard>
   )
 }
 
@@ -80,7 +80,7 @@ function OrgPanel({ users, roles, canManage }: { users: AdminUser[]; roles: Role
             const order: Record<RoleLevel, number> = { executive: 0, lead: 1, member: 2 }
             const sorted = [...inDomain].sort((a, b) => order[roleOf(roles, a)!.level] - order[roleOf(roles, b)!.level] || a.name.localeCompare(b.name))
             return (
-              <section key={domain.id} aria-label={domain.label} className="rounded-[18px] border border-border bg-muted/40 p-2">
+              <section key={domain.id} aria-label={domain.label} className="rounded-[18px] bg-card p-2">
                 <header className="px-2 pt-1 pb-2">
                   <h3 className="text-[14px] font-semibold">{domain.label}</h3>
                   <p className="text-[12px] text-muted-foreground">{domain.description}</p>
@@ -126,7 +126,7 @@ function PersonCard({
   const manager = users.find((entry) => entry.id === user.reportsTo)
 
   return (
-    <div className={cn("rounded-[14px] border border-border bg-background px-3 py-2.5", emphasis && "min-w-[260px]")}>
+    <div className={cn("rounded-[14px] bg-background px-3 py-2.5", emphasis && "min-w-[260px]")}>
       <div className="flex items-center gap-2.5">
         <span className="grid size-8 shrink-0 place-items-center rounded-full bg-foreground/[0.07] text-[12px] font-semibold">
           {user.name.trim().charAt(0).toUpperCase() || "?"}
@@ -176,7 +176,7 @@ function PlainSelect({ label, value, onChange, options }: { label: string; value
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-7 max-w-[170px] truncate rounded-lg border border-border bg-background px-1.5 text-[12px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/30"
+        className="h-7 max-w-[170px] truncate rounded-lg bg-background px-1.5 text-[12px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/30"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -206,10 +206,10 @@ function AddPersonForm({ users, roles, onDone }: { users: AdminUser[]; roles: Ro
   }
 
   return (
-    <div className="grid grid-cols-1 gap-2 border-b border-border bg-muted/40 p-4 sm:grid-cols-2 lg:grid-cols-3">
-      <Input placeholder="Name" value={name} onChange={(event) => setName(event.target.value)} className="bg-card" />
-      <Input placeholder="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value.toLowerCase())} className="bg-card" />
-      <Input placeholder="Title, e.g. Key Account Manager" value={title} onChange={(event) => setTitle(event.target.value)} className="bg-card" />
+    <div className="m-2 grid grid-cols-1 gap-2 rounded-[16px] bg-card p-3 sm:grid-cols-2 lg:grid-cols-3">
+      <Input placeholder="Name" value={name} onChange={(event) => setName(event.target.value)} className="bg-background" />
+      <Input placeholder="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value.toLowerCase())} className="bg-background" />
+      <Input placeholder="Title, e.g. Key Account Manager" value={title} onChange={(event) => setTitle(event.target.value)} className="bg-background" />
       <PlainSelect label="Role" value={roleId} onChange={setRoleId} options={roles.map((role) => ({ value: role.id, label: `${role.name} · ${DOMAIN_LABEL[role.domain]}` }))} />
       <PlainSelect label="Reports to" value={reportsTo} onChange={setReportsTo} options={[{ value: "", label: "Nobody" }, ...users.map((user) => ({ value: user.id, label: user.name }))]} />
       <Button size="sm" onClick={() => void submit()} disabled={!name.trim() || !email.trim()}>
@@ -247,8 +247,8 @@ function RolesPanel({ roles, users }: { roles: Role[]; users: AdminUser[] }) {
       }
     >
       {adding ? (
-        <div className="grid grid-cols-1 gap-2 border-b border-border bg-muted/40 p-4 sm:grid-cols-4">
-          <Input placeholder="Role name" value={name} onChange={(event) => setName(event.target.value)} className="bg-card sm:col-span-2" />
+        <div className="m-2 grid grid-cols-1 gap-2 rounded-[16px] bg-card p-3 sm:grid-cols-4">
+          <Input placeholder="Role name" value={name} onChange={(event) => setName(event.target.value)} className="bg-background sm:col-span-2" />
           <PlainSelect label="Level" value={level} onChange={(value) => setLevel(value as RoleLevel)} options={(["executive", "lead", "member"] as const).map((entry) => ({ value: entry, label: LEVEL_LABEL[entry] }))} />
           <PlainSelect label="Domain" value={domain} onChange={(value) => setDomain(value as Domain)} options={DOMAINS.map((entry) => ({ value: entry.id, label: entry.label }))} />
           <Button size="sm" onClick={() => void submit()} disabled={!name.trim()} className="w-fit">
@@ -272,7 +272,7 @@ function RoleRow({ role, memberCount }: { role: Role; memberCount: number }) {
   const granted = new Set(role.permissions as Permission[])
 
   return (
-    <li className="rounded-[14px] border border-border p-3.5">
+    <li className="rounded-[14px] bg-card p-3.5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="flex items-center gap-2 text-[13px] font-semibold text-foreground">

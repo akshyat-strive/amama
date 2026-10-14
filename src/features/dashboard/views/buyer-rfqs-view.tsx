@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { ColumnCard } from "@/components/ui/column-card"
 import { DetailPage, useDetailRoute } from "@/components/ui/detail-page"
 import { formatInr } from "@/features/marketplace/currency"
 import { buyerIdentity } from "@/features/marketplace/identity"
@@ -32,10 +33,9 @@ function BuyerRfqsView() {
 
 function RfqsSkeleton() {
   return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">RFQs</h1>
-      <div className="mt-6 h-40 animate-pulse rounded-3xl bg-muted" />
-    </div>
+    <ColumnCard title="RFQs">
+      <div className="h-40 animate-pulse rounded-[16px] bg-muted" />
+    </ColumnCard>
   )
 }
 
@@ -55,18 +55,21 @@ function BuyerRfqsWorkspace() {
 
   if (selected) {
     return (
-      <DetailPage backLabel="RFQs" onBack={detail.close} trail={["RFQs", selected.title]}>
+      <DetailPage
+        backLabel="RFQs"
+        onBack={detail.close}
+        trail={["RFQs", selected.title]}
+        status={<span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-foreground">{STATUS_LABEL[selected.status]}</span>}
+      >
         <RfqComparison key={selected.id} rfq={selected} myName={buyer.name} />
       </DetailPage>
     )
   }
 
   return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">RFQs</h1>
-
+    <ColumnCard title="RFQs">
       {mine.length === 0 ? (
-        <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border px-5 py-16 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-[20px] bg-card px-5 py-16 text-center">
           <ClipboardListIcon className="size-6 text-muted-foreground" />
           <p className="text-[15px] font-semibold">No RFQs yet</p>
           <p className="max-w-sm text-[13px] text-muted-foreground">
@@ -75,7 +78,7 @@ function BuyerRfqsWorkspace() {
           </p>
         </div>
       ) : (
-        <ul className="mt-4 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-background">
+        <ul className="flex flex-col">
           {mine.map((rfq) => (
             <li key={rfq.id}>
               <BuyerRfqListRow rfq={rfq} onSelect={() => openRfq(rfq.id)} />
@@ -83,7 +86,7 @@ function BuyerRfqsWorkspace() {
           ))}
         </ul>
       )}
-    </div>
+    </ColumnCard>
   )
 }
 
@@ -96,7 +99,7 @@ function BuyerRfqListRow({ rfq, onSelect }: { rfq: Rfq; onSelect: () => void }) 
     <button
       type="button"
       onClick={onSelect}
-      className="flex w-full items-center gap-3 px-4 py-3.5 text-start transition-colors hover:bg-muted"
+      className="chat-row flex w-full items-center gap-3 rounded-xl px-3 py-3.5 text-start transition-colors [--row-inset:0.75rem] hover:bg-card"
     >
       <div className="min-w-0 flex-1">
         <p className="truncate text-[14px] font-semibold text-foreground">{rfq.title}</p>
@@ -143,15 +146,9 @@ function RfqComparison({ rfq, myName }: { rfq: Rfq; myName: string }) {
 
   return (
     <div className="flex flex-1 flex-col gap-5">
-      <div>
-        <div className="flex items-start justify-between gap-3 pe-8">
-          <h2 className="min-w-0 text-[17px] font-semibold tracking-tight text-foreground">{rfq.title}</h2>
-          <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-foreground">
-            {STATUS_LABEL[rfq.status]}
-          </span>
-        </div>
-        {facts.length > 0 ? (
-          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5">
+      {facts.length > 0 ? (
+        <section aria-label="Requirement" className="rounded-[20px] bg-card p-4">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5">
             {facts.map((fact) => (
               <div key={fact.label} className="min-w-0">
                 <dt className="text-[11.5px] text-muted-foreground">{fact.label}</dt>
@@ -159,22 +156,22 @@ function RfqComparison({ rfq, myName }: { rfq: Rfq; myName: string }) {
               </div>
             ))}
           </dl>
-        ) : null}
-      </div>
+        </section>
+      ) : null}
 
-      <div>
-        <p className="text-[12px] font-medium text-muted-foreground">
+      <section aria-label="Quotes" className="rounded-[20px] bg-card p-2">
+        <p className="px-3 pt-1.5 pb-2.5 text-[13px] font-semibold text-foreground">
           Quotes{sorted.length > 0 ? ` · ${sorted.length}` : ""}
         </p>
         {sorted.length === 0 ? (
-          <p className="mt-2 rounded-2xl border border-dashed border-border px-4 py-8 text-center text-[13px] text-muted-foreground">
+          <p className="rounded-[14px] bg-background px-4 py-8 text-center text-[13px] text-muted-foreground">
             No quotes yet
           </p>
         ) : (
           <div
             role={decidable ? "radiogroup" : "list"}
             aria-label="Quotes"
-            className="mt-2 flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-background"
+            className="flex flex-col divide-inset overflow-hidden rounded-[14px] bg-background"
           >
             {sorted.map((quote, index) => (
               <QuoteRow
@@ -188,10 +185,10 @@ function RfqComparison({ rfq, myName }: { rfq: Rfq; myName: string }) {
             ))}
           </div>
         )}
-      </div>
+      </section>
 
       {decidable && sorted.length > 0 ? (
-        <div className="sticky bottom-0 -mx-4 mt-auto -mb-4 border-t border-border bg-popover px-4 py-3">
+        <div className="sticky bottom-0 -mx-3 mt-auto -mb-3 border-t border-border bg-background px-3 py-3 sm:-mx-4 sm:px-4">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate text-[12px] text-muted-foreground">{selected ? selected.sellerName : "Pick a quote"}</p>
@@ -199,7 +196,7 @@ function RfqComparison({ rfq, myName }: { rfq: Rfq; myName: string }) {
                 {selected ? formatInr(selected.pricePerTonneUsd * selected.quantityMt) : "—"}
               </p>
             </div>
-            <Button disabled={!selected} onClick={() => setConfirming(true)}>
+            <Button disabled={!selected} onClick={() => setConfirming(true)} className="rounded-xl">
               Accept
             </Button>
           </div>
@@ -216,7 +213,7 @@ function RfqComparison({ rfq, myName }: { rfq: Rfq; myName: string }) {
                 {others > 0 ? `${others} other quote${others === 1 ? "" : "s"} will be marked not selected.` : null}
               </DialogDescription>
             </DialogHeader>
-            <dl className="divide-y divide-border rounded-2xl border border-border text-[13px]">
+            <dl className="divide-inset rounded-2xl border border-border text-[13px]">
               {[
                 { label: "Price", value: `${formatInr(selected.pricePerTonneUsd)} / t` },
                 { label: "Quantity", value: `${selected.quantityMt} MT` },

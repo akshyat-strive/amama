@@ -2,6 +2,7 @@
 
 import { FileSignatureIcon } from "lucide-react"
 
+import { ColumnCard } from "@/components/ui/column-card"
 import { AdminEmptyState } from "@/features/admin/admin-ui"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { ContractsView } from "@/features/contracts/contracts-view"
@@ -15,16 +16,13 @@ function AdminContractsView() {
 
   if (!admin.can("deals.work") && !admin.can("deals.viewAll")) {
     return (
-      <div>
-        <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Contracts</h1>
-        <div className="mt-6">
-          <AdminEmptyState
-            icon={FileSignatureIcon}
-            title="No contract permissions on your role"
-            description="Contracts are drafted by whoever works the deal."
-          />
-        </div>
-      </div>
+      <ColumnCard title="Contracts">
+        <AdminEmptyState
+          icon={FileSignatureIcon}
+          title="No contract permissions on your role"
+          description="Contracts are drafted by whoever works the deal."
+        />
+      </ColumnCard>
     )
   }
 

@@ -38,6 +38,7 @@ import {
 } from "@/features/marketplace/deal-store"
 import { ContractChatCard } from "@/features/contracts/contract-chat-cards"
 import { ContractRequestCard } from "@/features/contracts/contract-request-card"
+import { KamAssistCard } from "@/features/marketplace/kam-assist"
 
 const outcomeCopy = {
   accepted: { icon: CheckIcon, className: "text-amama-deep", label: "Accepted" },
@@ -254,13 +255,13 @@ function RoundComments({
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           placeholder="Ask about these terms…"
-          className="h-8 min-w-0 flex-1 rounded-full border border-border bg-background px-3 text-[12px] outline-none placeholder:text-muted-foreground focus-visible:border-ring"
+          className="h-8 min-w-0 flex-1 rounded-full bg-background px-3 text-[12px] outline-none placeholder:text-muted-foreground focus-visible:border-ring"
         />
         <button
           type="submit"
           disabled={!draft.trim()}
           aria-label="Post question"
-          className="grid size-8 shrink-0 place-items-center rounded-full bg-amama-deep text-white disabled:opacity-40"
+          className="grid size-8 shrink-0 place-items-center rounded-full bg-graphite text-white disabled:opacity-40"
         >
           <SendIcon className="size-3.5 rtl:-scale-x-100" />
         </button>
@@ -355,6 +356,9 @@ function ChatCard({
   }
   if (card.kind === "rfq-quote") {
     return <RfqQuoteCard rfqId={card.rfqId} quoteId={card.quoteId} viewer={viewer} viewerName={viewerName} />
+  }
+  if (card.kind === "kam-assist") {
+    return <KamAssistCard card={card} viewer={viewer} />
   }
   if (card.kind === "contract-request") {
     return <ContractRequestCard dealId={card.dealId} viewer={viewer} viewerName={viewerName} />

@@ -113,7 +113,7 @@ function TopbarNotifications({ perspective, email, basePath }: { perspective: Tr
         {items.length === 0 ? (
           <p className="px-4 py-6 text-center text-[13px] text-muted-foreground">Nothing new</p>
         ) : (
-          <ul className="max-h-[22rem] divide-y divide-border overflow-y-auto">
+          <ul className="max-h-[22rem] divide-inset overflow-y-auto">
             {items.map((item) => {
               const isUnread = !item.read && !read.has(item.id)
               return (

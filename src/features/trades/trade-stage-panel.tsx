@@ -3,6 +3,7 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { useBlockFill, useOnWhite } from "@/components/ui/column-card"
 import * as W from "@/features/tradechain/demo-world"
 import { documentRegister, stageStateFor } from "@/features/tradechain/trade-file"
 import type { TradePerspective } from "@/features/trades/trade-access"
@@ -38,8 +39,9 @@ function StageRail({
   selected: W.StageNo
   onSelect: (stage: W.StageNo) => void
 }) {
+  const fill = useBlockFill()
   return (
-    <nav aria-label="Stages" className="overflow-hidden rounded-[20px] border border-border bg-background py-1.5">
+    <nav aria-label="Stages" className={cn("overflow-hidden rounded-[20px] py-1.5", fill)}>
       {W.PHASES.map((phase) => (
         <div key={phase.id} className="px-1.5 pb-1">
           <p className="px-2.5 pt-2 pb-1 text-[11px] font-medium text-muted-foreground">{phase.label}</p>
@@ -241,7 +243,7 @@ function StageDetail({
 
       {internal && stage.notifications.length > 0 ? (
         <Panel title="Alerts" flush>
-          <ul className="divide-y divide-border">
+          <ul className="divide-inset">
             {stage.notifications.map((notification) => (
               <li key={notification.text} className="flex items-center gap-3 px-5 py-2.5">
                 <Pill tone={SEVERITY_TONE[notification.level]} className="w-[4.75rem] justify-center">
@@ -265,7 +267,7 @@ function DocumentRows({
   renderActions?: (document: W.TradeDocument) => React.ReactNode
 }) {
   return (
-    <ul className="divide-y divide-border">
+    <ul className="divide-inset">
       {documents.map((document) => (
         <li key={document.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-2.5">
           <span className="min-w-0 flex-1">
@@ -300,9 +302,12 @@ function StagesPanel({
   selected: W.StageNo
   onSelect: (stage: W.StageNo) => void
 }) {
+  // In a white column card the page tabs stick to the card's top, so the
+  // rail sticks just under them; on the bare page, under topbar and tabs.
+  const onWhite = useOnWhite()
   return (
     <div className="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
-      <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 lg:hidden">
+      <div className={cn("flex gap-1.5 overflow-x-auto pb-1 lg:hidden", onWhite ? "-mx-2 px-2" : "-mx-4 px-4")}>
         {W.STAGES.map((stage) => {
           const state = stageStateFor(trade, stage.n)
           const active = stage.n === selected
@@ -324,7 +329,7 @@ function StagesPanel({
           )
         })}
       </div>
-      <div className="hidden lg:sticky lg:top-[124px] lg:block">
+      <div className={cn("hidden lg:sticky lg:block", onWhite ? "lg:top-[60px]" : "lg:top-[124px]")}>
         <StageRail trade={trade} selected={selected} onSelect={onSelect} />
       </div>
       <StageDetail key={`${trade.id}-${selected}`} trade={trade} stageNo={selected} perspective={perspective} partyIds={partyIds} />

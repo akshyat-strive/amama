@@ -3,11 +3,10 @@
 import * as React from "react"
 import Link from "next/link"
 import { AnimatePresence, motion } from "motion/react"
-import { BadgeCheckIcon, MessageCircleIcon, PackageSearchIcon, XIcon } from "lucide-react"
+import { BadgeCheckIcon, ChevronLeftIcon, ClipboardListIcon, MessageCircleIcon, PackageSearchIcon, XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { catalogCategory, productLabel, slugify, gradeSlug } from "@/features/marketplace/catalog"
-import { MarketplaceBreadcrumbs } from "@/features/marketplace/marketplace-ui"
 import { buyerIdentity } from "@/features/marketplace/identity"
 import { ConversationThread } from "@/features/marketplace/conversation-thread"
 import {
@@ -25,7 +24,7 @@ import { ProposeDealDialog } from "@/features/marketplace/propose-deal-dialog"
 import { RfqDialog, type RfqCandidateSeller } from "@/features/marketplace/rfq-dialog"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import { Button } from "@/components/ui/button"
-import { ClipboardListIcon } from "lucide-react"
+import { ColumnCard, OnWhite } from "@/components/ui/column-card"
 
 /** Same viewport-relative height on every full-height chat surface in the
  *  dashboard — the topbar offset (80px) plus the content wrapper's own
@@ -33,7 +32,7 @@ import { ClipboardListIcon } from "lucide-react"
  *  panel's bottom edge lines up with the sidebar's. Only applied from `lg`
  *  up: below that the two panels stack and the page is allowed to scroll
  *  normally. */
-const FULL_HEIGHT = "lg:h-[calc(100dvh-92px)]"
+const FULL_HEIGHT = "lg:h-[calc(100dvh-76px)]"
 
 /**
  * A single product's own page — left is everything about it, right is the
@@ -113,13 +112,15 @@ function BuyerProductView({ listingId }: { listingId: string }) {
 
   if (!listing) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border py-16 text-center">
-        <PackageSearchIcon className="size-6 text-muted-foreground" />
-        <p className="text-[15px] font-semibold">This listing isn&apos;t available anymore</p>
-        <Link href="/buyer/dashboard/sourcing" className="text-[13px] font-medium text-amama-deep underline">
-          Back to the marketplace
-        </Link>
-      </div>
+      <ColumnCard title="Marketplace">
+        <div className="flex flex-col items-center gap-3 rounded-[20px] bg-card py-16 text-center">
+          <PackageSearchIcon className="size-6 text-muted-foreground" />
+          <p className="text-[15px] font-semibold">This listing isn&apos;t available anymore</p>
+          <Link href="/buyer/dashboard/sourcing" className="text-[13px] font-medium text-amama-deep underline">
+            Back to the marketplace
+          </Link>
+        </div>
+      </ColumnCard>
     )
   }
 
@@ -156,61 +157,60 @@ function BuyerProductView({ listingId }: { listingId: string }) {
   }
 
   return (
-    <div className={cn("flex flex-col gap-4 pb-20 lg:flex-row lg:overflow-hidden lg:pb-0", FULL_HEIGHT)}>
-      {/* A grey "chrome" frame around the white content card, rather than a
-          bordered card of its own — the header sits directly on the frame,
-          plain text, the way a widget's own title bar does. */}
-      <div className="flex flex-col rounded-3xl bg-muted lg:w-[380px] lg:shrink-0 lg:overflow-hidden">
-        <div className="flex shrink-0 items-center justify-between gap-2 p-3">
-          <div className="min-w-0 text-[13px] [&_ol]:text-[13px]">
-            <MarketplaceBreadcrumbs
-              trail={[
-                { label: "Marketplace", href: "/buyer/dashboard/sourcing" },
-                { label: catalogCategory(listing.categoryId).label, href: `/buyer/dashboard/sourcing/${listing.categoryId}` },
-                { label: productLabel(listing.cropId), href: `/buyer/dashboard/sourcing/${listing.categoryId}/${listing.cropId}` },
-                {
-                  label: listing.grade || "Ungraded",
-                  href: `/buyer/dashboard/sourcing/${listing.categoryId}/${listing.cropId}/${gradeSlug(listing.grade)}`,
-                },
-              ]}
-            />
-          </div>
-          {/* A buyer only ever sees a positive verdict here, never
-              "pending"/"flagged" — same rule the marketplace cards follow. */}
-          {listing.moderationStatus === "verified" ? (
-            <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-[11px] font-medium text-amama-deep">
-              <BadgeCheckIcon className="size-3" />
-              Verified
-            </span>
-          ) : null}
-        </div>
-        <div className="rounded-[18px] bg-card shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] lg:flex-1 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden">
-          <div className="p-4">
-            <ProductInfoPanel listing={listing} />
-            <Button
-              variant="outline"
-              className="mt-4 w-full"
-              onClick={() => setRequestingQuotes(true)}
+    <div className={cn("flex flex-col gap-3 pb-20 lg:flex-row lg:overflow-hidden lg:pb-0", FULL_HEIGHT)}>
+      {/* The product as its own white column, like a record page: back to
+          the grade's sellers, the product's name and verdict, an inset
+          hairline, then everything about it scrolling inside. */}
+      <OnWhite>
+        <section aria-label={cropLabel} className="flex flex-col rounded-[24px] bg-background p-2 lg:w-[380px] lg:shrink-0 lg:overflow-hidden">
+          <header className="flex shrink-0 items-center gap-2.5 px-2 pt-1.5 pb-3">
+            <Link
+              href={`/buyer/dashboard/sourcing/${listing.categoryId}/${listing.cropId}/${gradeSlug(listing.grade)}`}
+              aria-label={`Back to ${cropLabel} ${listing.grade || "ungraded"} sellers`}
+              title={`${cropLabel} · ${listing.grade || "Ungraded"}`}
+              className="grid size-9 shrink-0 place-items-center rounded-xl text-foreground/75 transition-colors hover:bg-muted"
             >
+              <ChevronLeftIcon aria-hidden className="size-5 rtl:-scale-x-100" />
+            </Link>
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-[17px] leading-tight font-semibold tracking-[-0.02em]">{cropLabel}</h1>
+              <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
+                {catalogCategory(listing.categoryId).label} · {listing.grade || "Ungraded"} · {listing.variety}
+              </p>
+            </div>
+            {/* A buyer only ever sees a positive verdict here, never
+                "pending"/"flagged" — same rule the marketplace cards follow. */}
+            {listing.moderationStatus === "verified" ? (
+              <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-amama-subtle px-2.5 py-1 text-[11px] font-medium text-amama-deep">
+                <BadgeCheckIcon className="size-3" />
+                Verified
+              </span>
+            ) : null}
+          </header>
+          <div aria-hidden className="mx-3 h-px shrink-0 bg-border" />
+          <div className="px-2 pt-3 pb-2 [scrollbar-width:none] [-ms-overflow-style:none] lg:min-h-0 lg:flex-1 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden">
+            <ProductInfoPanel listing={listing} />
+            <Button variant="outline" className="mt-4 w-full rounded-xl" onClick={() => setRequestingQuotes(true)}>
               <ClipboardListIcon className="size-4" />
               Request quotes (RFQ)
             </Button>
           </div>
-        </div>
-        <DealStatusFooter
-          deal={deal}
-          conversation={conversation}
-          listing={listing}
-          role="buyer"
-          myName={buyer.name}
-          counterpartName={listing.sellerName}
-        />
-      </div>
+          <DealStatusFooter
+            deal={deal}
+            conversation={conversation}
+            listing={listing}
+            role="buyer"
+            myName={buyer.name}
+            counterpartName={listing.sellerName}
+            className="mx-2 mb-1"
+          />
+        </section>
+      </OnWhite>
 
       {/* Desktop: inline, side by side. */}
       <div
         className={cn(
-          "hidden overflow-hidden rounded-3xl border border-border bg-background lg:block lg:flex-1",
+          "hidden overflow-hidden rounded-[24px] bg-background lg:block lg:flex-1",
           FULL_HEIGHT
         )}
       >
@@ -242,7 +242,7 @@ function BuyerProductView({ listingId }: { listingId: string }) {
             type="button"
             onClick={() => setMobileChatOpen(true)}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
-            className="fixed inset-x-4 bottom-4 z-20 flex items-center gap-3 rounded-3xl border border-border bg-background px-4 py-3 text-start shadow-lg lg:hidden"
+            className="fixed inset-x-4 bottom-4 z-20 flex items-center gap-3 rounded-3xl bg-background px-4 py-3 text-start shadow-lg lg:hidden"
           >
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-amama-deep text-[13px] font-semibold text-white">
               {listing.sellerName.charAt(0)}

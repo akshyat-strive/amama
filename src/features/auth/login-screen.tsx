@@ -168,7 +168,7 @@ function LoginScreen({ role }: { role: OnboardingRole }) {
                       aria-label={label}
                       title={label}
                       onClick={enterApp}
-                      className={cn(buttonVariants({ variant: "outline", size: "icon" }))}
+                      className="grid size-11 place-items-center rounded-xl border border-input bg-background text-black transition-colors hover:bg-muted active:scale-[0.97] dark:text-white"
                     >
                       <Icon className="size-5" />
                     </button>

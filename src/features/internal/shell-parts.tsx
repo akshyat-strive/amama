@@ -183,7 +183,7 @@ function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (
               Nothing matches “{query.trim()}”.
             </p>
           ) : (
-            <div className="divide-y divide-border">
+            <div className="divide-inset">
               {hits.map((hit) => (
                 <button
                   key={`${hit.ref.kind}-${hit.ref.id}`}
@@ -246,7 +246,7 @@ function NotificationBell() {
           <p className="text-[14px] font-semibold">Notifications</p>
           <p className="text-[12px] text-muted-foreground">{unread} unread</p>
         </header>
-        <div className="max-h-[24rem] divide-y divide-border overflow-y-auto">
+        <div className="max-h-[24rem] divide-inset overflow-y-auto">
           {ordered.map((notification) => (
             <button
               key={notification.id}

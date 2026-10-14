@@ -306,7 +306,7 @@ function ShipmentTracker({ shipment, actions }: { shipment: Shipment; actions?: 
   const arrivalLabel = arrivedEvent ? formatShortDate(arrivedEvent.at) : shipment.eta ? formatShortDate(shipment.eta) : "—"
 
   return (
-    <div className="w-full rounded-2xl border border-border bg-background p-4 sm:p-5">
+    <div className="w-full rounded-2xl bg-background p-4 sm:p-5">
       {/* Header — the shipment's own reference number as the title, its
           live status (and delay flag) at the end. */}
       <div className="space-y-3">
@@ -613,7 +613,7 @@ function ShipmentRow({ shipment, onSelect }: { shipment: Shipment; onSelect: () 
     <button
       type="button"
       onClick={onSelect}
-      className="group grid w-full grid-cols-1 items-center gap-3 bg-white px-4 py-3.5 text-start transition-colors hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:grid-cols-[1.2fr_1fr_1.1fr]"
+      className="chat-row group grid w-full grid-cols-1 items-center gap-3 rounded-xl px-3 py-3.5 text-start transition-colors [--row-inset:0.75rem] hover:bg-card focus-visible:bg-card focus-visible:outline-none sm:grid-cols-[1.2fr_1fr_1.1fr]"
     >
       {/* Col 1: Identity & Status/Carrier */}
       <div className="min-w-0 space-y-1">

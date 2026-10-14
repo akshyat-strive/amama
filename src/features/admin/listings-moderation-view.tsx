@@ -3,6 +3,7 @@
 import * as React from "react"
 import { ClockIcon, Trash2Icon } from "lucide-react"
 
+import { ColumnCard } from "@/components/ui/column-card"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { AdminEmptyState } from "@/features/admin/admin-ui"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
@@ -10,7 +11,6 @@ import {
   ApproveButton,
   RequestAgainButton,
   RequestNote,
-  ReviewGroup,
   RowNote,
   StatusPill,
   type Tone,
@@ -62,7 +62,7 @@ function ListingRow({ listing, reviewerName, canModerate }: { listing: Listing; 
   }
 
   return (
-    <>
+    <div>
       <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2.5 px-4 py-3">
         <span className="relative size-12 shrink-0 overflow-hidden rounded-xl bg-muted">
           <CropImage photo={listing.photo} width={120} alt={`${crop} — ${listing.variety}`} sizes="48px" />
@@ -139,7 +139,7 @@ function ListingRow({ listing, reviewerName, canModerate }: { listing: Listing; 
           ) : null}
         </RowNote>
       ) : null}
-    </>
+    </div>
   )
 }
 
@@ -160,43 +160,38 @@ function ListingsModerationView() {
   const visible = filter === "all" ? sorted : sorted.filter((listing) => listing.moderationStatus === filter)
 
   return (
-    <div className={PAGE_TABS_SPACE}>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Listings</h1>
-
-      <PageTabs
-        label="Listing review"
-        className="mt-5"
-        value={filter}
-        onChange={setFilter}
-        tabs={FILTERS.map(({ value, label }) => ({ value, label, count: countFor(value) }))}
-      />
-
-      {visible.length === 0 ? (
-        <AdminEmptyState
-          icon={ClockIcon}
-          title={filter === "unverified" ? "Nothing waiting on review" : "No listings here"}
-          description={
-            filter === "unverified" ? "New listings land here until someone verifies them or requests changes." : undefined
-          }
+    <ColumnCard title="Listings">
+      <div className={PAGE_TABS_SPACE}>
+        <PageTabs
+          label="Listing review"
+          value={filter}
+          onChange={setFilter}
+          tabs={FILTERS.map(({ value, label }) => ({ value, label, count: countFor(value) }))}
         />
-      ) : (
-        <TooltipProvider delay={300}>
-          <ReviewGroup
-            className="mt-4"
-            header={
-              <p className="text-[12.5px] text-muted-foreground">
-                <span className="font-semibold text-foreground">{visible.length}</span>{" "}
-                {visible.length === 1 ? "listing" : "listings"} · newest first
-              </p>
+
+        {visible.length === 0 ? (
+          <AdminEmptyState
+            icon={ClockIcon}
+            title={filter === "unverified" ? "Nothing waiting on review" : "No listings here"}
+            description={
+              filter === "unverified" ? "New listings land here until someone verifies them or requests changes." : undefined
             }
-          >
-            {visible.map((listing) => (
-              <ListingRow key={listing.id} listing={listing} reviewerName={reviewerName} canModerate={canModerate} />
-            ))}
-          </ReviewGroup>
-        </TooltipProvider>
-      )}
-    </div>
+          />
+        ) : (
+          <TooltipProvider delay={300}>
+            <p className="mt-4 px-4 text-[12.5px] text-muted-foreground">
+              <span className="font-semibold text-foreground">{visible.length}</span>{" "}
+              {visible.length === 1 ? "listing" : "listings"} · newest first
+            </p>
+            <div className="divide-inset mt-1">
+              {visible.map((listing) => (
+                <ListingRow key={listing.id} listing={listing} reviewerName={reviewerName} canModerate={canModerate} />
+              ))}
+            </div>
+          </TooltipProvider>
+        )}
+      </div>
+    </ColumnCard>
   )
 }
 

@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { CheckIcon, ClipboardListIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { ColumnCard } from "@/components/ui/column-card"
 import { DetailPage, useDetailRoute } from "@/components/ui/detail-page"
 import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
 import { formatInr } from "@/features/marketplace/currency"
@@ -45,10 +46,9 @@ function SellerRfqsView() {
 
 function RfqsSkeleton() {
   return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">RFQs</h1>
-      <div className="mt-6 h-40 animate-pulse rounded-3xl bg-muted" />
-    </div>
+    <ColumnCard title="RFQs">
+      <div className="h-40 animate-pulse rounded-[16px] bg-muted" />
+    </ColumnCard>
   )
 }
 
@@ -138,7 +138,7 @@ function SellerRfqsWorkspace() {
 
   if (selected) {
     return (
-      <DetailPage backLabel="RFQs" onBack={detail.close} trail={["RFQs", selected.title]}>
+      <DetailPage backLabel="RFQs" onBack={detail.close} trail={["RFQs", selected.title]} meta={selected.buyerName}>
         <RfqDetail rfq={selected} sellerId={seller.id} onQuote={() => startQuoting(selected)} />
         {quotingDialog}
       </DetailPage>
@@ -147,9 +147,8 @@ function SellerRfqsWorkspace() {
 
   if (mine.length === 0 && discoverable.length === 0) {
     return (
-      <div>
-        <h1 className="text-[34px] font-semibold tracking-[-0.03em]">RFQs</h1>
-        <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border px-5 py-16 text-center">
+      <ColumnCard title="RFQs">
+        <div className="flex flex-col items-center gap-3 rounded-[20px] bg-card px-5 py-16 text-center">
           <ClipboardListIcon className="size-6 text-muted-foreground" />
           <p className="text-[15px] font-semibold">No RFQs yet</p>
           <p className="max-w-sm text-[13px] text-muted-foreground">
@@ -157,46 +156,46 @@ function SellerRfqsWorkspace() {
             sell first.
           </p>
         </div>
-      </div>
+      </ColumnCard>
     )
   }
 
   return (
-    <div className={PAGE_TABS_SPACE}>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">RFQs</h1>
+    <ColumnCard title="RFQs">
+      <div className={PAGE_TABS_SPACE}>
+        <PageTabs
+          label="RFQ lists"
+          className="px-1.5"
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { value: "open", label: "Open", count: discoverable.length },
+            { value: "sent", label: "Invited", count: mine.length },
+          ]}
+        />
 
-      <PageTabs
-        label="RFQ lists"
-        className="mt-5"
-        value={tab}
-        onChange={setTab}
-        tabs={[
-          { value: "open", label: "Open", count: discoverable.length },
-          { value: "sent", label: "Invited", count: mine.length },
-        ]}
-      />
+        {visible.length === 0 ? (
+          <p className="mt-4 rounded-2xl bg-card px-5 py-10 text-center text-[13px] text-muted-foreground">
+            {tab === "open" ? "Nothing else open on the marketplace right now." : "No buyer has sent you an RFQ directly yet."}
+          </p>
+        ) : (
+          <ul className="mt-3 flex flex-col">
+            {visible.map((rfq) => (
+              <li key={rfq.id}>
+                <RfqListRow
+                  rfq={rfq}
+                  sellerId={seller.id}
+                  match={tab === "open" ? rfqMatchForSeller(rfq, myCropIds) : undefined}
+                  onSelect={() => openRfq(rfq)}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
 
-      {visible.length === 0 ? (
-        <p className="mt-6 rounded-2xl border border-dashed border-border px-5 py-10 text-center text-[13px] text-muted-foreground">
-          {tab === "open" ? "Nothing else open on the marketplace right now." : "No buyer has sent you an RFQ directly yet."}
-        </p>
-      ) : (
-        <ul className="mt-4 flex flex-col divide-y divide-border rounded-2xl border border-border bg-background">
-          {visible.map((rfq) => (
-            <li key={rfq.id}>
-              <RfqListRow
-                rfq={rfq}
-                sellerId={seller.id}
-                match={tab === "open" ? rfqMatchForSeller(rfq, myCropIds) : undefined}
-                onSelect={() => openRfq(rfq)}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {quotingDialog}
-    </div>
+        {quotingDialog}
+      </div>
+    </ColumnCard>
   )
 }
 
@@ -221,7 +220,7 @@ function RfqListRow({
     <button
       type="button"
       onClick={onSelect}
-      className="flex w-full items-center gap-3 px-4 py-3.5 text-start transition-colors hover:bg-muted"
+      className="chat-row flex w-full items-center gap-3 rounded-xl px-3 py-3.5 text-start transition-colors [--row-inset:0.75rem] hover:bg-card"
     >
       <div className="min-w-0 flex-1">
         <p className="truncate text-[14px] font-semibold text-foreground">{rfq.title}</p>
@@ -262,57 +261,52 @@ function RfqDetail({ rfq, sellerId, onQuote }: { rfq: Rfq; sellerId: string; onQ
   const canQuote = rfq.status === "open" && (!quote || quote.status === "withdrawn")
 
   return (
-          <div className="flex flex-col gap-4 pb-2">
-            <div>
-              <h2 className="text-[17px] font-semibold tracking-tight text-foreground">{rfq.title}</h2>
-              <p className="mt-1 text-[13px] text-muted-foreground">{rfq.buyerName}</p>
-            </div>
+    <div className="flex flex-col gap-3 pb-2">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-[20px] bg-card p-4 text-[13px]">
+        <RfqSpecField label="Quantity" value={rfq.spec.quantityMt ? `${rfq.spec.quantityMt} MT` : null} />
+        <RfqSpecField label="Variety" value={rfq.spec.variety} />
+        <RfqSpecField label="Grade" value={rfq.spec.grade} />
+        <RfqSpecField label="Packaging" value={rfq.spec.packaging} />
+        <RfqSpecField label="Container" value={rfq.spec.containerType} />
+        <RfqSpecField label="Destination" value={rfq.spec.destinationPort} />
+        <RfqSpecField label="Incoterm" value={rfq.spec.incoterm} />
+        <RfqSpecField
+          label="Shipping window"
+          value={
+            rfq.spec.shippingWindowFrom || rfq.spec.shippingWindowTo
+              ? `${rfq.spec.shippingWindowFrom ?? "…"} → ${rfq.spec.shippingWindowTo ?? "…"}`
+              : null
+          }
+        />
+        <RfqSpecField label="Payment ask" value={rfq.spec.paymentTermPreference} />
+        <RfqSpecField label="Monthly volume" value={rfq.spec.monthlyVolumeMt ? `${rfq.spec.monthlyVolumeMt} MT` : null} />
+      </dl>
 
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-2xl bg-muted p-4 text-[13px]">
-              <RfqSpecField label="Quantity" value={rfq.spec.quantityMt ? `${rfq.spec.quantityMt} MT` : null} />
-              <RfqSpecField label="Variety" value={rfq.spec.variety} />
-              <RfqSpecField label="Grade" value={rfq.spec.grade} />
-              <RfqSpecField label="Packaging" value={rfq.spec.packaging} />
-              <RfqSpecField label="Container" value={rfq.spec.containerType} />
-              <RfqSpecField label="Destination" value={rfq.spec.destinationPort} />
-              <RfqSpecField label="Incoterm" value={rfq.spec.incoterm} />
-              <RfqSpecField
-                label="Shipping window"
-                value={
-                  rfq.spec.shippingWindowFrom || rfq.spec.shippingWindowTo
-                    ? `${rfq.spec.shippingWindowFrom ?? "…"} → ${rfq.spec.shippingWindowTo ?? "…"}`
-                    : null
-                }
-              />
-              <RfqSpecField label="Payment ask" value={rfq.spec.paymentTermPreference} />
-              <RfqSpecField label="Monthly volume" value={rfq.spec.monthlyVolumeMt ? `${rfq.spec.monthlyVolumeMt} MT` : null} />
-            </dl>
+      {rfq.spec.notes ? (
+        <section className="rounded-[20px] bg-card p-4">
+          <h2 className="text-[13px] font-semibold text-foreground">Notes</h2>
+          <p className="mt-1 text-[13px] leading-relaxed text-foreground/85">{rfq.spec.notes}</p>
+        </section>
+      ) : null}
 
-            {rfq.spec.notes ? (
-              <div>
-                <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Notes</p>
-                <p className="mt-1 text-[13px] leading-relaxed text-foreground">{rfq.spec.notes}</p>
-              </div>
-            ) : null}
-
-            <div className="mt-1 border-t border-border pt-4">
-              {quote && quote.status !== "withdrawn" ? (
-                <p className="rounded-2xl bg-muted px-4 py-3 text-[13px] font-semibold text-foreground">
-                  Your quote: {formatInr(quote.pricePerTonneUsd)}/t ·{" "}
-                  {quote.status === "accepted" ? "accepted" : quote.status === "not-selected" ? "not selected" : "awaiting decision"}
-                </p>
-              ) : null}
-              {canQuote ? (
-                <Button className="w-full" onClick={onQuote}>
-                  {quote ? "Requote" : "Submit a quote"}
-                </Button>
-              ) : !quote ? (
-                <p className="text-center text-[13px] font-medium text-muted-foreground">
-                  {rfq.status === "cancelled" ? "This RFQ was cancelled." : "This RFQ has closed."}
-                </p>
-              ) : null}
-            </div>
-          </div>
+      <div className="flex flex-col gap-2 pt-1">
+        {quote && quote.status !== "withdrawn" ? (
+          <p className="rounded-2xl bg-muted px-4 py-3 text-[13px] font-semibold text-foreground">
+            Your quote: {formatInr(quote.pricePerTonneUsd)}/t ·{" "}
+            {quote.status === "accepted" ? "accepted" : quote.status === "not-selected" ? "not selected" : "awaiting decision"}
+          </p>
+        ) : null}
+        {canQuote ? (
+          <Button className="w-full rounded-xl" onClick={onQuote}>
+            {quote ? "Requote" : "Submit a quote"}
+          </Button>
+        ) : !quote ? (
+          <p className="text-center text-[13px] font-medium text-muted-foreground">
+            {rfq.status === "cancelled" ? "This RFQ was cancelled." : "This RFQ has closed."}
+          </p>
+        ) : null}
+      </div>
+    </div>
   )
 }
 

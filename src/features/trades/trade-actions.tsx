@@ -431,7 +431,7 @@ function ClaimsPanel({ trade, perspective }: { trade: W.Trade; perspective: Trad
   if (claims.length === 0) return null
   return (
     <Panel title="Claims" action={<span className="text-[12px] text-muted-foreground tabular-nums">{claims.length}</span>} flush>
-      <ul className="divide-y divide-border">
+      <ul className="divide-inset">
         {claims.map((claim) => (
           <ClaimRow key={claim.id} claim={claim} trade={trade} perspective={perspective} />
         ))}
@@ -671,7 +671,7 @@ function StageActivity({ trade, stageNo }: { trade: W.Trade; stageNo: W.StageNo 
   if (events.length === 0) return null
   return (
     <Panel title="Activity" action={<span className="text-[12px] text-muted-foreground tabular-nums">{events.length}</span>} flush>
-      <ol className="divide-y divide-border">
+      <ol className="divide-inset">
         {events.slice(0, 12).map((event) => (
           <li key={event.id} className="flex items-start gap-3 px-5 py-2.5">
             <span className="w-[6.5rem] shrink-0 text-[12px] text-muted-foreground tabular-nums">{formatStamp(event.at)}</span>

@@ -1,0 +1,116 @@
+/* The landing page's own type and textures — kept out of globals.css so
+ * the app itself stays on Inter alone. LT Blue (SIL OFL 1.1, see
+ * /fonts/lt-blue/OFL.txt) carries the headlines, as in visual.html. */
+@font-face {
+  font-family: "LT Blue";
+  src: url("/fonts/lt-blue/LTBlue-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "LT Blue";
+  src: url("/fonts/lt-blue/LTBlue-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "LT Blue";
+  src: url("/fonts/lt-blue/LTBlue-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-display: swap;
+}
+
+.landing {
+  --ink: #1d1d1f;
+  --ink-2: #6e6e73;
+  --line: #d2d2d7;
+  --mist: #f5f5f7;
+  --ease: cubic-bezier(0.28, 0.11, 0.32, 1);
+  background: #fff;
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1.47;
+  letter-spacing: -0.022em;
+  -webkit-font-smoothing: antialiased;
+}
+.landing .head {
+  font-family: "LT Blue", var(--font-sans), sans-serif;
+  font-weight: 600;
+}
+
+/* The route in the corridor figure, marching gently. */
+@keyframes landing-march {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+.landing .route {
+  animation: landing-march 1.6s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing .route {
+    animation: none;
+  }
+}
+
+/* Small loops inside the corridor figure: the vessel rides the swell,
+ * the DC's roof light breathes, labels settle in one by one. */
+@keyframes iso-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.6px); }
+}
+@keyframes iso-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.86; }
+}
+@keyframes iso-label {
+  from { transform: translateY(4px); }
+  to { transform: none; }
+}
+.landing .iso-bob {
+  animation: iso-bob 3.2s ease-in-out infinite;
+}
+.landing .iso-breathe {
+  animation: iso-breathe 2.8s ease-in-out infinite;
+}
+.landing .iso-label {
+  animation: iso-label 0.7s var(--ease) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing .iso-bob,
+  .landing .iso-breathe,
+  .landing .iso-label {
+    animation: none;
+  }
+}
+
+/* The hanging container: the rope swings, the container lags a beat
+ * behind, and the whole rig eases in from above on load. */
+@keyframes hang-sway {
+  0%, 100% { transform: rotate(-2.2deg); }
+  50% { transform: rotate(2.2deg); }
+}
+@keyframes hang-lag {
+  0%, 100% { transform: rotate(0.9deg); }
+  50% { transform: rotate(-0.9deg); }
+}
+@keyframes hang-in {
+  from { transform: translate3d(0, -60px, 0); }
+  to { transform: none; }
+}
+.landing .hang-sway {
+  animation: hang-sway 6.4s ease-in-out infinite;
+}
+.landing .hang-lag {
+  animation: hang-lag 6.4s ease-in-out -0.7s infinite;
+}
+.landing .hang-in {
+  animation: hang-in 1.4s var(--ease) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing .hang-sway,
+  .landing .hang-lag,
+  .landing .hang-in {
+    animation: none;
+  }
+}

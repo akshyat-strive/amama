@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "motion/react"
 import { StoreIcon, XIcon } from "lucide-react"
 
 import { ButtonGroup } from "@/components/ui/button-group"
+import { ColumnCard } from "@/components/ui/column-card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CATALOG_CATEGORIES, productLabel, slugify, gradeSlug } from "@/features/marketplace/catalog"
 import { CategoryTabs } from "@/features/marketplace/marketplace-ui"
@@ -21,13 +22,13 @@ import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import { ORDER_SIZE_MIN_MT, type orderSizes } from "@/features/onboarding/steps"
 
 const ALL = "all"
-const STICK_AT = 68
 
 type Sort = "name" | "price"
 const SORT_ITEMS: Record<Sort, string> = { name: "Name A–Z", price: "Lowest price" }
 
 /**
- * The marketplace: categories as text tabs pinned under the topbar —
+ * The marketplace, one white column: categories as text tabs pinned to
+ * the top of the card —
  * readable however many there are — over a grid of product photo tiles.
  * From a product, the drill-down goes to its grades, then to the sellers
  * offering that grade, with breadcrumbs back up. Search is the topbar's —
@@ -172,9 +173,9 @@ function SourcingWorkspace() {
   const selectCategory = (id: string) => setSelectedId(id)
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Marketplace</h1>
+    <ColumnCard
+      title="Marketplace"
+      action={
         <div className="flex items-center gap-2">
           {canScope && !flatMode ? (
             <ButtonGroup
@@ -189,11 +190,14 @@ function SourcingWorkspace() {
           ) : null}
           <WishlistSwitch checked={wishlistOnly} onCheckedChange={setWishlistOnly} />
         </div>
-      </div>
-
+      }
+      // Categories sit right under the title, fixed in the header, while
+      // the products scroll beneath.
+      toolbar={!flatMode && categories.length > 0 ? <CategoryTabs items={railItems} selectedId={activeId} onSelect={selectCategory} /> : undefined}
+    >
       {flatMode ? (
         <>
-          <div className="mt-5 flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 px-1">
             {query ? (
               <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-muted ps-3 pe-1 text-[12.5px] font-medium text-foreground">
                 Results for &ldquo;{query}&rdquo;
@@ -210,7 +214,7 @@ function SourcingWorkspace() {
           {flatResults.length === 0 ? (
             <EmptyState message={query ? `Nothing matches "${query}".` : "Nothing saved to your wishlist yet."} />
           ) : (
-            <motion.div layout className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+            <motion.div layout className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">
               <AnimatePresence mode="popLayout">
                 {flatResults.map((listing, index) => (
                   <motion.div
@@ -231,13 +235,7 @@ function SourcingWorkspace() {
         <EmptyState message="No sellers have listed anything yet." />
       ) : (
         <>
-          {/* Categories as words, pinned under the topbar while the
-              products scroll. */}
-          <div className="sticky z-20 -mx-2 mt-4 bg-background/90 px-2 py-1 backdrop-blur sm:-mx-1 sm:px-1" style={{ top: STICK_AT }}>
-            <CategoryTabs items={railItems} selectedId={activeId} onSelect={selectCategory} />
-          </div>
-
-          <div ref={resultsRef} className="mt-4 flex scroll-mt-32 items-center justify-between gap-2">
+          <div ref={resultsRef} className="mt-1.5 flex scroll-mt-14 items-center justify-between gap-2 px-1">
             <p className="text-[13px] text-muted-foreground">
               <span className="font-semibold text-foreground tabular-nums">{products.length}</span> {products.length === 1 ? "product" : "products"}
               {activeId !== ALL ? ` in ${railItems.find((item) => item.id === activeId)?.label}` : ""}
@@ -268,7 +266,7 @@ function SourcingWorkspace() {
           )}
         </>
       )}
-    </div>
+    </ColumnCard>
   )
 }
 
@@ -285,7 +283,7 @@ type ProductRow = {
 
 function ProductGrid({ products }: { products: ProductRow[] }) {
   return (
-    <motion.div layout className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+    <motion.div layout className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">
       <AnimatePresence mode="popLayout">
         {products.map((product, index) => (
           <motion.div
@@ -315,7 +313,7 @@ function ProductGrid({ products }: { products: ProductRow[] }) {
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="mt-6 flex flex-col items-center gap-3 rounded-[28px] bg-card py-16 text-center">
+    <div className="mt-3 flex flex-col items-center gap-3 rounded-[20px] bg-card py-16 text-center">
       <span className="grid size-12 place-items-center rounded-full bg-amama-subtle text-amama-deep">
         <StoreIcon className="size-5" strokeWidth={2.25} />
       </span>
@@ -328,7 +326,13 @@ function EmptyState({ message }: { message: string }) {
  *  boundary. */
 function SourcingView() {
   return (
-    <React.Suspense fallback={<div className="h-64 animate-pulse rounded-3xl bg-muted" />}>
+    <React.Suspense
+      fallback={
+        <ColumnCard title="Marketplace">
+          <div className="h-64 animate-pulse rounded-[16px] bg-muted" />
+        </ColumnCard>
+      }
+    >
       <SourcingWorkspace />
     </React.Suspense>
   )

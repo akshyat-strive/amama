@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { CheckCircle2Icon, ClockIcon } from "lucide-react"
 
+import { ColumnCard } from "@/components/ui/column-card"
 import { Panel } from "@/features/dashboard/dashboard-ui"
 import { PlansPanel } from "@/features/dashboard/plans-panel"
 import { useVerification } from "@/features/verification/verification-context"
@@ -19,12 +20,10 @@ function SettingsView({ role }: { role: OnboardingRole }) {
   const status = statusFor(role)
 
   return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Settings</h1>
-
+    <ColumnCard title="Settings">
       <Panel
         title="Verification"
-        className="mt-6"
+        className="bg-card"
         action={
           status === "approved" ? (
             <span className="flex items-center gap-1.5 text-[13px] font-medium text-amama-deep">
@@ -54,7 +53,7 @@ function SettingsView({ role }: { role: OnboardingRole }) {
       </Panel>
 
       <PlansPanel role={role} />
-    </div>
+    </ColumnCard>
   )
 }
 

@@ -98,7 +98,7 @@ function ClauseRow({
   const myLastProposal = [...clause.proposals].reverse().find((entry) => entry.by === viewer)
 
   return (
-    <div className="rounded-2xl border border-border bg-background p-3.5">
+    <div className="rounded-2xl bg-background p-3.5">
       <div className="flex items-start justify-between gap-2">
         <p className="text-[13px] font-bold text-foreground">{clause.label}</p>
         <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold", copy.className)}>

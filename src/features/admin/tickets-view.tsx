@@ -19,20 +19,23 @@ import { TicketsList } from "@/features/tickets/tickets-list"
 import { useTickets } from "@/features/tickets/ticket-store"
 import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
 import { countries } from "@/features/onboarding/countries"
-import type { ReviewStatus } from "@/features/verification/verification-context"
 import {
   approveApplication,
   useAllVerificationQueuesLoaded,
   useVerificationQueue,
   type AdminSubmission,
 } from "@/features/verification/admin-verification"
-import { kycTicketId } from "@/features/verification/ticket"
+import { owesUpload } from "@/features/verification/components/kyc-ticket-parts"
+import { resolveKycTicket } from "@/features/verification/kyc-store"
+import type { KycTicket, KycTicketStatus } from "@/features/verification/kyc-types"
 
 /**
- * Every KYC application as a ticket, in one queue, sliced by tags —
- * "seller KYC, producers, waiting on the applicant" — without switching
- * pages. What's in the queue follows the hierarchy: a KAM sees the
- * tickets they own plus unclaimed ones; Master KAMs and executives (who hold
+ * Every KYC ticket, in one queue, sliced by tags — "seller KYC, KAM
+ * requests, waiting on the applicant" — without switching pages. An
+ * account has many tickets over time: its onboarding submission, updates
+ * the account holder raises, and documents a KAM asks for. What's in the
+ * queue follows the hierarchy: a KAM sees the tickets they own plus
+ * unclaimed ones; Master KAMs and executives (who hold
  * `onboarding.viewAll`) see every ticket.
  */
 
@@ -42,6 +45,7 @@ type View = "list" | "board"
 
 type Ticket = {
   submission: AdminSubmission
+  ticket: KycTicket
   id: string
   state: TicketState
   tags: Tag[]
@@ -49,11 +53,17 @@ type Ticket = {
 
 const BOARD_COLUMNS: TicketState[] = ["open", "waiting", "resolved"]
 
-const STATE_OF: Record<ReviewStatus, TicketState | null> = {
-  pending: "open",
-  "changes-requested": "waiting",
-  approved: "resolved",
-  "not-submitted": null,
+const STATE_OF: Record<KycTicketStatus, TicketState> = {
+  open: "open",
+  "in-progress": "open",
+  waiting: "waiting",
+  resolved: "resolved",
+}
+
+const ORIGIN_TAG: Record<KycTicket["origin"], Tag> = {
+  onboarding: { id: "onboarding", label: "Onboarding" },
+  applicant: { id: "applicant-update", label: "Applicant update" },
+  staff: { id: "kam-request", label: "KAM request" },
 }
 
 const STATE_LABEL: Record<TicketState, { label: string; tone: Tone }> = {
@@ -64,9 +74,10 @@ const STATE_LABEL: Record<TicketState, { label: string; tone: Tone }> = {
 
 type Tag = { id: string; label: string }
 
-function tagsOf(submission: AdminSubmission): Tag[] {
+function tagsOf(submission: AdminSubmission, ticket: KycTicket): Tag[] {
   const tags: Tag[] = [
     submission.role === "buyer" ? { id: "buyer-kyc", label: "Buyer KYC" } : { id: "seller-kyc", label: "Seller KYC" },
+    ORIGIN_TAG[ticket.origin],
     submission.entityType === "organization" ? { id: "organisation", label: "Organisation" } : { id: "individual", label: "Individual" },
   ]
   if (submission.sellerSubType) {
@@ -85,6 +96,9 @@ const VIEWS = [
 const FILTER_TAGS: Tag[] = [
   { id: "buyer-kyc", label: "Buyer KYC" },
   { id: "seller-kyc", label: "Seller KYC" },
+  ORIGIN_TAG.onboarding,
+  ORIGIN_TAG.applicant,
+  ORIGIN_TAG.staff,
   { id: "organisation", label: "Organisation" },
   { id: "individual", label: "Individual" },
   { id: "producer", label: "Producer" },
@@ -137,24 +151,26 @@ function TicketsWorkspace() {
   const tickets = React.useMemo(
     () =>
       [...buyers, ...sellers]
-        .filter((submission) => seesAll || submission.assigneeId === myId || submission.assigneeId === null)
-        .map((submission) => ({
-          submission,
-          id: kycTicketId(submission.role, submission.email),
-          state: STATE_OF[submission.reviewStatus],
-          tags: tagsOf(submission),
-        }))
-        .filter((ticket): ticket is Ticket => ticket.state !== null)
-        .sort((a, b) => (b.submission.submittedAt ?? "").localeCompare(a.submission.submittedAt ?? "")),
+        .flatMap((submission) =>
+          submission.tickets.map((ticket): Ticket => ({
+            submission,
+            ticket,
+            id: ticket.id,
+            state: STATE_OF[ticket.status],
+            tags: tagsOf(submission, ticket),
+          }))
+        )
+        .filter(({ ticket }) => seesAll || ticket.assignee?.id === myId || !ticket.assignee)
+        .sort((a, b) => b.ticket.openedAt.localeCompare(a.ticket.openedAt)),
     [buyers, sellers, seesAll, myId]
   )
 
   const needle = query.trim().toLowerCase()
   const tagged = tickets.filter(
     (ticket) =>
-      (!mineOnly || ticket.submission.assigneeId === myId) &&
+      (!mineOnly || ticket.ticket.assignee?.id === myId) &&
       activeTags.every((tag) => ticket.tags.some((entry) => entry.id === tag)) &&
-      (!needle || [ticket.id, ticket.submission.fullName, ticket.submission.email].join(" ").toLowerCase().includes(needle))
+      (!needle || [ticket.id, ticket.ticket.title, ticket.submission.fullName, ticket.submission.email].join(" ").toLowerCase().includes(needle))
   )
   const visible = filter === "all" ? tagged : tagged.filter((ticket) => ticket.state === filter)
   const count = (state: Filter) => (state === "all" ? tagged.length : tagged.filter((ticket) => ticket.state === state).length)
@@ -171,16 +187,19 @@ function TicketsWorkspace() {
       return
     }
     if (to === "resolved") {
-      const blocked = ticket.submission.documents.some(
-        (document) => document.reviewStatus === "rejected" || (document.required && document.reviewStatus === "missing")
-      )
+      const onboarding = ticket.ticket.origin === "onboarding"
+      const blocked = onboarding
+        ? ticket.submission.documents.some((document) => document.reviewStatus === "rejected" || (document.required && document.reviewStatus === "missing"))
+        : ticket.ticket.items.some((entry) => owesUpload(entry.status))
       if (blocked) {
         detail.open(ticket.id)
         toast("This one is still waiting on the applicant")
         return
       }
-      approveApplication(ticket.submission.role, ticket.submission.userId, { id: admin.user.id, name: admin.user.name, title: admin.role.name })
-      toast.success(`${ticket.id} approved`)
+      const by = { id: admin.user.id, name: admin.user.name, title: admin.role.name }
+      if (onboarding) approveApplication(ticket.submission.role, ticket.submission.userId, by)
+      else resolveKycTicket(ticket.submission.role, ticket.submission.userId, ticket.id, by)
+      toast.success(`${ticket.id} ${onboarding ? "approved" : "resolved"}`)
     } else if (to === "waiting") {
       detail.open(ticket.id)
       toast("Say what needs fixing, then send it back")
@@ -194,7 +213,7 @@ function TicketsWorkspace() {
     return (
       <DetailPage backLabel="Tickets" onBack={detail.close} trail={["Tickets", sheetTicket.id]}>
         <TooltipProvider delay={300}>
-          <SubmissionCard submission={sheetTicket.submission} />
+          <SubmissionCard submission={sheetTicket.submission} ticketId={sheetTicket.id} onOpenTicket={detail.open} />
         </TooltipProvider>
       </DetailPage>
     )
@@ -219,21 +238,21 @@ function TicketsWorkspace() {
     return (
       <div>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="me-auto text-[34px] font-semibold tracking-[-0.03em]">Tickets</h1>
+          <h1 className="me-auto page-title text-[28px] font-semibold tracking-[-0.025em]">Tickets</h1>
           {typeSwitch}
         </div>
-        <div className="mt-4">
+        <div className="mt-3">
           <RequestsPanel />
         </div>
       </div>
     )
   }
-  const ownerName = (id: string | null) => (id ? (users.find((user) => user.id === id)?.name ?? "—") : "Unassigned")
+  const ownerName = (ticket: KycTicket) => (ticket.assignee ? (users.find((user) => user.id === ticket.assignee!.id)?.name ?? ticket.assignee.name) : "Unassigned")
 
   return (
     <div className={PAGE_TABS_SPACE}>
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="me-auto text-[34px] font-semibold tracking-[-0.03em]">Tickets</h1>
+        <h1 className="me-auto page-title text-[28px] font-semibold tracking-[-0.025em]">Tickets</h1>
         {typeSwitch}
         <ButtonGroup
           label="View"
@@ -304,7 +323,7 @@ function TicketsWorkspace() {
       </div>
 
       {!loaded ? (
-        <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-background">
+        <div className="mt-4 overflow-hidden rounded-2xl bg-background">
           <AdminListSkeleton rows={4} />
         </div>
       ) : view === "board" ? (
@@ -313,11 +332,11 @@ function TicketsWorkspace() {
         <AdminEmptyState
           icon={Inbox}
           title={filter === "open" ? "No open tickets" : "No tickets here"}
-          description="A ticket opens when someone finishes onboarding and submits their KYC."
+          description="A ticket opens when someone submits their KYC, raises a document update, or a KAM asks for a document."
         />
       ) : (
         <TooltipProvider delay={300}>
-          <ul className="mt-4 flex flex-col overflow-hidden rounded-2xl border border-border bg-background">
+          <ul className="mt-4 flex flex-col overflow-hidden rounded-2xl bg-background">
             {visible.map((ticket) => {
               const open = openId === ticket.id
               const state = STATE_LABEL[ticket.state]
@@ -332,7 +351,9 @@ function TicketsWorkspace() {
                     <span className="font-mono text-[12px] text-muted-foreground">{ticket.id}</span>
                     <span className="min-w-0 max-sm:col-span-2 max-sm:row-start-2">
                       <span className="block truncate text-[13.5px] font-semibold text-foreground">{ticket.submission.fullName || "Unnamed applicant"}</span>
-                      <span className="block truncate text-[12px] text-muted-foreground">{ticket.submission.email}</span>
+                      <span className="block truncate text-[12px] text-muted-foreground">
+                        {ticket.ticket.title} · {ticket.ticket.items.length} doc{ticket.ticket.items.length === 1 ? "" : "s"}
+                      </span>
                     </span>
                     <span className="flex min-w-0 flex-wrap gap-1 max-sm:col-span-2 max-sm:row-start-3">
                       {ticket.tags.map((tag) => (
@@ -348,17 +369,17 @@ function TicketsWorkspace() {
                       ))}
                     </span>
                     <span className="hidden truncate text-[12.5px] sm:block">
-                      <span className={ticket.submission.assigneeId ? "text-foreground" : "text-muted-foreground"}>{ownerName(ticket.submission.assigneeId)}</span>
+                      <span className={ticket.ticket.assignee ? "text-foreground" : "text-muted-foreground"}>{ownerName(ticket.ticket)}</span>
                     </span>
                     <span className="justify-self-end sm:justify-self-start max-sm:col-start-2 max-sm:row-start-1">
                       <StatusPill tone={state.tone}>{state.label}</StatusPill>
                     </span>
-                    <span className="hidden text-[12px] text-muted-foreground tabular-nums sm:block">{ago(ticket.submission.submittedAt)}</span>
+                    <span className="hidden text-[12px] text-muted-foreground tabular-nums sm:block">{ago(ticket.ticket.openedAt)}</span>
                     <ChevronDownIcon aria-hidden className={cn("hidden size-4 text-muted-foreground transition-transform sm:block", open && "rotate-180")} />
                   </button>
                   {open ? (
                     <div className="border-t border-border bg-muted/30 p-3">
-                      <SubmissionCard submission={ticket.submission} />
+                      <SubmissionCard submission={ticket.submission} ticketId={ticket.id} onOpenTicket={detail.open} />
                     </div>
                   ) : null}
                 </li>
@@ -382,7 +403,7 @@ function TicketBoard({
   tickets: Ticket[]
   onOpen: (id: string) => void
   onMove: (ticket: Ticket, to: TicketState) => void
-  ownerName: (id: string | null) => string
+  ownerName: (ticket: KycTicket) => string
 }) {
   const [dragging, setDragging] = React.useState<string | null>(null)
   const [over, setOver] = React.useState<TicketState | null>(null)
@@ -439,19 +460,19 @@ function TicketBoard({
                       }}
                       onClick={() => onOpen(ticket.id)}
                       className={cn(
-                        "w-full cursor-grab rounded-2xl border border-border bg-background p-3 text-start transition-shadow hover:shadow-md active:cursor-grabbing",
+                        "w-full cursor-grab rounded-2xl bg-background p-3 text-start transition-shadow hover:shadow-md active:cursor-grabbing",
                         dragging === ticket.id && "opacity-50"
                       )}
                     >
                       <span className="flex items-center justify-between gap-2">
                         <span className="font-mono text-[11.5px] text-muted-foreground">{ticket.id}</span>
-                        <span className="text-[11.5px] text-muted-foreground tabular-nums">{ago(ticket.submission.submittedAt)}</span>
+                        <span className="text-[11.5px] text-muted-foreground tabular-nums">{ago(ticket.ticket.openedAt)}</span>
                       </span>
                       <span className="mt-1.5 block truncate text-[13.5px] font-semibold text-foreground">
                         {ticket.submission.fullName || "Unnamed applicant"}
                       </span>
-                      <span className="block truncate text-[12px] text-muted-foreground">{ticket.submission.email}</span>
-                      <span className="mt-1 block truncate text-[11.5px] text-muted-foreground">Owner · {ownerName(ticket.submission.assigneeId)}</span>
+                      <span className="block truncate text-[12px] text-muted-foreground">{ticket.ticket.title}</span>
+                      <span className="mt-1 block truncate text-[11.5px] text-muted-foreground">Owner · {ownerName(ticket.ticket)}</span>
                       <span className="mt-2 flex flex-wrap gap-1">
                         {ticket.tags.map((tag) => (
                           <span
@@ -492,7 +513,7 @@ function RequestsPanel() {
   return (
     <TicketsList
       title="Requests"
-      heightClassName="h-[calc(100dvh-160px)] sm:h-[calc(100dvh-172px)]"
+      heightClassName="h-[calc(100dvh-152px)] sm:h-[calc(100dvh-156px)]"
       tickets={visible}
       me={{ kind: "staff", id: admin.user.id, name: admin.user.name, title: admin.role.name }}
       staff={users.map((user) => ({ id: user.id, name: user.name }))}

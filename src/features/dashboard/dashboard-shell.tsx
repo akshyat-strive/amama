@@ -29,7 +29,7 @@ const SIDEBAR_STORAGE_KEY = "amama.dashboardSidebarOpen"
 /** The topbar's height, kept in one place since both the header itself and
  *  everything that sits below it (sidebar, scrollable content) need to agree
  *  on it. */
-const TOPBAR_OFFSET = "pt-20"
+const TOPBAR_OFFSET = "pt-16"
 
 /**
  * The shell every `/[role]/dashboard/*` page renders inside: a topbar fixed
@@ -56,7 +56,7 @@ const TOPBAR_OFFSET = "pt-20"
  * the label visibility there have to move together or the rail would clip
  * text instead of hiding it.
  */
-const RAIL_WIDTH_MD = "md:w-[68px]"
+const RAIL_WIDTH_MD = "md:w-[60px]"
 
 /** What stays open while KYC is in review: the KYC ticket, support
  *  tickets and settings. Everything else waits for approval. */
@@ -147,7 +147,7 @@ function DashboardShell({
 
   return (
     <div className="h-dvh bg-card">
-      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center gap-4 bg-transparent ps-3 pe-4 sm:pe-6">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center gap-4 bg-transparent ps-3 pe-4 sm:pe-6">
         <SidebarToggle open={sidebarOpen} onToggle={toggleSidebar} />
         <TopbarBrand href="/" role={role === "seller" ? "Seller" : undefined} />
         <TopbarSearch perspective={role} email={person.email} basePath={tradeBase} />
@@ -210,7 +210,7 @@ function DashboardShell({
               desktop's collapsed rail never translates, it just resizes. */}
           <div
             className={cn(
-              "h-full p-3 transition-[width,transform] duration-300 ease-out md:pe-0",
+              "h-full bg-card p-3 transition-[width,transform] duration-300 ease-out md:pe-0",
               TOPBAR_OFFSET,
               sidebarOpen ? "w-64" : cn("w-64", RAIL_WIDTH_MD),
               sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 rtl:translate-x-full md:rtl:translate-x-0"

@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { ColumnCard } from "@/components/ui/column-card"
 import { DetailPage, useDetailRoute } from "@/components/ui/detail-page"
 import { Button } from "@/components/ui/button"
 import {
@@ -117,10 +118,9 @@ function ContractsView({ viewer, identity }: { viewer: ChatParty; identity: { id
 
 function ContractsSkeleton() {
   return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Contracts</h1>
-      <div className="mt-6 h-40 animate-pulse rounded-3xl bg-muted" />
-    </div>
+    <ColumnCard title="Contracts">
+      <div className="h-40 animate-pulse rounded-[16px] bg-muted" />
+    </ColumnCard>
   )
 }
 
@@ -180,69 +180,74 @@ function ContractsWorkspace({
 
   if (selected) {
     return (
-      <DetailPage backLabel="Contracts" onBack={detail.close} trail={["Contracts", selected.id]}>
+      <DetailPage
+        backLabel="Contracts"
+        onBack={detail.close}
+        trail={["Contracts", selected.listingTitle]}
+        meta={selected.reference}
+        status={<ContractStagePill contract={selected} />}
+      >
         <ContractDetail contract={selected} viewer={viewer} identity={identity} />
       </DetailPage>
     )
   }
 
   return (
-    <div className={PAGE_TABS_SPACE}>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Contracts</h1>
+    <ColumnCard title="Contracts">
+      <div className={PAGE_TABS_SPACE}>
+        <PageTabs
+          label="Contract lists"
+          className="px-1.5"
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { value: "requests", label: "Requests", count: requests.length },
+            { value: "prepared", label: "Prepared", count: prepared.length },
+          ]}
+        />
 
-      <PageTabs
-        label="Contract lists"
-        className="mt-5"
-        value={tab}
-        onChange={setTab}
-        tabs={[
-          { value: "requests", label: "Requests", count: requests.length },
-          { value: "prepared", label: "Prepared", count: prepared.length },
-        ]}
-      />
-
-      {tab === "requests" ? (
-        requests.length === 0 ? (
-          <p className="mt-6 rounded-2xl border border-dashed border-border px-5 py-10 text-center text-[13px] text-muted-foreground">
+        {tab === "requests" ? (
+          requests.length === 0 ? (
+            <p className="mt-4 rounded-2xl bg-card px-5 py-10 text-center text-[13px] text-muted-foreground">
+              {viewer === "kam"
+                ? "No agreed deals are waiting on a term sheet right now."
+                : "Once you and your counterparty agree a deal, request a term sheet and it'll show up here."}
+            </p>
+          ) : (
+            <ReviewGroup
+              className="mt-4"
+              header={
+                <ListHeader
+                  count={requests.length}
+                  noun={viewer === "kam" ? "deal waiting on a term sheet" : "agreed deal"}
+                  nounPlural={viewer === "kam" ? "deals waiting on a term sheet" : "agreed deals"}
+                />
+              }
+            >
+              {requests.map((deal) =>
+                viewer === "kam" ? (
+                  <KamRequestRow key={deal.id} deal={deal} contracts={contracts} me={identity} />
+                ) : (
+                  <TraderRequestRow key={deal.id} deal={deal} viewer={viewer as "buyer" | "seller"} identity={identity} />
+                )
+              )}
+            </ReviewGroup>
+          )
+        ) : prepared.length === 0 ? (
+          <p className="mt-4 rounded-2xl bg-card px-5 py-10 text-center text-[13px] text-muted-foreground">
             {viewer === "kam"
-              ? "No agreed deals are waiting on a term sheet right now."
-              : "Once you and your counterparty agree a deal, request a term sheet and it'll show up here."}
+              ? "Open a contract from an agreed deal on the Deals page and it'll appear here."
+              : "Once your account manager opens a contract, it shows up here."}
           </p>
         ) : (
-          <ReviewGroup
-            className="mt-4"
-            header={
-              <ListHeader
-                count={requests.length}
-                noun={viewer === "kam" ? "deal waiting on a term sheet" : "agreed deal"}
-                nounPlural={viewer === "kam" ? "deals waiting on a term sheet" : "agreed deals"}
-              />
-            }
-          >
-            {requests.map((deal) =>
-              viewer === "kam" ? (
-                <KamRequestRow key={deal.id} deal={deal} contracts={contracts} me={identity} />
-              ) : (
-                <TraderRequestRow key={deal.id} deal={deal} viewer={viewer as "buyer" | "seller"} identity={identity} />
-              )
-            )}
+          <ReviewGroup className="mt-4" header={<ListHeader count={prepared.length} noun="contract" nounPlural="contracts" />}>
+            {prepared.map((contract) => (
+              <ContractRow key={contract.id} contract={contract} viewer={viewer} onSelect={() => openContract(contract.id)} />
+            ))}
           </ReviewGroup>
-        )
-      ) : prepared.length === 0 ? (
-        <p className="mt-6 rounded-2xl border border-dashed border-border px-5 py-10 text-center text-[13px] text-muted-foreground">
-          {viewer === "kam"
-            ? "Open a contract from an agreed deal on the Deals page and it'll appear here."
-            : "Once your account manager opens a contract, it shows up here."}
-        </p>
-      ) : (
-        <ReviewGroup className="mt-4" header={<ListHeader count={prepared.length} noun="contract" nounPlural="contracts" />}>
-          {prepared.map((contract) => (
-            <ContractRow key={contract.id} contract={contract} viewer={viewer} onSelect={() => openContract(contract.id)} />
-          ))}
-        </ReviewGroup>
-      )}
-
-    </div>
+        )}
+      </div>
+    </ColumnCard>
   )
 }
 
@@ -379,7 +384,7 @@ function TraderRequestRow({
           <button
             type="button"
             onClick={() => requestContract(deal.id, viewer, identity.name)}
-            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-amama-deep px-3.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-amama-deep/90"
+            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-graphite px-3.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-black"
           >
             <FileTextIcon aria-hidden className="size-3.5" />
             Request term sheet
@@ -443,7 +448,7 @@ function KamRequestRow({
           <button
             type="button"
             onClick={() => createContract(deal, me)}
-            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-amama-deep px-3.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-amama-deep/90"
+            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-graphite px-3.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-black"
           >
             <PenLineIcon aria-hidden className="size-3.5" />
             Start term sheet
@@ -556,19 +561,36 @@ function ActionItemsBanner({ items }: { items: string[] }) {
   if (items.length === 0) return null
 
   return (
-    <div className="border-b border-slate-200 py-2 text-[12px]">
+    <div className="rounded-2xl bg-status-warning/8 px-4 py-3 text-[12px]">
       <div className="flex items-baseline justify-between gap-2 pb-1">
-        <span className="font-semibold text-slate-900">Needs attention</span>
+        <span className="font-semibold text-foreground">Needs attention</span>
       </div>
-      <div className="space-y-0.5 text-slate-700 leading-normal">
+      <div className="space-y-0.5 leading-normal text-foreground/80">
         {items.map((item, idx) => (
           <div key={item} className="flex items-baseline gap-1.5 break-words">
-            <span className="select-none text-slate-400">·</span>
+            <span className="text-muted-foreground select-none">·</span>
             <span className="flex-1">{item}</span>
           </div>
         ))}
       </div>
     </div>
+  )
+}
+
+/** The contract's stage as a dot pill — red once any clause is disputed.
+ *  Sits in the record page's header, beside the product name. */
+function ContractStagePill({ contract }: { contract: Contract }) {
+  const disputed = contract.clauses.some((clause) => clause.status === "disputed")
+  return (
+    <span
+      className={cn(
+        "flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
+        disputed ? "bg-destructive/10 text-destructive" : "bg-amama-subtle text-amama-deep"
+      )}
+    >
+      <span aria-hidden className={cn("size-1.5 rounded-full", disputed ? "bg-destructive" : "bg-amama-deep")} />
+      {CONTRACT_STAGE_LABELS[contract.stage]}
+    </span>
   )
 }
 
@@ -586,58 +608,36 @@ function ContractDetail({
   const isTrader = viewer === "buyer" || viewer === "seller"
   const myRequests = isTrader ? requestsForParty(contract, viewer) : contract.requests
   const actionItems = actionItemsFor(contract, viewer)
-  const disputed = contract.clauses.some((clause) => clause.status === "disputed")
 
   return (
     <div className="flex flex-col gap-4 pb-2">
-      {/* Header — the reference is a lookup key, so it stays small; the
-          product itself is the real headline. */}
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="font-mono text-[12px] text-muted-foreground">{contract.reference}</p>
-          <h2 className="mt-0.5 truncate text-[19px] font-semibold tracking-tight text-foreground">
-            {contract.listingTitle}
-          </h2>
-        </div>
-        <br />
-        <span
-          className={cn(
-            "flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
-            disputed ? "bg-destructive/10 text-destructive" : "bg-amama-subtle text-amama-deep"
-          )}
-        >
-          <span aria-hidden className={cn("size-1.5 rounded-full", disputed ? "bg-destructive" : "bg-amama-deep")} />
-          {CONTRACT_STAGE_LABELS[contract.stage]}
-        </span>
-      </div>
-
       {/* Who's actually party to this — the identifiable info a reader
           scans for first, given its own big, legible name each rather
           than folded into one small sentence. */}
-      <div className="my-4 flex w-full items-center justify-between text-[18px] font-semibold tracking-tight text-slate-900">
+      <div className="my-2 flex w-full items-center justify-between text-[18px] font-semibold tracking-tight text-foreground">
         <span className="flex-1 leading-4 text-left">{contract.buyerName}</span>
         
         {/* Center exchange bridge aligned horizontally across baseline */}
         <div className="flex shrink-0 items-center gap-3 px-6">
           <div className="flex w-16 items-center justify-between select-none">
             {Array.from({ length: 5 }).map((_, i) => (
-              <span key={i} className="size-1.5 rounded-full bg-slate-300" />
+              <span key={i} className="size-1.5 rounded-full bg-border" />
             ))}
           </div>
 
           {/* KAM metadata stacked cleanly without squeezing vertical space */}
           <div className="flex flex-col text-center">
-            <span className="text-[12px] font-semibold text-slate-700 leading-none">
+            <span className="text-[12px] leading-none font-semibold text-foreground/80">
               {contract.kamName}
             </span>
-            <span className="mt-1 text-[10px] font-medium uppercase tracking-wider text-slate-400 leading-none">
+            <span className="mt-1 text-[10px] leading-none font-medium tracking-wider text-muted-foreground uppercase">
               KAM
             </span>
           </div>
 
           <div className="flex w-16 items-center justify-between select-none">
             {Array.from({ length: 5 }).map((_, i) => (
-              <span key={i} className="size-1.5 rounded-full bg-slate-300" />
+              <span key={i} className="size-1.5 rounded-full bg-border" />
             ))}
           </div>
         </div>
@@ -651,7 +651,7 @@ function ContractDetail({
 
       {/* Where things stand, and what was actually agreed — one card,
           since the stage rail and the terms it produced are one story. */}
-      <section className="rounded-2xl border border-border bg-background p-5">
+      <section className="rounded-2xl bg-card p-5">
         <StageRail stage={contract.stage} />
         <dl className="mt-4 grid grid-cols-1 gap-x-4 gap-y-3 border-t border-border pt-4 sm:grid-cols-1">
           <Term label="Price" value={`${formatInr(contract.terms.pricePerTonneUsd)}/t`} />
@@ -702,7 +702,7 @@ function ContractDetail({
       ) : null}
 
       {contract.shipmentDates ? (
-        <section className="rounded-2xl border border-border bg-background p-5">
+        <section className="rounded-2xl bg-card p-5">
           <h3 className="flex items-center gap-2 text-[15px] font-semibold">
             <CalendarDaysIcon className="size-4 text-muted-foreground" />
             Shipping date
@@ -791,7 +791,7 @@ function PaperworkSection({
   const needsSellerConfirm = po?.status === "pending-seller-confirmation" && !cancelled
 
   return (
-    <section className="rounded-2xl border border-border bg-background p-5">
+    <section className="rounded-2xl bg-card p-5">
       {contract.clauses.length > 0 ? (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -984,10 +984,10 @@ function StageRail({ stage }: { stage: Contract["stage"] }) {
             className={cn(
               "flex items-center justify-between px-2.5 py-1.5 transition-colors",
               current
-                ? "bg-amber-50/90 font-semibold text-slate-900"
+                ? "bg-status-warning/10 font-semibold text-foreground"
                 : done
-                  ? "bg-slate-100/70 text-slate-700"
-                  : "bg-transparent text-slate-400"
+                  ? "bg-background text-foreground/80"
+                  : "bg-transparent text-muted-foreground"
             )}
           >
             <span className="truncate">{CONTRACT_STAGE_LABELS[entry]}</span>
@@ -995,10 +995,10 @@ function StageRail({ stage }: { stage: Contract["stage"] }) {
               className={cn(
                 "shrink-0 pl-2 font-mono text-[11px] select-none",
                 current
-                  ? "font-bold text-amber-600"
+                  ? "font-bold text-status-warning"
                   : done
                     ? "text-amama-deep"
-                    : "text-slate-300"
+                    : "text-muted-foreground/50"
               )}
             >
               {done ? "✓" : current ? "●" : "·"}

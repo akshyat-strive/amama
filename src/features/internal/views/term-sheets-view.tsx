@@ -258,7 +258,7 @@ function TermSheetDetailView({ termSheetId }: { termSheetId: string }) {
       <Group label="Clauses" count={`${agreed} of ${total} agreed`}>
         <Meter segments={clauseSegments(sheet)} className="mb-4" />
 
-        <div className="flex flex-col divide-y divide-border">
+        <div className="flex flex-col divide-inset">
           {sheet.clauses.map((clause, index) => (
             <div key={clause.id} className="py-3.5 first:pt-0 last:pb-0">
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">

@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { ColumnCard, useBlockFill } from "@/components/ui/column-card"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -113,10 +114,8 @@ function DealsView() {
   const canWork = admin.can("deals.work")
 
   return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Deals</h1>
-
-      <div className="mt-6 flex flex-col gap-8">
+    <ColumnCard title="Deals">
+      <div className="flex flex-col gap-8">
         {canViewAll ? (
           // `EveryDealSection` reads `useSearchParams` (for the Home page's
           // deep-linked filter) — that opts the route out of static
@@ -135,7 +134,7 @@ function DealsView() {
           <AdminEmptyState icon={HandshakeIcon} title="No deal permissions on your role" />
         ) : null}
       </div>
-    </div>
+    </ColumnCard>
   )
 }
 
@@ -213,10 +212,10 @@ function EveryDealSection({
 
   return (
     <div>
-      <h2 className="text-[15px] font-semibold text-foreground">Every deal</h2>
-      <p className="mt-1 text-[13px] text-muted-foreground">Across every team member — assign who&apos;s driving each one.</p>
+      <h2 className="px-1.5 text-[17px] font-semibold tracking-[-0.02em] text-foreground">Every deal</h2>
+      <p className="mt-0.5 px-1.5 text-[13px] text-muted-foreground">Across every team member — assign who&apos;s driving each one.</p>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <AdminStatCard
           label="Active deals"
           value={String(activeDeals.length)}
@@ -244,7 +243,7 @@ function EveryDealSection({
       <div
         role="tablist"
         aria-label="Filter deals"
-        className="mt-6 flex w-fit max-w-full gap-0.5 overflow-x-auto rounded-full border border-border bg-background p-1 [scrollbar-width:none]"
+        className="mt-5 flex w-fit max-w-full gap-0.5 overflow-x-auto rounded-full bg-card p-1 [scrollbar-width:none]"
       >
         {filters.map(({ id, label }) => (
           <button
@@ -255,14 +254,14 @@ function EveryDealSection({
             onClick={() => setFilter(id)}
             className={cn(
               "flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-semibold whitespace-nowrap transition-colors",
-              filter === id ? "bg-foreground text-background" : "text-foreground/70 hover:bg-muted hover:text-foreground"
+              filter === id ? "bg-foreground text-background" : "text-foreground/70 hover:bg-background hover:text-foreground"
             )}
           >
             {label}
             <span
               className={cn(
                 "rounded-full px-1.5 text-[11px] tabular-nums",
-                filter === id ? "bg-background/20 text-background" : "bg-muted text-muted-foreground"
+                filter === id ? "bg-background/20 text-background" : "bg-background text-muted-foreground"
               )}
             >
               {counts[id]}
@@ -274,7 +273,7 @@ function EveryDealSection({
       {visible.length === 0 ? (
         <AdminEmptyState icon={HandshakeIcon} title="Nothing here" />
       ) : (
-        <div className="mt-4 flex flex-col gap-3">
+        <div className="mt-4 flex flex-col gap-2">
           {visible.map((deal) => (
             <DealCard
               key={deal.id}
@@ -307,7 +306,7 @@ function DealContractAction({ deal, me }: { deal: Deal; me: { id: string; name: 
     return (
       <Link
         href={`/internal/contracts/${contract.id}`}
-        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted"
+        className="inline-flex h-8 items-center gap-1.5 rounded-full bg-card px-3 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted"
       >
         <FileSignatureIcon className="size-3.5" />
         Open {contract.reference}
@@ -351,7 +350,7 @@ function DealCard({
     <ReviewGroup
       header={
         <div className="flex items-start gap-3">
-          <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-background text-muted-foreground">
+          <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-background text-muted-foreground">
             <HandshakeIcon className="size-4" />
           </span>
           <div className="min-w-0 flex-1">
@@ -434,7 +433,7 @@ function DealCard({
               <button
                 type="button"
                 onClick={() => assignKam(deal.id, me, me.name)}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-[12.5px] font-semibold text-foreground transition-colors hover:bg-muted"
+                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-card px-3 text-[12.5px] font-semibold text-foreground transition-colors hover:bg-muted"
               >
                 <HandIcon aria-hidden className="size-3.5" />
                 {deal.assignedKamId ? "Take over" : "Assign to me"}
@@ -623,13 +622,13 @@ function MyDealsSection({ myUserId, myUserName }: { myUserId: string; myUserName
           description="Claim an agreed deal from Every deal above, or wait to be given one — either way it shows up here."
         />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+        <div className="grid gap-2 lg:grid-cols-[320px_1fr]">
           <ReviewGroup
             className="self-start"
             header={
               <p className="flex items-center justify-between text-[13px] font-semibold text-foreground">
                 My deals
-                <span className="rounded-full bg-card px-2 py-0.5 text-[11px] text-muted-foreground tabular-nums">{myDeals.length}</span>
+                <span className="rounded-full bg-background px-2 py-0.5 text-[11px] text-muted-foreground tabular-nums">{myDeals.length}</span>
               </p>
             }
           >
@@ -673,7 +672,7 @@ function MyDealsSection({ myUserId, myUserName }: { myUserId: string; myUserName
           {selected ? (
             <DealDetail deal={selected} myUserName={myUserName} />
           ) : (
-            <div className="flex items-center justify-center rounded-[20px] border border-dashed border-border py-16 text-center text-[13px] text-muted-foreground">
+            <div className="flex items-center justify-center rounded-[20px] bg-card py-16 text-center text-[13px] text-muted-foreground">
               Pick a deal to manage it.
             </div>
           )}
@@ -695,10 +694,11 @@ function DealDetail({ deal, myUserName }: { deal: Deal; myUserName: string }) {
   }
 
   const isLastStage = deal.stage === DEAL_STAGE_ORDER[DEAL_STAGE_ORDER.length - 1]
+  const fill = useBlockFill()
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="rounded-[20px] border border-border bg-background p-5">
+    <div className="flex flex-col gap-2">
+      <div className={cn("rounded-[20px] p-5", fill)}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="truncate text-[16px] font-semibold tracking-tight">{deal.listingTitle}</h2>

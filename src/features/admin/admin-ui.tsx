@@ -1,6 +1,9 @@
+"use client"
+
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { useBlockFill, useOnWhite } from "@/components/ui/column-card"
 
 /**
  * Admin-only counterparts to `dashboard-ui.tsx`'s `Panel`/`StatCard` — not a
@@ -29,8 +32,11 @@ function AdminPanel({
   className?: string
   action?: React.ReactNode
 }) {
+  // Inside a white column card the shell turns mist and the body stays
+  // white, so the panel still reads as one group.
+  const onWhite = useOnWhite()
   return (
-    <section className={cn("overflow-hidden rounded-[24px] bg-background p-2", className)}>
+    <section className={cn("overflow-hidden rounded-[24px] p-2", onWhite ? "bg-card" : "bg-background", className)}>
       <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-3.5">
         <div className="min-w-0">
           <h2 className="text-[17px] font-semibold tracking-[-0.02em] text-foreground">{title}</h2>
@@ -58,8 +64,9 @@ function AdminStatCard({
   caption?: string
   tone?: "brand" | "warning" | "plain"
 }) {
+  const fill = useBlockFill()
   return (
-    <div className="rounded-[20px] border border-border bg-background px-4 py-4">
+    <div className={cn("rounded-[20px] px-4 py-4", fill)}>
       <p className="text-[13px] font-medium text-muted-foreground">{label}</p>
       <p
         className={cn(
@@ -83,8 +90,9 @@ function AdminStatCard({
  *  "still counting" rather than a wrong "zero" flashing before the real
  *  number lands. */
 function AdminStatCardSkeleton() {
+  const fill = useBlockFill()
   return (
-    <div className="rounded-[20px] border border-border bg-background px-4 py-4">
+    <div className={cn("rounded-[20px] px-4 py-4", fill)}>
       <div className="h-[13px] w-16 animate-pulse rounded bg-muted" />
       <div className="mt-2.5 h-[28px] w-10 animate-pulse rounded bg-muted" />
       <div className="mt-2.5 h-[12px] w-24 animate-pulse rounded bg-muted" />
@@ -96,7 +104,7 @@ function AdminStatCardSkeleton() {
  *  for a Home-page list card while its own fetch is still in flight. */
 function AdminListSkeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <ul className="divide-y divide-border">
+    <ul className="divide-inset">
       {Array.from({ length: rows }).map((_, index) => (
         <li key={index} className="flex items-center gap-3 px-5 py-3.5">
           <span className="size-9 shrink-0 animate-pulse rounded-full bg-muted" />
@@ -114,7 +122,8 @@ function AdminListSkeleton({ rows = 3 }: { rows?: number }) {
  *  application) that don't need a distinct header band — just the shared
  *  hardcoded radius so every admin surface nests consistently. */
 function AdminCard({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <article className={cn("rounded-[20px] border border-border bg-background p-5", className)}>{children}</article>
+  const fill = useBlockFill()
+  return <article className={cn("rounded-[20px] p-5", fill, className)}>{children}</article>
 }
 
 /** The empty-state shape used across every admin queue/list. */
@@ -127,8 +136,15 @@ function AdminEmptyState({
   title: string
   description?: string
 }) {
+  // A mist block inside a white column card; a dashed outline on the page.
+  const onWhite = useOnWhite()
   return (
-    <div className="mt-6 flex flex-col items-center gap-3 rounded-[20px] border border-dashed border-border px-5 py-16 text-center">
+    <div
+      className={cn(
+        "mt-6 flex flex-col items-center gap-3 rounded-[20px] px-5 py-16 text-center",
+        onWhite ? "bg-card" : "border border-dashed border-border"
+      )}
+    >
       <Icon aria-hidden className="size-6 text-muted-foreground" />
       <p className="text-[15px] font-semibold">{title}</p>
       {description ? <p className="max-w-sm text-[13px] text-muted-foreground">{description}</p> : null}

@@ -3,6 +3,7 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { useOnWhite } from "@/components/ui/column-card"
 
 /**
  * Buttons joined into one control, Material 3's connected button group:
@@ -24,6 +25,8 @@ function ButtonGroup<T extends string>({
   size?: "sm" | "md"
   className?: string
 }) {
+  // On a white card the idle segments take the mist fill so they still read.
+  const idle = useOnWhite() ? "bg-card" : "bg-background"
   return (
     <div role="radiogroup" aria-label={label} className={cn("inline-flex gap-0.5", className)}>
       {options.map((option, index) => {
@@ -42,7 +45,7 @@ function ButtonGroup<T extends string>({
               "rounded-[6px]",
               index === 0 && (size === "sm" ? "rounded-s-[10px]" : "rounded-s-xl"),
               index === options.length - 1 && (size === "sm" ? "rounded-e-[10px]" : "rounded-e-xl"),
-              on ? "bg-amama text-white" : "bg-background text-foreground hover:bg-muted"
+              on ? "bg-graphite text-white dark:bg-white dark:text-black" : cn(idle, "text-foreground hover:bg-muted")
             )}
           >
             {Icon ? <Icon aria-hidden className="size-4" /> : null}

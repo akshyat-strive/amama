@@ -74,7 +74,7 @@ export const dashboardNav: Record<OnboardingRole, DashboardNavItem[]> = {
   seller: [
     { label: "Home", href: "/seller/dashboard", icon: HouseIcon, group: "overview" },
     { label: "Messages", href: "/seller/dashboard/messages", icon: MessageCircleIcon, group: "overview" },
-    { label: "My listings", href: "/seller/dashboard/listings", icon: SproutIcon, group: "selling" },
+    { label: "Listings", href: "/seller/dashboard/listings", icon: SproutIcon, group: "selling" },
     { label: "Buyers", href: "/seller/dashboard/buyers", icon: UsersIcon, group: "selling" },
     { label: "RFQs", href: "/seller/dashboard/rfqs", icon: ClipboardListIcon, group: "selling" },
     { label: "Contracts", href: "/seller/dashboard/contracts", icon: FileSignatureIcon, group: "selling" },

@@ -517,7 +517,7 @@ function StageDetailView({ tradeId, stageNo }: { tradeId: string; stageNo: numbe
         {documents.length === 0 ? (
           <EmptyState icon={PackageIcon} title="No documents on this stage yet" />
         ) : (
-          <div className="flex flex-col divide-y divide-border">
+          <div className="flex flex-col divide-inset">
             {documents.map((document) => (
               <div key={document.id} className="py-3 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">

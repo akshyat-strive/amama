@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     ".claude/**",
+    // Vendored Evil Charts registry code — kept as shipped so updates stay drop-in.
+    "src/components/evilcharts/**",
   ]),
 ]);
 

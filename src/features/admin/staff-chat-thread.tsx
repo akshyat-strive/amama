@@ -105,7 +105,7 @@ function StaffChatThread({
           className="relative shrink-0 p-3"
         >
           {mentionQuery !== null && filteredCandidates.length > 0 ? (
-            <div className="absolute inset-x-3 bottom-full mb-2 max-h-40 overflow-y-auto rounded-[16px] border border-border bg-background p-1.5 shadow-lg">
+            <div className="absolute inset-x-3 bottom-full mb-2 max-h-40 overflow-y-auto rounded-[16px] bg-background p-1.5 shadow-lg">
               {filteredCandidates.map((candidate) => (
                 <button
                   key={candidate.id}
@@ -138,7 +138,7 @@ function StaffChatThread({
               type="submit"
               disabled={draftText.trim().length === 0}
               aria-label="Send message"
-              className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors enabled:bg-amama-deep enabled:text-white enabled:hover:bg-amama-deep-hover disabled:opacity-50"
+              className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors enabled:bg-graphite enabled:text-white enabled:hover:bg-black disabled:opacity-50"
             >
               <SendIcon className="size-4 rtl:-scale-x-100" />
             </button>

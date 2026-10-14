@@ -136,7 +136,8 @@ function GradeCard({ href, grade, listings, rank, total }: { href: string; grade
 }
 
 /** A seller's offer at one grade — a person, not a product tile: who,
- *  where, how much, at what price. */
+ *  where, how much, at what price. One row of a list, an inset hairline
+ *  under it from the name onwards. */
 function SellerRow({ listing, href }: { listing: Listing; href: string }) {
   const country = countries.find((entry) => entry.code === listing.country)
   const initials = listing.sellerName
@@ -149,7 +150,7 @@ function SellerRow({ listing, href }: { listing: Listing; href: string }) {
     <li>
       <Link
         href={href}
-        className="group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 rounded-[22px] bg-card px-4 py-4 outline-none transition-colors hover:bg-[#ededf1] focus-visible:ring-2 focus-visible:ring-amama-deep/40 sm:grid-cols-[auto_minmax(0,1.4fr)_minmax(0,1fr)_auto_auto] sm:px-5 dark:hover:bg-muted"
+        className="chat-row group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 rounded-2xl px-3 py-3.5 outline-none transition-colors [--row-inset:4.75rem] hover:bg-card focus-visible:bg-card sm:grid-cols-[auto_minmax(0,1.4fr)_minmax(0,1fr)_auto_auto]"
       >
         <span aria-hidden className="grid size-12 place-items-center rounded-full bg-graphite text-[15px] font-semibold text-white">
           {initials}
@@ -179,7 +180,7 @@ function SellerRow({ listing, href }: { listing: Listing; href: string }) {
           <span className="block text-[18px] font-semibold tracking-[-0.02em] tabular-nums">{formatInr(listing.pricePerTonneUsd)}</span>
           <span className="block text-[12px] text-muted-foreground">per tonne</span>
         </span>
-        <span className="hidden h-9 items-center rounded-full border border-amama-deep px-4 text-[14px] font-medium text-amama-deep transition-colors group-hover:bg-amama-deep group-hover:text-white sm:inline-flex">
+        <span className="hidden h-9 items-center rounded-full border border-foreground/15 px-4 text-[14px] font-medium text-foreground transition-colors group-hover:bg-graphite group-hover:text-white sm:inline-flex">
           View offer
         </span>
       </Link>

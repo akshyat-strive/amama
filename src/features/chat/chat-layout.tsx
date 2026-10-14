@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 /** The page below the topbar (80px) and above the shell's bottom inset
  *  (none on a phone, 12px from `sm`) — the chat fills exactly that, and
  *  each column scrolls itself. */
-const FULL_HEIGHT = "h-[calc(100dvh-80px)] sm:h-[calc(100dvh-92px)]"
+const FULL_HEIGHT = "h-[calc(100dvh-72px)] sm:h-[calc(100dvh-76px)]"
 
 /**
  * Which conversation is open lives in the URL (`?conversation=`), so on a
@@ -85,12 +85,13 @@ function ChatLayout({
           open ? "hidden md:flex md:w-[300px] md:shrink-0 lg:w-[340px]" : "w-full flex-1"
         )}
       >
-        <header className="flex shrink-0 items-center justify-between gap-3 px-3 pt-2 pb-3">
-          <h1 className="text-[24px] font-semibold tracking-[-0.025em]">{title}</h1>
+        <header className="flex shrink-0 items-center justify-between gap-3 px-3 pt-1 pb-3">
+          <h1 className="text-[28px] font-semibold tracking-[-0.025em]">{title}</h1>
           {listAction}
         </header>
         {/* The list scrolls inside a white panel, so rows read on white
             and the mist column keeps the same 8px margin all round. */}
+        <div aria-hidden className="mx-3 h-px shrink-0 bg-border" />
         <div className="min-h-0 flex-1 overflow-y-auto rounded-[16px] bg-background p-1.5">{list}</div>
       </section>
 
@@ -99,27 +100,32 @@ function ChatLayout({
           aria-label="Conversation"
           className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-[24px] bg-background p-2 animate-in fade-in slide-in-from-right-3 duration-300"
         >
-          <header className="flex shrink-0 items-center gap-2 px-2 pt-1 pb-2.5">
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Back to chats"
-              className="-ms-1 grid size-9 shrink-0 place-items-center rounded-xl text-foreground/75 hover:bg-muted md:hidden"
-            >
-              <ChevronLeftIcon className="size-5 rtl:-scale-x-100" />
-            </button>
-            <div className="min-w-0 flex-1">{windowHeader}</div>
-            {windowActions}
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close conversation"
-              className="hidden size-9 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground md:grid"
-            >
-              <XIcon className="size-4" />
-            </button>
-          </header>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[16px] bg-background">{windowBody}</div>
+          {/* The conversation is one white panel: its header, an inset
+              hairline, then the messages — the way a chat window reads. */}
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[16px] bg-background">
+            <header className="flex shrink-0 items-center gap-2 px-4 py-3">
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Back to chats"
+                className="-ms-1 grid size-9 shrink-0 place-items-center rounded-xl text-foreground/75 hover:bg-muted md:hidden"
+              >
+                <ChevronLeftIcon className="size-5 rtl:-scale-x-100" />
+              </button>
+              <div className="min-w-0 flex-1">{windowHeader}</div>
+              {windowActions}
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close conversation"
+                className="hidden size-9 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground md:grid"
+              >
+                <XIcon className="size-4" />
+              </button>
+            </header>
+            <div aria-hidden className="mx-4 h-px shrink-0 bg-border" />
+            {windowBody}
+          </div>
         </section>
       ) : null}
     </div>
@@ -149,7 +155,7 @@ function ChatListRow({
       onClick={onClick}
       aria-current={active ? "true" : undefined}
       className={cn(
-        "flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-start transition-colors",
+        "chat-row flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-start transition-colors [--row-inset:3.875rem]",
         active ? "bg-amama text-white" : "text-foreground hover:bg-card"
       )}
     >

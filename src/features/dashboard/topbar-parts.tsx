@@ -57,9 +57,9 @@ function SidebarToggle({ open, onToggle }: { open: boolean; onToggle: () => void
       aria-label={open ? "Collapse navigation" : "Expand navigation"}
       aria-pressed={open}
       className={cn(
-        "group grid size-11 shrink-0 place-items-center rounded-2xl md:w-14",
-        "bg-charcoal text-lime",
-        "transition-[background-color,color,transform] duration-200 hover:bg-black active:scale-[0.96]",
+        "group grid size-9 shrink-0 place-items-center rounded-[10px] md:w-9",
+        "bg-transparent text-foreground/80",
+        "transition-[background-color,color,transform] duration-200 hover:bg-foreground/[0.06] hover:text-foreground active:scale-[0.96]",
         "outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       )}
     >

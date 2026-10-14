@@ -5,6 +5,7 @@ import { CheckIcon, CrownIcon, SparklesIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useOnWhite } from "@/components/ui/column-card"
 import { Panel } from "@/features/dashboard/dashboard-ui"
 import { usePlan, type PlanTier } from "@/features/dashboard/plan-store"
 import type { OnboardingRole } from "@/features/onboarding/types"
@@ -40,12 +41,14 @@ const PRO_FEATURES = [
  */
 function PlansPanel({ role }: { role: OnboardingRole }) {
   const [tier, setTier] = usePlan(`amama.plan.${role}`)
+  // Inside a white column card the panel turns mist so it reads as a group.
+  const onWhite = useOnWhite()
 
   return (
     <Panel
       title="Plans"
       subtitle="Upgrade for more visibility, faster support, and a dedicated concierge."
-      className="mt-6"
+      className={cn("mt-6", onWhite && "mt-3 bg-card")}
       action={
         tier !== "free" ? (
           <button

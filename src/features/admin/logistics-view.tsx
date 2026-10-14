@@ -2,9 +2,11 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowLeftIcon, ArrowRightIcon, ShipIcon } from "lucide-react"
+import { ArrowRightIcon, ShipIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { ColumnCard, OnWhite } from "@/components/ui/column-card"
+import { ChatLayout } from "@/features/chat/chat-layout"
 import { AdminEmptyState, AdminPanel, AdminStatCard } from "@/features/admin/admin-ui"
 import { formatInr } from "@/features/marketplace/currency"
 import {
@@ -47,11 +49,11 @@ function isOpenClaim(shipment: Shipment): boolean {
 }
 
 /**
- * The control tower: every shipment across every deal, full-width until
- * one is opened, then a narrow rail beside its full detail — same
- * transition shape as Contracts (`ContractGalleryCard`/`CompactContractRow`),
- * so a KAM working across Deals, Contracts and Logistics gets one
- * consistent "browse, then open" pattern instead of three different ones.
+ * The control tower: every shipment across every deal as one white
+ * column, full-width until one is opened, then a narrow list beside its
+ * full detail — the same list-and-window shape as chat, so a KAM working
+ * across Deals, Contracts and Logistics gets one "browse, then open"
+ * pattern instead of three different ones.
  */
 function LogisticsView() {
   const deals = useDeals()
@@ -61,12 +63,9 @@ function LogisticsView() {
 
   if (rows.length === 0) {
     return (
-      <div>
-        <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Logistics</h1>
-        <div className="mt-6">
-          <AdminEmptyState icon={ShipIcon} title="No shipments logged yet" />
-        </div>
-      </div>
+      <ColumnCard title="Logistics">
+        <AdminEmptyState icon={ShipIcon} title="No shipments logged yet" />
+      </ColumnCard>
     )
   }
 
@@ -75,11 +74,9 @@ function LogisticsView() {
   const openClaims = rows.filter((row) => isOpenClaim(row.shipment))
   const demurrageTotal = rows.reduce((sum, row) => sum + (row.shipment.demurrageUsd ?? 0), 0)
 
-  return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Logistics</h1>
-
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+  const board = (
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <AdminStatCard label="Shipments" value={String(rows.length)} />
         <AdminStatCard label="In transit" value={String(inTransit)} tone={inTransit > 0 ? "brand" : "plain"} />
         <AdminStatCard
@@ -96,68 +93,96 @@ function LogisticsView() {
         />
       </div>
 
-      {!selected ? (
-        <div className="mt-8 grid gap-4 lg:grid-cols-4">
-          {COLUMNS.map((column) => {
-            const items = rows.filter((row) => row.shipment.status === column.status)
-            return (
-              <AdminPanel
-                key={column.status}
-                title={column.label}
-                subtitle={`${items.length} shipment${items.length === 1 ? "" : "s"}`}
-              >
-                <div className="flex flex-col divide-y divide-border">
-                  {items.length === 0 ? (
-                    <p className="px-5 py-6 text-[13px] text-muted-foreground">Nothing here right now.</p>
-                  ) : (
-                    items.map(({ deal, shipment }) => (
-                      <ShipmentRow key={shipment.id} deal={deal} shipment={shipment} onOpen={() => setSelectedId(shipment.id)} />
-                    ))
-                  )}
-                </div>
-              </AdminPanel>
-            )
-          })}
-        </div>
-      ) : (
-        <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-start">
-          <button
-            type="button"
-            onClick={() => setSelectedId(null)}
-            className="inline-flex w-fit items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground lg:hidden"
-          >
-            <ArrowLeftIcon className="size-4" />
-            All shipments
-          </button>
-          <ul className="hidden flex-col gap-2 lg:flex lg:w-[280px] lg:shrink-0">
-            {rows.map(({ deal, shipment }) => (
-              <li key={shipment.id}>
-                <CompactShipmentRow
-                  deal={deal}
-                  shipment={shipment}
-                  active={shipment.id === selected.shipment.id}
-                  onSelect={() => setSelectedId(shipment.id)}
-                />
-              </li>
-            ))}
-          </ul>
-          <div className="min-w-0 flex-1">
-            <ShipmentDetail deal={selected.deal} shipment={selected.shipment} />
-          </div>
-        </div>
-      )}
+      <div className="grid gap-2 lg:grid-cols-4">
+        {COLUMNS.map((column) => {
+          const items = rows.filter((row) => row.shipment.status === column.status)
+          return (
+            <AdminPanel
+              key={column.status}
+              title={column.label}
+              subtitle={`${items.length} shipment${items.length === 1 ? "" : "s"}`}
+            >
+              <div className="flex flex-col divide-inset">
+                {items.length === 0 ? (
+                  <p className="px-5 py-6 text-[13px] text-muted-foreground">Nothing here right now.</p>
+                ) : (
+                  items.map(({ deal, shipment }) => (
+                    <ShipmentRow key={shipment.id} deal={deal} shipment={shipment} onOpen={() => setSelectedId(shipment.id)} />
+                  ))
+                )}
+              </div>
+            </AdminPanel>
+          )
+        })}
+      </div>
 
-      {openClaims.length > 0 && !selected ? (
-        <div className="mt-8">
-          <h2 className="text-[17px] font-semibold tracking-tight">Open claims</h2>
-          <div className="mt-3 flex flex-col gap-3">
+      {openClaims.length > 0 ? (
+        <section aria-label="Open claims" className="rounded-[24px] bg-card p-2">
+          <h2 className="px-4 pt-3 pb-3.5 text-[17px] font-semibold tracking-[-0.02em]">Open claims</h2>
+          <div className="divide-inset overflow-hidden rounded-[16px] bg-background">
             {openClaims.map(({ deal, shipment }) => (
               <ClaimRow key={shipment.id} deal={deal} shipment={shipment} onOpen={() => setSelectedId(shipment.id)} />
             ))}
           </div>
-        </div>
+        </section>
       ) : null}
     </div>
+  )
+
+  return (
+    <OnWhite>
+      <ChatLayout
+        title="Logistics"
+        open={selected !== null}
+        onClose={() => setSelectedId(null)}
+        list={
+          selected ? (
+            <ul>
+              {rows.map(({ deal, shipment }) => (
+                <li key={shipment.id}>
+                  <CompactShipmentRow
+                    deal={deal}
+                    shipment={shipment}
+                    active={shipment.id === selected.shipment.id}
+                    onSelect={() => setSelectedId(shipment.id)}
+                  />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            board
+          )
+        }
+        windowHeader={
+          selected ? (
+            <>
+              <p className="truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground">{selected.deal.listingTitle}</p>
+              <p className="truncate text-[12.5px] text-muted-foreground">
+                {selected.deal.buyerName} ↔ {selected.deal.sellerName}
+              </p>
+            </>
+          ) : null
+        }
+        windowActions={
+          selected ? (
+            <Link
+              href={`/internal/deals?deal=${selected.deal.id}`}
+              className="inline-flex h-9 shrink-0 items-center gap-1 rounded-xl px-3 text-[12.5px] font-medium text-amama-deep transition-colors hover:bg-muted"
+            >
+              Open deal
+              <ArrowRightIcon className="size-3.5 rtl:-scale-x-100" />
+            </Link>
+          ) : null
+        }
+        windowBody={
+          selected ? (
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-3">
+              <ShipmentDetail deal={selected.deal} shipment={selected.shipment} />
+            </div>
+          ) : null
+        }
+      />
+    </OnWhite>
   )
 }
 
@@ -222,8 +247,8 @@ function CompactShipmentRow({
       onClick={onSelect}
       aria-current={active ? "true" : undefined}
       className={cn(
-        "flex w-full items-start gap-2.5 rounded-[18px] border p-3.5 text-start transition-colors",
-        active ? "border-amama-deep bg-amama-subtle" : "border-border bg-card hover:bg-muted"
+        "chat-row flex w-full items-start gap-2.5 rounded-xl px-2.5 py-2.5 text-start transition-colors [--row-inset:1.75rem]",
+        active ? "bg-amama text-white" : "text-foreground hover:bg-card"
       )}
     >
       {cutoff ? (
@@ -232,8 +257,8 @@ function CompactShipmentRow({
         <span aria-hidden className="mt-1.5 size-2 shrink-0 rounded-full bg-border" />
       )}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-bold text-foreground">{deal.listingTitle}</p>
-        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{deal.buyerName} ↔ {deal.sellerName}</p>
+        <p className="truncate text-[13px] font-semibold">{deal.listingTitle}</p>
+        <p className={cn("mt-0.5 truncate text-[11.5px]", active ? "text-white/75" : "text-muted-foreground")}>{deal.buyerName} ↔ {deal.sellerName}</p>
         <p className="mt-1.5 inline-flex rounded-full bg-card px-2 py-0.5 text-[11px] font-semibold text-amama-deep">
           {LOGISTICS_STAGE_LABELS[shipment.stage]}
         </p>
@@ -249,7 +274,7 @@ function ClaimRow({ deal, shipment, onOpen }: { deal: Deal; shipment: Shipment; 
     <button
       type="button"
       onClick={onOpen}
-      className="flex w-full flex-wrap items-start justify-between gap-3 rounded-[20px] border border-border bg-background p-4 text-start transition-colors hover:bg-muted"
+      className="flex w-full flex-wrap items-start justify-between gap-3 px-5 py-3.5 text-start transition-colors hover:bg-muted"
     >
       <div className="min-w-0">
         <p className="text-[13px] font-bold text-destructive">{formatInr(claim.amountUsd)}</p>
@@ -353,30 +378,15 @@ function DocumentRegister({ shipment }: { shipment: Shipment }) {
   )
 }
 
-/** The full detail pane — a plain header and three-clock summary, then
- *  the shared tracker as the one bordered "card" on the page (it already
- *  carries the stage rail, cutoff chip, blocking documents, cold-chain
- *  strip and claim behind its own "Show details"), and the fuller
- *  document register underneath as a plain section — not another card
- *  wrapping a card. */
+/** The full detail pane — the three-clock summary (the window header
+ *  carries the deal's name), then the shared tracker as the one "card"
+ *  in the window (it already carries the stage rail, cutoff chip,
+ *  blocking documents, cold-chain strip and claim behind its own "Show
+ *  details"), and the fuller document register underneath as a plain
+ *  section — not another card wrapping a card. */
 function ShipmentDetail({ deal, shipment }: { deal: Deal; shipment: Shipment }) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-[17px] font-semibold tracking-tight text-foreground">{deal.listingTitle}</p>
-          <p className="truncate text-[13px] text-muted-foreground">
-            {deal.buyerName} ↔ {deal.sellerName}
-          </p>
-        </div>
-        <Link
-          href={`/internal/deals?deal=${deal.id}`}
-          className="inline-flex shrink-0 items-center gap-1 text-[12px] font-medium text-amama-deep hover:underline"
-        >
-          Open deal
-          <ArrowRightIcon className="size-3" />
-        </Link>
-      </div>
       <ThreeClocksLine deal={deal} shipment={shipment} />
       <ShipmentTracker shipment={shipment} />
       <DocumentRegister shipment={shipment} />

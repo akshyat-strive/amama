@@ -63,24 +63,24 @@ function DispatchChecklist({ deal, shipment }: { deal: Deal; shipment: Shipment 
   }
 
   return (
-    <div className="grid w-full grid-cols-1 items-center gap-3 border-b border-slate-100 bg-white px-4 py-3.5 text-start transition-colors hover:bg-slate-50/80 sm:grid-cols-[1.6fr_1fr_auto]">
+    <div className="chat-row grid w-full grid-cols-1 items-center gap-3 rounded-xl px-3 py-3.5 text-start transition-colors [--row-inset:0.75rem] hover:bg-card sm:grid-cols-[1.6fr_1fr_auto]">
       {/* Col 1: Listing & Buyer Info */}
       <div className="min-w-0 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="shrink-0 rounded-full bg-amama-subtle px-2 py-0.5 text-[11px] font-semibold text-amama-deep">
             Yours to move
           </span>
-          <p className="truncate text-[14px] font-bold text-slate-900">
+          <p className="truncate text-[14px] font-semibold text-foreground">
             {deal.listingTitle}
           </p>
         </div>
-        <p className="text-[12px] text-slate-500">
-          {LOGISTICS_STAGE_LABELS[shipment.stage]} · <span className="font-medium text-slate-700">{deal.buyerName}</span>
+        <p className="text-[12px] text-muted-foreground">
+          {LOGISTICS_STAGE_LABELS[shipment.stage]} · <span className="font-medium text-foreground/80">{deal.buyerName}</span>
         </p>
       </div>
 
       {/* Col 2: Context / Inline Temp Input when active */}
-      <div className="flex min-w-0 items-center text-[12px] text-slate-500">
+      <div className="flex min-w-0 items-center text-[12px] text-muted-foreground">
         {shipment.stage === "cold-storage" && logging ? (
           <div className="flex w-full items-center gap-1.5 sm:w-auto">
             <div className="relative w-24">
@@ -89,30 +89,30 @@ function DispatchChecklist({ deal, shipment }: { deal: Deal; shipment: Shipment 
                 placeholder="-18"
                 value={tempC}
                 onChange={(e) => setTempC(e.target.value)}
-                className="h-7 border-slate-200 bg-white pr-6 text-xs tabular-nums"
+                className="h-8 rounded-xl bg-background pr-6 text-xs tabular-nums"
                 autoFocus
               />
-              <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">
+              <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">
                 °C
               </span>
             </div>
             <button
               type="button"
               onClick={logTemperature}
-              className="inline-flex h-7 items-center rounded bg-slate-900 px-2.5 text-xs font-medium text-white hover:bg-slate-800"
+              className="inline-flex h-8 items-center rounded-xl bg-graphite px-3 text-xs font-medium text-white hover:bg-black"
             >
               Save
             </button>
             <button
               type="button"
               onClick={() => setLogging(false)}
-              className="px-1 text-xs text-slate-400 hover:text-slate-600"
+              className="px-1 text-xs text-muted-foreground hover:text-foreground"
             >
               Cancel
             </button>
           </div>
         ) : (
-          <span className="truncate text-slate-400 text-[11px]">
+          <span className="truncate text-[11px] text-muted-foreground">
             {shipment.stage === "cold-storage" ? "Cold store monitored" : "—"}
           </span>
         )}
@@ -124,7 +124,7 @@ function DispatchChecklist({ deal, shipment }: { deal: Deal; shipment: Shipment 
           <button
             type="button"
             onClick={() => setLogging(true)}
-            className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            className="inline-flex h-8 items-center gap-1 rounded-xl bg-card px-3 text-xs font-medium text-foreground ring-1 ring-border transition-colors hover:bg-muted"
           >
             <ThermometerIcon className="size-3.5 text-amama-deep" />
             <span>Temp</span>
@@ -135,13 +135,13 @@ function DispatchChecklist({ deal, shipment }: { deal: Deal; shipment: Shipment 
           <button
             type="button"
             onClick={advance}
-            className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-slate-800"
+            className="inline-flex h-8 items-center gap-1 rounded-xl bg-graphite px-3 text-xs font-semibold text-white transition-colors hover:bg-black"
           >
             <span>{next.label}</span>
-            <ArrowRightIcon className="size-3 text-slate-400" />
+            <ArrowRightIcon className="size-3 text-white/70" />
           </button>
         ) : (
-          <span className="text-[11px] text-slate-400">Waiting KAM booking</span>
+          <span className="text-[11px] text-muted-foreground">Waiting KAM booking</span>
         )}
       </div>
     </div>
@@ -170,15 +170,15 @@ function ShipmentDetail({ pair }: { pair: { deal: Deal; shipment: Shipment } }) 
 
   return (
     <ShipmentTracker
-            shipment={pair.shipment}
-            actions={
-              isSellersToMove && next ? (
-                <Button size="sm" onClick={advance}>
-                  {next.label}
-                </Button>
-              ) : undefined
-            }
-          />
+      shipment={pair.shipment}
+      actions={
+        isSellersToMove && next ? (
+          <Button size="sm" onClick={advance}>
+            {next.label}
+          </Button>
+        ) : undefined
+      }
+    />
   )
 }
 
@@ -195,8 +195,8 @@ function SellerShipmentsView() {
 function ShipmentsSkeleton() {
   return (
     <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Shipments</h1>
-      <div className="mt-6 h-40 animate-pulse rounded-3xl bg-muted" />
+      <h1 className="page-title text-[28px] font-semibold tracking-[-0.025em]">Shipments</h1>
+      <div className="mt-3 h-40 animate-pulse rounded-3xl bg-muted" />
     </div>
   )
 }
@@ -254,8 +254,8 @@ function SellerShipmentsWorkspace() {
   if (trackedShipments.length === 0) {
     return (
       <div>
-        <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Shipments</h1>
-        <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border px-5 py-16 text-center">
+        <h1 className="page-title text-[28px] font-semibold tracking-[-0.025em]">Shipments</h1>
+        <div className="mt-3 flex flex-col items-center gap-3 rounded-[20px] bg-card px-5 py-16 text-center">
           <ShipIcon aria-hidden className="size-6 text-muted-foreground" />
           <p className="text-[15px] font-semibold">No shipments yet</p>
           <p className="max-w-sm text-[13px] text-muted-foreground">
@@ -268,11 +268,11 @@ function SellerShipmentsWorkspace() {
 
   return (
     <div className={PAGE_TABS_SPACE}>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Shipments</h1>
+      <h1 className="page-title text-[28px] font-semibold tracking-[-0.025em]">Shipments</h1>
 
       <PageTabs
         label="Shipment lists"
-        className="mt-5"
+        className="mt-3"
         value={tab}
         onChange={setTab}
         tabs={[
@@ -283,18 +283,18 @@ function SellerShipmentsWorkspace() {
 
       {tab === "dispatch" ? (
         dispatchQueue.length === 0 ? (
-          <p className="mt-6 rounded-2xl border border-dashed border-border px-5 py-10 text-center text-[13px] text-muted-foreground">
+          <p className="mt-4 rounded-2xl bg-card px-5 py-10 text-center text-[13px] text-muted-foreground">
             Nothing needs your attention right now — every tracked shipment&apos;s already past your own leg of it.
           </p>
         ) : (
-          <div className="mt-4 flex flex-col divide-y divide-border rounded-2xl border border-border bg-background overflow-hidden">
+          <div className="mt-3 flex flex-col">
             {dispatchQueue.map(({ deal, shipment }) => (
               <DispatchChecklist key={shipment.id} deal={deal} shipment={shipment} />
             ))}
           </div>
         )
       ) : (
-        <ul className="mt-4 flex flex-col divide-y divide-border rounded-2xl border border-border bg-background overflow-hidden">
+        <ul className="mt-3 flex flex-col">
           {trackedShipments.map(({ shipment }) => (
             <li key={shipment.id}>
               <ShipmentRow shipment={shipment} onSelect={() => openShipment(shipment.id)} />

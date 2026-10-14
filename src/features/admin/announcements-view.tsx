@@ -1,5 +1,7 @@
 "use client"
 
+import { COLUMN_HEIGHT, OnWhite } from "@/components/ui/column-card"
+import { cn } from "@/lib/utils"
 import { StaffChatThread } from "@/features/admin/staff-chat-thread"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { useUsers } from "@/features/admin/user-store"
@@ -28,22 +30,26 @@ function AnnouncementsView() {
   const mentionCandidates = users.map((user) => ({ id: user.id, name: user.name }))
 
   return (
-    <div>
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Announcements</h1>
-
-      <div className="mt-6 overflow-hidden rounded-[20px] border border-border bg-background lg:h-[calc(100vh-220px)]">
-        <StaffChatThread
-          messages={messages}
-          currentSenderId={sender.id}
-          mentionCandidates={mentionCandidates}
-          readOnly={!canPost}
-          placeholder="Post an announcement…"
-          onSend={(text, mentions) => sendStaffMessage(STAFF_ANNOUNCEMENTS_CHANNEL_ID, sender, text, mentions)}
-          emptyState={<p className="text-[13px] text-muted-foreground">No announcements yet.</p>}
-          className="h-full"
-        />
-      </div>
-    </div>
+    <OnWhite>
+      <section aria-label="Announcements" className={cn("flex min-w-0 flex-col overflow-hidden rounded-[24px] bg-background p-2", COLUMN_HEIGHT)}>
+        <header className="shrink-0 px-3 pt-1 pb-3">
+          <h1 className="text-[28px] font-semibold tracking-[-0.025em]">Announcements</h1>
+        </header>
+        <div aria-hidden className="mx-3 h-px shrink-0 bg-border" />
+        <div className="min-h-0 flex-1">
+          <StaffChatThread
+            messages={messages}
+            currentSenderId={sender.id}
+            mentionCandidates={mentionCandidates}
+            readOnly={!canPost}
+            placeholder="Post an announcement…"
+            onSend={(text, mentions) => sendStaffMessage(STAFF_ANNOUNCEMENTS_CHANNEL_ID, sender, text, mentions)}
+            emptyState={<p className="text-[13px] text-muted-foreground">No announcements yet.</p>}
+            className="h-full"
+          />
+        </div>
+      </section>
+    </OnWhite>
   )
 }
 

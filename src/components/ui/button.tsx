@@ -9,9 +9,10 @@ import { cn } from "@/lib/utils"
  * and a springy press that scales down instead of nudging down a pixel.
  *
  * Apple's set, as in public/visual.html:
- * - `default` / `brand`: deep green (#0B7A43) with white text → 5.4:1 (AA).
- * - `outline`: the secondary — transparent with a 1px green ring and green
- *   text, filling green on hover. Never a bare text link.
+ * - `default`: near-black (#1d1d1f) with white text — the primary action.
+ * - `brand`: deep green, kept for the rare green moment.
+ * - `outline`: the secondary — transparent with a quiet grey ring, tinting
+ *   grey on hover. Never a bare text link.
  * - `secondary`: tonal grey fill.
  * - `sun`: bright yellow with graphite text, only *on* a green surface.
  * - `dark`: graphite with white text.
@@ -31,13 +32,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-amama-deep-hover",
+        default: "bg-graphite text-white hover:bg-black dark:bg-white dark:text-black dark:hover:bg-white/85",
         brand: "bg-amama text-amama-foreground hover:bg-amama-hover",
         sun: "bg-sun text-sun-foreground hover:bg-sun-hover",
         dark: "bg-graphite text-white hover:bg-graphite/85 dark:text-black",
         secondary: "bg-muted text-foreground hover:bg-[#dcdce1] dark:hover:bg-[#3a3a3c]",
-        outline:
-          "border-amama-deep bg-transparent text-amama-deep hover:bg-amama-deep hover:text-white dark:border-amama dark:text-amama",
+        outline: "border-foreground/15 bg-transparent text-foreground hover:border-foreground/25 hover:bg-muted",
         ghost: "text-foreground hover:bg-muted",
         destructive:
           "bg-destructive text-white hover:bg-[color:theme(colors.destructive.hover)] focus-visible:ring-destructive/30",

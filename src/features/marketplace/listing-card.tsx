@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ArrowUpRightIcon, ClockIcon, EyeOffIcon, MapPinIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useBlockFill } from "@/components/ui/column-card"
 import { productLabel } from "@/features/marketplace/catalog"
 import { CropImage } from "@/features/marketplace/crop-image"
 import { formatInr } from "@/features/marketplace/currency"
@@ -32,9 +33,10 @@ function ListingCard({
   const wishlist = useWishlist(personId ?? "")
   const wishlisted = !!personId && wishlist.includes(listing.id)
   const status = ownerView ? listing.moderationStatus : "verified"
+  const fill = useBlockFill()
 
   return (
-    <div className="group relative rounded-[22px] border border-border bg-background p-1.5 transition-[box-shadow,border-color] duration-200 hover:border-foreground/15">
+    <div className={cn("group relative rounded-[22px] p-1.5 transition-colors duration-200", fill, fill === "bg-card" && "hover:bg-[#ededf1] dark:hover:bg-muted")}>
       <Link href={href} className="block outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/40 rounded-[18px]">
         <div className="relative aspect-4/3 w-full overflow-hidden rounded-[16px] bg-muted">
           <CropImage

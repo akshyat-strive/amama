@@ -14,10 +14,10 @@ export type CardTone = "brand" | "neutral" | "success" | "warning" | "danger"
  *  a white icon, not a tint. Tinting every icon by its "type" is exactly
  *  the generic-SaaS tell this was rebuilt to get away from. */
 const iconToneStyles: Record<CardTone, string> = {
-  brand: "bg-muted text-foreground",
-  neutral: "bg-muted text-foreground",
-  success: "bg-muted text-foreground",
-  warning: "bg-muted text-foreground",
+  brand: "bg-background text-foreground",
+  neutral: "bg-background text-foreground",
+  success: "bg-background text-foreground",
+  warning: "bg-background text-foreground",
   danger: "bg-destructive text-white",
 }
 
@@ -27,7 +27,8 @@ const iconToneStyles: Record<CardTone, string> = {
  * card is something you can act on, and blurring the two is how people end
  * up scrolling past the thing that needs them.
  *
- * Plain white card, one thin neutral border. No tinted background wash and
+ * A mist card with the title on its own ground and the content on a white
+ * inset panel, so it stands apart from the white thread. No tinted wash and
  * no colored top spine — a card that announces "I am a brand-colored
  * object" before you've read a word of it is what makes a UI feel
  * AI-generated. The only color left is the icon badge's, and only for a
@@ -62,35 +63,30 @@ function CardShell({
   footer?: React.ReactNode
   cancelled?: CardCancelled | null
 }) {
+  const hasBody = !!children || !!cancelled || !!footer
   return (
-    <div
-      className={cn(
-        "w-full max-w-[92%] overflow-hidden rounded-[20px] border border-border bg-background sm:max-w-[420px]",
-        cancelled && "opacity-60"
-      )}
-    >
-      <div className="p-4">
-        <div className="flex items-start gap-3">
-          <span className={cn("grid size-9 shrink-0 place-items-center rounded-full", iconToneStyles[tone])}>
-            <Icon className="size-[18px]" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className={cn("text-[14px] font-bold leading-tight text-foreground", cancelled && "line-through")}>
-              {title}
-            </p>
-            {subtitle ? <p className="mt-0.5 text-[12px] text-muted-foreground">{subtitle}</p> : null}
-          </div>
+    <div className={cn("w-full max-w-[92%] overflow-hidden rounded-[20px] bg-card p-1.5 sm:max-w-[420px]", cancelled && "opacity-60")}>
+      <div className="flex items-start gap-3 px-2 pt-1.5 pb-2.5">
+        <span className={cn("grid size-9 shrink-0 place-items-center rounded-full", iconToneStyles[tone])}>
+          <Icon className="size-[18px]" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className={cn("text-[14px] font-bold leading-tight text-foreground", cancelled && "line-through")}>{title}</p>
+          {subtitle ? <p className="mt-0.5 text-[12px] text-muted-foreground">{subtitle}</p> : null}
         </div>
-        {children ? <div className={cn("mt-3.5", cancelled && "pointer-events-none")}>{children}</div> : null}
-        {cancelled ? (
-          <p className="mt-3.5 text-[12px] font-medium text-muted-foreground">
-            Cancelled by {cancelled.byName} ·{" "}
-            {new Date(cancelled.at).toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric" })}
-          </p>
-        ) : footer ? (
-          <div className="mt-3.5">{footer}</div>
-        ) : null}
       </div>
+      {hasBody ? (
+        <div className="rounded-[14px] bg-background p-3.5">
+          {children ? <div className={cn(cancelled && "pointer-events-none")}>{children}</div> : null}
+          {cancelled ? (
+            <p className={cn("text-[12px] font-medium text-muted-foreground", children && "mt-3.5")}>
+              Cancelled by {cancelled.byName} · {new Date(cancelled.at).toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric" })}
+            </p>
+          ) : footer ? (
+            <div className={cn(children && "mt-3.5")}>{footer}</div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   )
 }

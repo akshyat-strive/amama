@@ -12,7 +12,16 @@ import type { Tone } from "@/features/admin/review-ui"
 import { constraintFor, defaultConstraint, describeAccept, describeMaxSize, documentText, type DocumentId } from "@/features/documents/documents"
 import { useI18n } from "@/features/i18n/i18n-context"
 import { fileObjectUrl, putFile } from "@/features/local-db/file-store"
-import type { DocumentReviewStatus, DocumentVersion, KycComment, KycDocument, ReviewStatus } from "@/features/verification/kyc-types"
+import type {
+  DocumentReviewStatus,
+  DocumentVersion,
+  KycComment,
+  KycDocument,
+  KycTicketItemKind,
+  KycTicketOrigin,
+  KycTicketStatus,
+  ReviewStatus,
+} from "@/features/verification/kyc-types"
 
 export const applicationStatus: Record<ReviewStatus, { label: string; tone: Tone }> = {
   "not-submitted": { label: "Not submitted", tone: "neutral" },
@@ -25,7 +34,54 @@ export const documentStatus: Record<DocumentReviewStatus, { label: string; tone:
   missing: { label: "Requested", tone: "info" },
   pending: { label: "In review", tone: "neutral" },
   approved: { label: "Approved", tone: "success" },
-  rejected: { label: "Sent back", tone: "danger" },
+  rejected: { label: "Changes requested", tone: "danger" },
+  "update-requested": { label: "Update requested", tone: "warning" },
+}
+
+export const ticketStatus: Record<KycTicketStatus, { label: string; applicantLabel: string; tone: Tone; dot: string }> = {
+  open: { label: "Open", applicantLabel: "Awaiting a KAM", tone: "info", dot: "bg-sky-500" },
+  "in-progress": { label: "In progress", applicantLabel: "In review", tone: "warning", dot: "bg-status-warning" },
+  waiting: { label: "Waiting on applicant", applicantLabel: "Waiting on you", tone: "danger", dot: "bg-destructive" },
+  resolved: { label: "Resolved", applicantLabel: "Resolved", tone: "success", dot: "bg-amama-deep" },
+}
+
+export const ticketOrigin: Record<KycTicketOrigin, { label: string; applicantLabel: string }> = {
+  onboarding: { label: "Onboarding", applicantLabel: "Onboarding" },
+  applicant: { label: "Raised by applicant", applicantLabel: "Raised by you" },
+  staff: { label: "Raised by KAM", applicantLabel: "Requested by your KAM" },
+}
+
+export const itemKind: Record<KycTicketItemKind, string> = {
+  submitted: "Submitted",
+  update: "Update requested",
+  new: "New document",
+}
+
+/** Items the applicant still owes on a ticket. */
+export const owesUpload = (status: DocumentReviewStatus) => status === "missing" || status === "rejected" || status === "update-requested"
+
+/** The expiry on a document's current upload, if it has one. */
+export function expiryOf(document: KycDocument): string | null {
+  return document.versions.at(-1)?.expiresAt ?? null
+}
+
+const DAY = 86_400_000
+
+/** "expired", "soon" (within 30 days) or "ok". */
+export function expiryState(iso: string | null): "expired" | "soon" | "ok" | null {
+  if (!iso) return null
+  const left = new Date(iso).getTime() - Date.now()
+  if (left < 0) return "expired"
+  if (left < 30 * DAY) return "soon"
+  return "ok"
+}
+
+export function daysUntil(iso: string) {
+  return Math.ceil((new Date(iso).getTime() - Date.now()) / DAY)
+}
+
+export function formatDate(iso: string, withYear = true) {
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", ...(withYear ? { year: "numeric" } : {}) }).format(new Date(iso))
 }
 
 /** A document's name — the catalog's translated label, or the label the
@@ -212,7 +268,7 @@ function UploadVersionButton({
         onClick={() => inputRef.current?.click()}
         className={cn(
           "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold transition-colors disabled:opacity-50",
-          variant === "primary" ? "bg-amama-deep text-white hover:bg-amama-deep/90" : "border border-border bg-background text-foreground hover:bg-muted"
+          variant === "primary" ? "bg-graphite text-white hover:bg-black" : "border border-border bg-background text-foreground hover:bg-muted"
         )}
       >
         {busy ? <Loader2Icon aria-hidden className="size-3.5 animate-spin" /> : <UploadIcon aria-hidden className="size-3.5" />}
@@ -296,8 +352,10 @@ function Composer({
   docId,
   onDocChange,
   onSend,
+  generalLabel = "The whole application",
 }: {
   placeholder: string
+  generalLabel?: string
   documents: { id: string; label: string }[]
   docId: string | null
   onDocChange: (docId: string | null) => void
@@ -327,9 +385,9 @@ function Composer({
           <select
             value={docId ?? ""}
             onChange={(event) => onDocChange(event.target.value || null)}
-            className="h-8 max-w-[220px] truncate rounded-full border border-border bg-background px-2.5 text-[12.5px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/30"
+            className="h-8 max-w-[220px] truncate rounded-full bg-background px-2.5 text-[12.5px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-amama-deep/30"
           >
-            <option value="">The whole application</option>
+            <option value="">{generalLabel}</option>
             {documents.map((document) => (
               <option key={document.id} value={document.id}>
                 {document.label}

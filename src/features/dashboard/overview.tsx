@@ -1,318 +1,160 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { FileTextIcon, ShipIcon, TriangleAlertIcon } from "lucide-react"
-
-import { cn } from "@/lib/utils"
-import type { TradeStatus } from "@/features/dashboard/dashboard-ui"
 import {
-  buildLotMeta,
-  buildLotTrace,
-  buildOrderBook,
-  TOTAL_GATES,
-  type DemoOrder,
-} from "@/features/dashboard/demo-data"
-import { LotInspector } from "@/features/dashboard/lot-inspector"
-import { STATUS_META } from "@/features/dashboard/overview-charts"
-import { KpiWidgets } from "@/features/dashboard/kpi-widgets"
+  ClipboardCheckIcon,
+  ClipboardListIcon,
+  FileSignatureIcon,
+  FileTextIcon,
+  MessagesSquareIcon,
+  PackageCheckIcon,
+  PackageIcon,
+  ReceiptIcon,
+  ShipIcon,
+  SproutIcon,
+  WarehouseIcon,
+} from "lucide-react"
+
+import { formatInr } from "@/features/marketplace/currency"
+import { buildOrderBook } from "@/features/dashboard/demo-data"
+import { HoverBars, PaddedDonut, PipelineFlow, RevealArea, SemiRadial, StripedComposed, type Stage } from "@/features/dashboard/home-charts"
+import { HomeCard, HomeHeader, StatRow, TaskList, monthLabels, seedOf, series, weekLabels, type Stat, type Task } from "@/features/dashboard/home-ui"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import type { OnboardingRole } from "@/features/onboarding/types"
 
-const STATUS_ORDER: TradeStatus[] = ["on-track", "watch", "critical"]
+/**
+ * A seller's home, in the order their eye goes after signing in: four
+ * numbers (what's held, what's received, who's waiting on a price, who's
+ * asking), then where their deals stand from first chat to invoice, what
+ * to do next, what reached Mumbai, and how buyers are responding.
+ */
+function SellerHome({ seed, tonnes, lots }: { seed: number; tonnes: number; lots: number }) {
+  const weeks = weekLabels(8)
+  const received = series(seed + 5, 8, tonnes / 4 + 6, tonnes / 8 + 3)
+  const views = series(seed + 9, 8, 140, 50)
+  const enquiries = views.map((value, index) => Math.round(value / 9 + (index % 3)))
 
-const PILL: Record<TradeStatus, string> = {
-  "on-track": "bg-amama-subtle text-amama-deep",
-  watch: "bg-status-warning/12 text-status-warning",
-  critical: "bg-destructive/10 text-destructive",
-}
+  const stats: Stat[] = [
+    { label: "In our lots", value: `${tonnes} MT`, caption: `≈ ${formatInr(tonnes * 182_000)} held in amama warehouses`, trend: series(seed, 10, tonnes, tonnes / 3 + 4), icon: WarehouseIcon, href: "/seller/dashboard/orders?view=shipments" },
+    { label: "GRNs this month", value: String(lots * 3 + 2), caption: "Goods received at Mumbai", trend: series(seed + 3, 10, lots * 3, 4), icon: ClipboardCheckIcon, href: "/seller/dashboard/orders" },
+    { label: "RFQs to quote", value: String(Math.max(1, lots - 1)), caption: "Buyers waiting on your price", trend: series(seed + 7, 10, lots, 3), icon: ClipboardListIcon, href: "/seller/dashboard/rfqs" },
+    { label: "Buyer enquiries", value: String(enquiries[enquiries.length - 1]), caption: "Chats this week", trend: enquiries, icon: MessagesSquareIcon, href: "/seller/dashboard/messages" },
+  ]
 
-const GATES = ["Booked", "Collected", "Stored", "Containerised", "Sailed"]
+  const steps: Stage[] = [
+    { label: "Enquiries", value: 24 + (seed % 6), dropLabel: "Still chatting" },
+    { label: "KAM assist", value: 12 + (seed % 3), dropLabel: "Negotiating" },
+    { label: "Contract signed", value: 7, dropLabel: "Awaiting PO" },
+    { label: "PO received", value: 6, dropLabel: "In transit" },
+    { label: "GRN issued", value: 5, dropLabel: "Invoice due" },
+    { label: "Invoiced", value: 3 },
+  ]
 
-function StatusTag({ status }: { status: TradeStatus }) {
+  const tasks: Task[] = [
+    { title: "Sign contract", detail: "Basmati 1121 · 120 MT · Al Noor Foods", tag: "CT-2041", href: "/seller/dashboard/contracts", icon: FileSignatureIcon, urgent: true },
+    { title: "Acknowledge purchase order", detail: "Turmeric finger · 40 MT · FOB Nhava Sheva", tag: "PO-88213", href: "/seller/dashboard/orders", icon: FileTextIcon },
+    { title: "Quote on an RFQ", detail: "Red chilli Teja · 60 MT · Dubai", tag: "RFQ-1187", href: "/seller/dashboard/rfqs", icon: ClipboardListIcon },
+    { title: "Raise invoice", detail: "Goods received at Mumbai DC, QC passed", tag: "GRN-41820", href: "/seller/dashboard/orders", icon: ReceiptIcon },
+    { title: "Farm QC before dispatch", detail: "Lot L-2207 leaves Friday", tag: "QC", href: "/seller/dashboard/orders", icon: SproutIcon },
+  ]
+
   return (
-    <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap", PILL[status])}>
-      <span aria-hidden className={cn("size-1.5 rounded-full", STATUS_META[status].dot)} />
-      {STATUS_META[status].label}
-    </span>
-  )
-}
-
-function Steps({ cleared, status }: { cleared: number; status: TradeStatus }) {
-  const fill = status === "critical" ? "bg-destructive" : status === "watch" ? "bg-status-warning" : "bg-amama-deep"
-  return (
-    <span className="flex items-center gap-2" aria-label={`${cleared} of ${TOTAL_GATES} steps`}>
-      <span className="flex w-20 gap-[3px]">
-        {Array.from({ length: TOTAL_GATES }).map((_, index) => (
-          <span key={index} className={cn("h-1.5 flex-1 rounded-full", index < cleared ? fill : "bg-border")} />
-        ))}
-      </span>
-      <span className="text-[11.5px] text-muted-foreground tabular-nums">
-        {cleared}/{TOTAL_GATES}
-      </span>
-    </span>
-  )
-}
-
-/* ── the metrics row ───────────────────────────────────────────────────── */
-
-function Tile({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn("flex min-w-0 flex-col rounded-[20px] bg-card px-4 py-3.5", className)}>{children}</div>
-}
-
-function TileLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[12px] font-medium text-muted-foreground">{children}</p>
-}
-
-/** One number, then how it splits — the status mix as a single segmented
- *  bar rather than a second, smaller number underneath. */
-function StatusMixTile({ label, orders }: { label: string; orders: DemoOrder[] }) {
-  const counts = STATUS_ORDER.map((status) => ({ status, count: orders.filter((order) => order.status === status).length }))
-  return (
-    <Tile className="col-span-2 lg:col-span-5">
-      <div className="flex items-baseline justify-between gap-3">
-        <TileLabel>{label}</TileLabel>
-        <span className="text-[11.5px] text-muted-foreground tabular-nums">{orders.reduce((sum, order) => sum + order.tonnes, 0)} MT booked</span>
+    <>
+      <HomeHeader />
+      <div className="mt-6">
+        <StatRow stats={stats} />
       </div>
-      <p className="mt-1 text-[32px] leading-none font-semibold tracking-tight text-foreground tabular-nums">{orders.length}</p>
-      <div className="mt-3 flex h-2 gap-[3px] overflow-hidden rounded-full" aria-hidden>
-        {counts
-          .filter((entry) => entry.count > 0)
-          .map((entry) => (
-            <span key={entry.status} className={cn("rounded-full", STATUS_META[entry.status].dot)} style={{ flexGrow: entry.count }} />
-          ))}
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <HomeCard className="lg:col-span-2" title="Deal pipeline" subtitle="From first chat to invoice" href="/seller/dashboard/contracts" figure={String(steps[2].value)} figureCaption="contracts signed this season">
+          <PipelineFlow stages={steps} />
+        </HomeCard>
+        <HomeCard title="Up next" subtitle="What needs you today" href="/seller/dashboard/orders">
+          <TaskList tasks={tasks} />
+        </HomeCard>
+        <HomeCard title="Received at Mumbai" subtitle="Tonnes accepted each week, and the GRNs behind them" href="/seller/dashboard/orders?view=shipments" figure={`${received.reduce((sum, value) => sum + value, 0)} MT`} figureCaption="last 8 weeks">
+          <StripedComposed data={weeks.map((week, index) => ({ week, tonnes: received[index], grns: Math.max(1, Math.round(received[index] / 6)) }))} xKey="week" bar={{ key: "tonnes", label: "Tonnes", tone: "blue" }} line={{ key: "grns", label: "GRNs", tone: "orange" }} />
+        </HomeCard>
+        <HomeCard title="Enquiries by product" subtitle="Which listings buyers are asking about" href="/seller/dashboard/listings" figure={String(enquiries.reduce((a, b) => a + b, 0))} figureCaption="enquiries in 8 weeks">
+          <SemiRadial slices={[{ name: "Basmati", value: 38 + (seed % 7) }, { name: "Turmeric", value: 27 }, { name: "Red chilli", value: 21 }, { name: "Cumin", value: 14 }]} />
+        </HomeCard>
+        <HomeCard title="Stock by grade" subtitle="What's sitting in our lots for you" href="/seller/dashboard/orders?view=shipments" figure={`${tonnes} MT`} figureCaption="in storage">
+          <PaddedDonut slices={[{ name: "Grade A", value: Math.round(tonnes * 0.46) }, { name: "Grade B", value: Math.round(tonnes * 0.3) }, { name: "Premium", value: Math.round(tonnes * 0.16) }, { name: "Under QC", value: Math.max(1, Math.round(tonnes * 0.08)) }]} />
+        </HomeCard>
+        <HomeCard className="lg:col-span-3" title="Buyer interest" subtitle="Listing views and the chats they turn into" href="/seller/dashboard/listings" figure={`${Math.round((enquiries.reduce((a, b) => a + b, 0) / views.reduce((a, b) => a + b, 0)) * 100)}%`} figureCaption="of views become enquiries">
+          <HoverBars data={weeks.map((week, index) => ({ week, views: Math.round(views[index] / 10), enquiries: enquiries[index] }))} xKey="week" series={[{ key: "views", label: "Views ÷ 10", tone: "violet" }, { key: "enquiries", label: "Enquiries", tone: "pink" }]} variant="gradient" />
+        </HomeCard>
       </div>
-      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-        {counts.map((entry) => (
-          <li key={entry.status} className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-            <span aria-hidden className={cn("size-2 rounded-full", STATUS_META[entry.status].dot)} />
-            <span className="font-semibold text-foreground tabular-nums">{entry.count}</span>
-            {STATUS_META[entry.status].label}
-          </li>
-        ))}
-      </ul>
-    </Tile>
+    </>
   )
-}
-
-/** A value against its ceiling, drawn as an inline meter. */
-function MeterTile({ label, value, max, unit, caption }: { label: string; value: number; max: number; unit: string; caption: string }) {
-  const share = max > 0 ? Math.min(1, value / max) : 0
-  return (
-    <Tile className="col-span-2 sm:col-span-1 lg:col-span-3">
-      <TileLabel>{label}</TileLabel>
-      <p className="mt-1 text-[26px] leading-none font-semibold tracking-tight text-foreground tabular-nums">
-        {value}
-        <span className="ms-1 text-[13px] font-medium text-muted-foreground">{unit}</span>
-      </p>
-      <div className="mt-auto pt-3">
-        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-amama-deep" style={{ width: `${Math.round(share * 100)}%` }} />
-        </div>
-        <p className="mt-1.5 flex justify-between text-[11.5px] text-muted-foreground tabular-nums">
-          <span>{caption}</span>
-          <span>
-            {Math.round(share * 100)}% of {max} {unit}
-          </span>
-        </p>
-      </div>
-    </Tile>
-  )
-}
-
-/** The nearest arrival, with every arrival as a micro bar chart — shorter
- *  bars land sooner. */
-function ArrivalTile({ label, orders }: { label: string; orders: DemoOrder[] }) {
-  const sorted = [...orders].sort((a, b) => a.etaDays - b.etaDays)
-  const longest = Math.max(...orders.map((order) => order.etaDays), 1)
-  return (
-    <Tile className="col-span-1 lg:col-span-2">
-      <TileLabel>{label}</TileLabel>
-      <p className="mt-1 text-[26px] leading-none font-semibold tracking-tight text-foreground tabular-nums">
-        {sorted[0]?.etaDays ?? "—"}
-        <span className="ms-1 text-[13px] font-medium text-muted-foreground">days</span>
-      </p>
-      <div className="mt-auto flex h-7 items-end gap-1 pt-3" aria-hidden>
-        {sorted.map((order, index) => (
-          <span
-            key={order.id}
-            title={`${order.id} · ${order.etaDays} days`}
-            className={cn("flex-1 rounded-t-[3px]", index === 0 ? "bg-amama-deep" : "bg-muted-foreground/25")}
-            style={{ height: `${Math.max(18, (order.etaDays / longest) * 100)}%` }}
-          />
-        ))}
-      </div>
-    </Tile>
-  )
-}
-
-/** The one tile that should pull the eye — tinted, not just coloured text. */
-function AttentionTile({ orders, href }: { orders: DemoOrder[]; href: string }) {
-  const critical = orders.filter((order) => order.status === "critical").length
-  const delayed = orders.filter((order) => order.status === "watch").length
-  const total = critical + delayed
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "col-span-1 flex min-w-0 flex-col rounded-[20px] border px-4 py-3.5 transition-colors lg:col-span-2",
-        total > 0
-          ? "border-status-warning/30 bg-status-warning/10 hover:bg-status-warning/15"
-          : "border-border bg-card hover:bg-muted/60"
-      )}
-    >
-      <p className={cn("flex items-center gap-1.5 text-[12px] font-medium", total > 0 ? "text-status-warning" : "text-muted-foreground")}>
-        {total > 0 ? <TriangleAlertIcon aria-hidden className="size-3.5" /> : null}
-        Needs attention
-      </p>
-      <p className={cn("mt-1 text-[26px] leading-none font-semibold tracking-tight tabular-nums", total > 0 ? "text-status-warning" : "text-foreground")}>
-        {total}
-      </p>
-      <p className="mt-auto flex flex-wrap gap-x-2 pt-3 text-[11.5px] text-foreground/70">
-        <span>
-          <span className="font-semibold text-destructive tabular-nums">{critical}</span> action
-        </span>
-        <span>
-          <span className="font-semibold text-status-warning tabular-nums">{delayed}</span> delayed
-        </span>
-      </p>
-    </Link>
-  )
-}
-
-/* ── the order book ────────────────────────────────────────────────────── */
-
-function OrderActions({ order, role }: { order: DemoOrder; role: OnboardingRole }) {
-  const base = `/${role}/dashboard`
-  const action = "grid size-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-  return (
-    <span className="flex items-center justify-end gap-0.5">
-      <Link href={`${base}/orders?tab=eta&order=${order.id}`} onClick={(event) => event.stopPropagation()} className={action} title="Open order" aria-label={`Open order ${order.id}`}>
-        <FileTextIcon aria-hidden className="size-3.5" />
-      </Link>
-      <Link href={`${base}/shipments`} onClick={(event) => event.stopPropagation()} className={action} title="Track shipment" aria-label={`Track shipment for ${order.id}`}>
-        <ShipIcon aria-hidden className="size-3.5" />
-      </Link>
-    </span>
-  )
-}
-
-function OrderBook({
-  title,
-  orders,
-  selectedId,
-  onSelect,
-  role,
-}: {
-  title: string
-  orders: DemoOrder[]
-  selectedId: string | undefined
-  onSelect: (id: string) => void
-  role: OnboardingRole
-}) {
-  return (
-    <section className="overflow-hidden rounded-[20px] border border-border bg-background">
-      <header className="flex items-center justify-between gap-2 px-5 pt-4 pb-3">
-        <h2 className="text-[14px] font-semibold text-foreground">{title}</h2>
-        <span className="text-[12px] text-muted-foreground tabular-nums">{orders.length}</span>
-      </header>
-
-      <table className="hidden w-full border-t border-border text-[13px] md:table">
-        <thead>
-          <tr className="text-left text-[11px] text-muted-foreground">
-            <th className="py-2 ps-5 pe-3 font-medium">File</th>
-            <th className="px-3 py-2 font-medium">Quantity</th>
-            <th className="px-3 py-2 font-medium">Progress</th>
-            <th className="px-3 py-2 text-end font-medium">ETA</th>
-            <th className="px-3 py-2 font-medium">Status</th>
-            <th className="py-2 ps-3 pe-4">
-              <span className="sr-only">Actions</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border border-t border-border">
-          {orders.map((order) => {
-            const selected = order.id === selectedId
-            return (
-              <tr
-                key={order.id}
-                onClick={() => onSelect(order.id)}
-                className={cn("cursor-pointer transition-colors", selected ? "bg-amama-subtle/50" : "hover:bg-muted/50")}
-              >
-                <td className="py-2.5 ps-5 pe-3">
-                  <button type="button" aria-pressed={selected} onClick={() => onSelect(order.id)} className="block max-w-full text-start outline-none focus-visible:underline">
-                    <span className="block truncate font-medium text-foreground">
-                      {order.crop} · {order.variety}
-                    </span>
-                    <span className="block truncate font-mono text-[11px] text-muted-foreground">{order.id}</span>
-                  </button>
-                </td>
-                <td className="px-3 py-2.5 whitespace-nowrap">
-                  <span className="block font-medium text-foreground tabular-nums">{order.tonnes} MT</span>
-                  <span className="block text-[11px] text-muted-foreground">{order.grade}</span>
-                </td>
-                <td className="px-3 py-2.5">
-                  <Steps cleared={order.gatesCleared} status={order.status} />
-                  <span className="mt-0.5 block text-[11px] text-muted-foreground">{GATES[Math.max(0, order.gatesCleared - 1)]}</span>
-                </td>
-                <td className="px-3 py-2.5 text-end font-medium whitespace-nowrap text-foreground tabular-nums">{order.etaDays} d</td>
-                <td className="px-3 py-2.5">
-                  <StatusTag status={order.status} />
-                </td>
-                <td className="py-2.5 ps-3 pe-4">
-                  <OrderActions order={order} role={role} />
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-
-      <ul className="divide-y divide-border border-t border-border md:hidden">
-        {orders.map((order) => {
-          const selected = order.id === selectedId
-          return (
-            <li key={order.id} className={cn(selected && "bg-amama-subtle/50")}>
-              <button type="button" aria-pressed={selected} onClick={() => onSelect(order.id)} className="flex w-full flex-col gap-2 px-5 py-3 text-start">
-                <span className="flex items-center justify-between gap-2">
-                  <span className="min-w-0 truncate text-[13px] font-medium text-foreground">
-                    {order.crop} · {order.variety}
-                  </span>
-                  <StatusTag status={order.status} />
-                </span>
-                <span className="flex items-center justify-between gap-2 text-[12px] text-muted-foreground tabular-nums">
-                  <span>
-                    {order.tonnes} MT · ETA {order.etaDays} d
-                  </span>
-                  <Steps cleared={order.gatesCleared} status={order.status} />
-                </span>
-              </button>
-            </li>
-          )
-        })}
-      </ul>
-    </section>
-  )
-}
-
-/* ── the page ──────────────────────────────────────────────────────────── */
-
-const COPY: Record<OnboardingRole, { primary: string; volume: string; volumeCaption: string; arrival: string; book: string }> = {
-  buyer: { primary: "Active orders", volume: "Volume in transit", volumeCaption: "At sea", arrival: "Next arrival", book: "Order book" },
-  seller: { primary: "Live lots", volume: "Volume dispatched", volumeCaption: "Containerised", arrival: "Next delivery", book: "Consignments" },
 }
 
 /**
- * The home screen: one compact header, an asymmetric metrics row (the
- * status mix leads, supporting numbers carry their own micro-visuals, the
- * attention count is tinted), the season curve beside the status ring, and
- * a dense order book driving the lot inspector next to it.
+ * A buyer's home: spend, open POs, what lands soon, what's waiting on
+ * their signature — then the procurement pipeline from PR to paid
+ * invoice, what to do next, monthly spend, and arrivals.
  */
+function BuyerHome({ seed, tonnes, orders }: { seed: number; tonnes: number; orders: number }) {
+  const months = monthLabels(6)
+  const spend = series(seed + 4, 6, 42, 16)
+  const weeks = weekLabels(6).map((_, index) => `W+${index + 1}`)
+  const arriving = series(seed + 8, 6, tonnes / 5 + 8, tonnes / 10 + 4)
+
+  const stats: Stat[] = [
+    { label: "Spend this season", value: formatInr(tonnes * 214_000), caption: `${tonnes} MT contracted`, trend: series(seed, 10, tonnes, tonnes / 3 + 4), icon: ReceiptIcon, href: "/buyer/dashboard/orders" },
+    { label: "Open POs", value: String(orders), caption: "Issued and not yet received", trend: series(seed + 3, 10, orders, 2), icon: PackageIcon, href: "/buyer/dashboard/orders" },
+    { label: "Arriving in 14 days", value: `${arriving[0] + arriving[1]} MT`, caption: "Plan your warehouse slots", trend: series(seed + 7, 10, tonnes / 2, tonnes / 4 + 2), icon: ShipIcon, href: "/buyer/dashboard/orders?tab=eta" },
+    { label: "Contracts to sign", value: String(Math.max(1, Math.round(orders / 2))), caption: "Term sheets agreed, awaiting you", trend: series(seed + 11, 10, orders / 2, 2), icon: FileSignatureIcon, href: "/buyer/dashboard/contracts" },
+  ]
+
+  const steps: Stage[] = [
+    { label: "PR raised", value: 16 + (seed % 5), dropLabel: "Drafting RFQ" },
+    { label: "RFQ sent", value: 12, dropLabel: "Awaiting quotes" },
+    { label: "Contract signed", value: 7, dropLabel: "Comparing" },
+    { label: "PO issued", value: 6, dropLabel: "Supplier confirming" },
+    { label: "GRN received", value: 4, dropLabel: "On the water" },
+    { label: "Invoice paid", value: 3 },
+  ]
+
+  const tasks: Task[] = [
+    { title: "Compare quotes", detail: "Basmati 1121 · 4 sellers replied", tag: "RFQ-1172", href: "/buyer/dashboard/rfqs", icon: ClipboardListIcon, urgent: true },
+    { title: "Sign contract", detail: "Turmeric finger · 40 MT · CIF Jebel Ali", tag: "CT-2038", href: "/buyer/dashboard/contracts", icon: FileSignatureIcon },
+    { title: "Confirm goods received", detail: "Red chilli Teja · 18 MT landed", tag: "GRN-41766", href: "/buyer/dashboard/orders", icon: PackageCheckIcon },
+    { title: "Approve invoice", detail: "Matched to PO and GRN", tag: "INV-30912", href: "/buyer/dashboard/orders", icon: ReceiptIcon },
+  ]
+
+  return (
+    <>
+      <HomeHeader />
+      <div className="mt-6">
+        <StatRow stats={stats} />
+      </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <HomeCard className="lg:col-span-2" title="Procurement pipeline" subtitle="From requisition to paid invoice" href="/buyer/dashboard/orders" figure={String(steps[3].value)} figureCaption="purchase orders issued this season">
+          <PipelineFlow stages={steps} />
+        </HomeCard>
+        <HomeCard title="Up next" subtitle="What needs you today" href="/buyer/dashboard/orders">
+          <TaskList tasks={tasks} />
+        </HomeCard>
+        <HomeCard title="Spend" subtitle="Contracted value by month, ₹ lakh, and POs issued" href="/buyer/dashboard/orders" figure={`₹${spend.reduce((a, b) => a + b, 0)} L`} figureCaption="last 6 months">
+          <StripedComposed data={months.map((month, index) => ({ month, spend: spend[index], pos: Math.max(1, Math.round(spend[index] / 9)) }))} xKey="month" bar={{ key: "spend", label: "Spend", tone: "violet" }} line={{ key: "pos", label: "POs", tone: "orange" }} />
+        </HomeCard>
+        <HomeCard title="Spend by supplier" subtitle="Where this season's money went" href="/buyer/dashboard/orders" figure={formatInr(tonnes * 214_000)} figureCaption="contracted">
+          <PaddedDonut slices={[{ name: "Patil Agro", value: 34 }, { name: "Kaveri Farms", value: 26 }, { name: "Deccan Spice", value: 22 }, { name: "Others", value: 18 }]} />
+        </HomeCard>
+        <HomeCard title="Quotes per RFQ" subtitle="How many sellers answer each request" href="/buyer/dashboard/rfqs" figure={(3.6).toFixed(1)} figureCaption="quotes on average">
+          <HoverBars data={["Basmati", "Turmeric", "Chilli", "Cumin", "Pepper"].map((product, index) => ({ product, quotes: [5, 4, 3, 4, 2][index] + (seed % 2) }))} xKey="product" series={[{ key: "quotes", label: "Quotes", tone: "amber" }]} variant="duotone" />
+        </HomeCard>
+        <HomeCard className="lg:col-span-3" title="Arrivals" subtitle="Tonnes landing in the weeks ahead" href="/buyer/dashboard/orders?tab=eta" figure={`${arriving.reduce((a, b) => a + b, 0)} MT`} figureCaption="next 6 weeks">
+          <RevealArea data={weeks.map((week, index) => ({ week, arriving: arriving[index], planned: arriving[index] + 4 - (index % 3) * 3 }))} xKey="week" series={[{ key: "arriving", label: "Arriving", tone: "teal" }, { key: "planned", label: "Planned", tone: "blue" }]} />
+        </HomeCard>
+      </div>
+    </>
+  )
+}
+
 function DashboardOverview({ role }: { role: OnboardingRole }) {
   const { draft } = useOnboarding()
   const person = role === "buyer" ? draft.buyer : draft.seller
-  const firstName = person.fullName.trim().split(" ")[0]
-  const copy = COPY[role]
 
   const orders = React.useMemo(
     () =>
@@ -324,54 +166,16 @@ function DashboardOverview({ role }: { role: OnboardingRole }) {
       }),
     [role, draft.buyer.sourcing, draft.seller.produce, person.country, draft.buyer.companyName, draft.seller.farmName]
   )
-
-  const [selectedId, setSelectedId] = React.useState<string | null>(null)
-  const selected = orders.find((order) => order.id === selectedId) ?? orders[0]
-  const grower = draft.seller.farmName || "Sanjay Patil"
-
-  const booked = orders.reduce((sum, order) => sum + order.tonnes, 0)
-  const moving = orders.filter((order) => order.gatesCleared >= 4).reduce((sum, order) => sum + order.tonnes, 0)
+  const tonnes = orders.reduce((sum, order) => sum + order.tonnes, 0)
+  const seed = seedOf(person.email || role) + tonnes
 
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
-        <div>
-          <p className="text-[12px] text-muted-foreground">
-            Dashboard <span aria-hidden>/</span> <span className="text-foreground/80">Overview</span>
-          </p>
-          <h1 className="text-[34px] leading-tight font-semibold tracking-[-0.03em]">Overview</h1>
-        </div>
-        <p className="text-[12.5px] text-muted-foreground">{firstName ? `Welcome back, ${firstName}` : "Welcome back"}</p>
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-12">
-        <StatusMixTile label={copy.primary} orders={orders} />
-        <MeterTile label={copy.volume} value={moving} max={booked} unit="MT" caption={copy.volumeCaption} />
-        <ArrivalTile label={copy.arrival} orders={orders} />
-        <AttentionTile orders={orders} href={`/${role}/dashboard/orders?tab=eta`} />
-      </div>
-
-      <div className="mt-3">
-        <KpiWidgets role={role} orders={orders} />
-      </div>
-
-      <div className="mt-3 grid gap-3 lg:grid-cols-12 lg:items-start">
-        <div className="lg:col-span-8">
-          <OrderBook title={copy.book} orders={orders} selectedId={selected?.id} onSelect={setSelectedId} role={role} />
-        </div>
-        <div className="lg:col-span-4">
-          {selected ? (
-            <LotInspector
-              key={selected.id}
-              order={selected}
-              meta={buildLotMeta(selected, grower)}
-              trace={buildLotTrace(selected, grower)}
-            />
-          ) : null}
-        </div>
-      </div>
-
-      <p className="mt-3 text-[11.5px] text-muted-foreground">Demo data, derived from your onboarding answers.</p>
+      {role === "seller" ? (
+        <SellerHome seed={seed} tonnes={orders.filter((order) => order.gatesCleared >= 3).reduce((sum, order) => sum + order.tonnes, 0)} lots={orders.length} />
+      ) : (
+        <BuyerHome seed={seed} tonnes={tonnes} orders={orders.length} />
+      )}
     </div>
   )
 }

@@ -449,3 +449,48 @@ html[lang="kn"] {
     animation: none;
   }
 }
+/* Apple-style list dividers: hairlines inset from both edges instead of
+ * running wall to wall. Drawn as a background line, so row hover and
+ * selected fills still work on top of it. */
+@utility divide-inset {
+  & > :not(:last-child) {
+    background-image: linear-gradient(var(--border), var(--border));
+    background-size: calc(100% - 2.5rem) 1px;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+  }
+}
+
+/* Chat-style list rows: an inset hairline under each row, starting where
+ * the text starts. It steps aside for the hovered or selected row (and the
+ * row above it), so the rounded fill never sits on a line. */
+.chat-row {
+  position: relative;
+}
+.chat-row::after {
+  content: "";
+  position: absolute;
+  inset-inline: var(--row-inset, 0.75rem) 0.75rem;
+  bottom: -0.5px;
+  height: 1px;
+  background: var(--border);
+  pointer-events: none;
+  transition: opacity 150ms;
+}
+/* A row wrapped in its own <li> is always that li's last child, so the
+ * end-of-list check has to look at the li instead. */
+.chat-row:last-child:not(li > .chat-row)::after,
+li:last-child > .chat-row::after,
+.chat-row:hover::after,
+.chat-row[aria-current]::after,
+.chat-row:has(+ .chat-row:is(:hover, [aria-current]))::after,
+li:has(+ li > .chat-row:is(:hover, [aria-current])) > .chat-row::after {
+  opacity: 0;
+}
+
+/* Every dashboard page title sits at the same spot — 20px in, 12px down —
+ * whether it heads a bare page or sits inside a chat-style column card. */
+.page-title {
+  padding-inline-start: 1.25rem;
+  padding-top: 0.75rem;
+}

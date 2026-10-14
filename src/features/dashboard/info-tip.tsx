@@ -39,7 +39,7 @@ function InfoTip({
         <p className="text-[13px] font-semibold text-foreground">{title}</p>
         {children ? <div className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">{children}</div> : null}
         {rows && rows.length > 0 ? (
-          <dl className="mt-2.5 divide-y divide-border border-t border-border">
+          <dl className="mt-2.5 divide-inset border-t border-border">
             {rows.map((row) => (
               <div key={row.label} className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3 py-1.5 text-[12px]">
                 <dt className="text-muted-foreground">{row.label}</dt>

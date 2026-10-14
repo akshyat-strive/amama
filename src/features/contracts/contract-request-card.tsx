@@ -55,7 +55,7 @@ function ContractRequestCard({
         footer={
           <Link
             href={contractsHref(viewer, contract.id)}
-            className="inline-flex h-9 items-center justify-center rounded-full bg-amama-deep px-4 text-[13px] font-semibold text-white transition-colors hover:bg-amama-deep-hover"
+            className="inline-flex h-9 items-center justify-center rounded-full bg-graphite px-4 text-[13px] font-semibold text-white transition-colors hover:bg-black"
           >
             Open contract
           </Link>

@@ -25,9 +25,9 @@ function CredsView() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="text-[34px] font-semibold tracking-[-0.03em]">Demo credentials</h1>
+      <h1 className="page-title text-[28px] font-semibold tracking-[-0.025em]">Demo credentials</h1>
 
-      <AdminPanel title="Every seeded account" subtitle={`${users.length} accounts`} className="mt-6">
+      <AdminPanel title="Every seeded account" subtitle={`${users.length} accounts`} className="mt-3">
         <div className="flex flex-col gap-2 border-b border-border px-5 py-4">
           <p className="flex items-start gap-2 text-[13px] leading-relaxed text-muted-foreground">
             <InfoIcon className="mt-0.5 size-4 shrink-0" />
@@ -64,7 +64,7 @@ function CredsView() {
                 <th className="px-5 py-3 text-start">Reports to</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-inset">
               {users.map((user) => {
                 return (
                   <tr key={user.id}>
@@ -100,7 +100,7 @@ function CredsView() {
                 <th className="px-5 py-3 text-start">KYC</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-inset">
               {applicants.map((applicant) => (
                 <tr key={`${applicant.role}-${applicant.userId}`}>
                   <td className="px-5 py-3 font-medium text-foreground">{applicant.fullName}</td>

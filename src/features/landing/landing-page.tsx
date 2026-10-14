@@ -21,9 +21,9 @@ import {
 import { cn } from "@/lib/utils"
 import { AmamaWordmark } from "@/components/brand/amama-wordmark"
 import { CorridorFigure } from "@/features/landing/corridor-figure"
-import { HangingContainer } from "@/features/landing/hero-containers"
 import { MacMockup } from "@/features/landing/mac-mockup"
 import { PixelHalftone } from "@/features/landing/pixel-halftone"
+import { WAREHOUSE_STAGES, WarehouseFigure } from "@/features/landing/warehouse-figure"
 import "@/features/landing/landing.css"
 
 /** The three doors into the CRM — each signs in differently. */
@@ -140,25 +140,31 @@ function Nav() {
 
 function Hero() {
   return (
-    <section aria-labelledby="hero-title" className="overflow-hidden pb-[72px] text-center">
-      <div className="relative">
-      <Wrap className="relative z-10">
-        {/* The lift, centred over the headline at every width. The rope
-            runs off the top; the box is sized from the screen. */}
-        <div
-          aria-hidden
-          className="pointer-events-none relative mx-auto h-[calc(var(--w)*1.06+70px)] w-[calc(var(--w)+48px)] overflow-hidden [--w:clamp(170px,24vw,300px)]"
-        >
-          <HangingContainer className="hang-in absolute start-6 top-[calc(var(--w)*-0.892+66px)] w-[var(--w)]" />
-        </div>
-        <p className="mt-6 text-[15px] text-[#6e6e73]">Cross-border produce trade, India to the world</p>
-        <h1 id="hero-title" className="head mx-auto mt-4 max-w-[900px] text-[44px] leading-[1.04] tracking-[-0.03em] text-balance sm:text-[64px] lg:text-[80px]">
+    <section aria-labelledby="hero-title" className="overflow-hidden pb-[72px] pt-6 text-center sm:pt-10">
+      {/* The warehouse fills the top of the hero; the claim and the way in
+          sit centred beneath it. */}
+      <Wrap>
+        <figure className="mx-auto max-w-[800px]">
+          <WarehouseFigure />
+          <figcaption className="mt-6 grid grid-cols-2 gap-x-6 gap-y-5 text-start sm:hidden">
+            {WAREHOUSE_STAGES.map((stage) => (
+              <div key={stage.n}>
+                <p className="text-[14px]">
+                  <span className="text-[#6e6e73]">{stage.n} </span>
+                  <span className="font-semibold">{stage.title}</span>
+                </p>
+                <p className="text-[12.5px] text-[#6e6e73]">{stage.detail}</p>
+              </div>
+            ))}
+          </figcaption>
+        </figure>
+      </Wrap>
+
+      <Wrap className="mt-12 sm:mt-16">
+        <h1 id="hero-title" className="head mx-auto max-w-[900px] text-[44px] leading-[1.04] tracking-[-0.03em] text-balance sm:text-[64px] lg:text-[80px]">
           Farm to port to buyer.
           <span className="block text-[#6e6e73]">One ledger.</span>
         </h1>
-        <p className="mx-auto mt-6 max-w-[620px] text-[19px] leading-[1.42] text-[#6e6e73] sm:text-[21px]">
-          amama connects growers and importers, brings in an account manager when it matters, and tracks every lot from the field through our Mumbai DC to the buyer&apos;s door.
-        </p>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
           <PrimaryLink href={ENTRIES.buyer.href} size="lg">
             {ENTRIES.buyer.label}
@@ -171,7 +177,6 @@ function Hero() {
           On the amama team? <Link href={ENTRIES.team.href} className="text-[#1d1d1f] underline-offset-4 hover:underline">Sign in here ›</Link>
         </p>
       </Wrap>
-      </div>
       <Wrap className="mt-[72px] sm:mt-[96px]">
         <MacMockup />
       </Wrap>
@@ -388,31 +393,23 @@ function Plans() {
   return (
     <section id="plans" aria-labelledby="plans-title" className="py-[80px] sm:py-[112px] lg:py-[140px]">
       <Wrap>
-        <Title id="plans-title" lead="Plans." rest="Start free. Go further when you're ready." />
-        <div className="mt-16 grid gap-5 lg:grid-cols-3">
-          <div className="flex flex-col rounded-[28px] bg-[#f5f5f7] p-8 sm:p-10">
-            <p className="text-[14px] text-[#6e6e73]">Standard</p>
-            <p className="head mt-1 text-[40px] leading-none tracking-[-0.03em]">Free</p>
-            <p className="mt-3 text-[15px] text-[#6e6e73]">Everything you need to trade on amama.</p>
-            <ul className="mt-8 flex-1">
-              {["Marketplace, chat and RFQs", "KAM-assisted contracts", "Order and shipment tracking", "KYC and support tickets"].map((point) => (
-                <PlanPoint key={point}>{point}</PlanPoint>
-              ))}
-            </ul>
-            <div className="mt-8">
-              <GhostLink href="#start">Get started</GhostLink>
-            </div>
-          </div>
-
+        <Title id="plans-title" lead="Plans." rest="Unlocked once your KYC is updated." />
+        <div className="mx-auto mt-16 grid max-w-[920px] gap-5 lg:grid-cols-2">
           <div className="relative isolate flex flex-col overflow-hidden rounded-[28px] bg-[#1d1d1f] p-8 text-white sm:p-10">
-            <PixelHalftone color="rgba(255,255,255,0.2)" shape="top-right" seed={5} className="-z-10" />
+            <PixelHalftone color="rgba(255,255,255,0.2)" shape="top-right" seed={5} strength={0.75} className="-z-10" />
             <p className="flex items-center gap-1.5 text-[14px] text-white/60">
               <GemIcon aria-hidden className="size-4" strokeWidth={1.75} /> amama Pro
             </p>
             <p className="head mt-1 text-[40px] leading-none tracking-[-0.03em]">Pro</p>
-            <p className="mt-3 text-[15px] text-white/65">For teams trading every week.</p>
+            <p className="mt-3 text-[15px] text-white/65">Trade directly, with more on tap.</p>
             <ul className="mt-8 flex-1">
-              {["Faster account manager response", "Unlimited RFQs and listings", "Advanced deal and shipment analytics", "Priority document review"].map((point) => (
+              {[
+                "Buyers and sellers connect one to one",
+                "Faster account manager response",
+                "Unlimited RFQs and listings",
+                "Advanced deal and shipment analytics",
+                "Priority document review",
+              ].map((point) => (
                 <PlanPoint key={point} dark>
                   {point}
                 </PlanPoint>
@@ -426,14 +423,21 @@ function Plans() {
           </div>
 
           <div className="relative isolate flex flex-col overflow-hidden rounded-[28px] bg-[#f3e7c9] p-8 text-[#3b2a06] sm:p-10">
-            <PixelHalftone color="rgba(176,124,20,0.3)" shape="top-right" seed={9} className="-z-10" />
+            <PixelHalftone color="rgba(176,124,20,0.3)" shape="top-right" seed={9} strength={0.75} className="-z-10" />
             <p className="flex items-center gap-1.5 text-[14px] text-[#3b2a06]/65">
               <CrownIcon aria-hidden className="size-4" strokeWidth={1.75} /> amama Gold
             </p>
             <p className="head mt-1 text-[40px] leading-none tracking-[-0.03em]">Gold</p>
-            <p className="mt-3 text-[15px] text-[#3b2a06]/70">A concierge for every contract.</p>
+            <p className="mt-3 text-[15px] text-[#3b2a06]/70">Say what you need. We arrange it.</p>
             <ul className="mt-8 flex-1">
-              {["Priority account manager response", "Featured placement in RFQs and search", "White-glove contract concierge", "Early access to new sellers and buyers"].map((point) => (
+              {[
+                "Priority KAM assistance",
+                "Post a requirement and a need-by date — KAMs pool the demand and arrange the supply",
+                "Dynamic lot sizing",
+                "White-glove contract concierge",
+                "Featured placement in RFQs and search",
+                "Early access to new sellers and buyers",
+              ].map((point) => (
                 <PlanPoint key={point} gold>
                   {point}
                 </PlanPoint>

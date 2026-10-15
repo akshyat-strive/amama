@@ -301,7 +301,7 @@ function SourcingWorkspace() {
         <>
           {/* Categories sit just under the header's divider and stay put
               while the products scroll beneath. */}
-          <div ref={resultsRef} className="sticky top-0 z-20 -mx-1.5 -mt-1.5 bg-background px-3 pt-0.5">
+          <div ref={resultsRef} className="sticky -top-1.5 z-20 -mx-1.5 -mt-1.5 bg-background px-3 pt-2">
             <CategoryTabs items={railItems} selectedId={activeId} onSelect={selectCategory} />
             <div aria-hidden className="mt-2 h-px bg-border" />
           </div>

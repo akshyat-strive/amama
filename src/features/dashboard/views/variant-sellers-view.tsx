@@ -7,7 +7,6 @@ import { PackageSearchIcon } from "lucide-react"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { DetailColumnCard } from "@/components/ui/column-card"
 import { catalogCategory, productLabel, gradeSlug } from "@/features/marketplace/catalog"
-import { formatInr } from "@/features/marketplace/currency"
 import { useListings } from "@/features/marketplace/listing-store"
 import { SellerRow } from "@/features/marketplace/marketplace-ui"
 
@@ -61,15 +60,12 @@ function VariantSellersView({ categoryId, productId, variantSlug }: { categoryId
     )
   }
 
-  const prices = listings.map((listing) => listing.pricePerTonneUsd)
-
   return (
     <DetailColumnCard
       backHref={`/buyer/dashboard/sourcing/${categoryId}/${productId}`}
       backLabel={product}
       crumbs={crumbs}
       title={grade}
-      meta={`${listings.length} ${listings.length === 1 ? "seller" : "sellers"} · ${formatInr(Math.min(...prices))}${Math.max(...prices) > Math.min(...prices) ? ` – ${formatInr(Math.max(...prices))}` : ""}/t`}
       action={
         <ButtonGroup
           label="Sort sellers"

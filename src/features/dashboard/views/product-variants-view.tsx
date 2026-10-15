@@ -5,7 +5,6 @@ import { PackageSearchIcon } from "lucide-react"
 
 import { DetailColumnCard } from "@/components/ui/column-card"
 import { catalogCategory, productLabel, gradeSlug } from "@/features/marketplace/catalog"
-import { formatInr } from "@/features/marketplace/currency"
 import { useListings } from "@/features/marketplace/listing-store"
 import { GradeCard } from "@/features/marketplace/marketplace-ui"
 import { gradesFor } from "@/features/onboarding/steps"
@@ -41,7 +40,6 @@ function ProductVariantsView({ categoryId, productId }: { categoryId: string; pr
   }, [listings, productId])
 
   const name = productLabel(productId)
-  const minPrice = listings.length ? Math.min(...listings.map((listing) => listing.pricePerTonneUsd)) : 0
 
   return (
     <DetailColumnCard
@@ -52,7 +50,6 @@ function ProductVariantsView({ categoryId, productId }: { categoryId: string; pr
         { label: category.label, href: `/buyer/dashboard/sourcing/${categoryId}` },
       ]}
       title={name}
-      meta={`${grades.length} ${grades.length === 1 ? "grade" : "grades"} · ${new Set(listings.map((listing) => listing.sellerId)).size} sellers${listings.length ? ` · from ${formatInr(minPrice)}/t` : ""}`}
     >
       {grades.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-[20px] bg-card py-16 text-center">

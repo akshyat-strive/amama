@@ -49,7 +49,6 @@ function CategoryProductsView({ categoryId }: { categoryId: string }) {
       backLabel="Marketplace"
       crumbs={[{ label: "Marketplace", href: "/buyer/dashboard/sourcing" }]}
       title={category.label}
-      meta={`${products.length} ${products.length === 1 ? "product" : "products"}`}
     >
       {products.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-[20px] bg-card py-16 text-center">

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { BadgeCheckIcon, ChevronRightIcon, MapPinIcon, PackageIcon, UsersIcon } from "lucide-react"
+import { BadgeCheckIcon, ChevronLeftIcon, ChevronRightIcon, MapPinIcon, PackageIcon, UsersIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { formatInr } from "@/features/marketplace/currency"
@@ -34,8 +34,9 @@ function MarketplaceBreadcrumbs({ trail }: { trail: { label: string; href?: stri
   )
 }
 
-/** Categories as words, not photos — it stays readable however many
- *  categories there are, and scrolls sideways on a phone. */
+/** Categories as compact pills. Long lists scroll sideways, and a fade
+ *  with an arrow appears on whichever side has more — only when there is
+ *  more. */
 function CategoryTabs({
   items,
   selectedId,
@@ -45,27 +46,73 @@ function CategoryTabs({
   selectedId: string
   onSelect: (id: string) => void
 }) {
+  const track = React.useRef<HTMLDivElement>(null)
+  const [edge, setEdge] = React.useState({ start: false, end: false })
+
+  const measure = React.useCallback(() => {
+    const el = track.current
+    if (!el) return
+    const max = el.scrollWidth - el.clientWidth
+    const left = Math.abs(el.scrollLeft)
+    setEdge({ start: left > 2, end: left < max - 2 })
+  }, [])
+
+  // The observer reports the size on its first call too, so no separate
+  // initial measure is needed.
+  React.useEffect(() => {
+    const el = track.current
+    if (!el) return
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [measure, items.length])
+
+  const slide = (direction: 1 | -1) => {
+    const el = track.current
+    if (el) el.scrollBy({ left: direction * el.clientWidth * 0.7, behavior: "smooth" })
+  }
+
+  const arrow = "absolute top-1/2 z-10 grid size-7 -translate-y-1/2 place-items-center rounded-full bg-card text-foreground/80 transition-colors hover:bg-muted"
+
   return (
-    <div role="tablist" aria-label="Categories" className="-mx-1 flex gap-1.5 overflow-x-auto px-1 py-1 scrollbar-none">
-      {items.map((item) => {
-        const on = item.id === selectedId
-        return (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            aria-selected={on}
-            onClick={() => onSelect(item.id)}
-            className={cn(
-              "inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-[14.5px] font-medium transition-colors",
-              on ? "bg-graphite text-white" : "bg-card text-foreground hover:bg-muted"
-            )}
-          >
-            {item.label}
-            <span className={cn("text-[12.5px] tabular-nums", on ? "text-white/60" : "text-muted-foreground")}>{item.count}</span>
+    <div className="relative">
+      <div ref={track} role="tablist" aria-label="Categories" onScroll={measure} className="flex gap-1.5 overflow-x-auto py-0.5 scrollbar-none">
+        {items.map((item) => {
+          const on = item.id === selectedId
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              onClick={() => onSelect(item.id)}
+              className={cn(
+                "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium transition-colors",
+                on ? "bg-graphite text-white" : "bg-card text-foreground hover:bg-muted"
+              )}
+            >
+              {item.label}
+              <span className={cn("text-[11.5px] tabular-nums", on ? "text-white/60" : "text-muted-foreground")}>{item.count}</span>
+            </button>
+          )
+        })}
+      </div>
+      {edge.start ? (
+        <>
+          <div aria-hidden className="pointer-events-none absolute inset-y-0 start-0 z-[5] w-14 bg-gradient-to-r from-background via-background/80 to-transparent rtl:bg-gradient-to-l" />
+          <button type="button" aria-label="Scroll categories back" onClick={() => slide(-1)} className={cn(arrow, "start-0")}>
+            <ChevronLeftIcon aria-hidden className="size-4 rtl:-scale-x-100" />
           </button>
-        )
-      })}
+        </>
+      ) : null}
+      {edge.end ? (
+        <>
+          <div aria-hidden className="pointer-events-none absolute inset-y-0 end-0 z-[5] w-14 bg-gradient-to-l from-background via-background/80 to-transparent rtl:bg-gradient-to-r" />
+          <button type="button" aria-label="Scroll categories forward" onClick={() => slide(1)} className={cn(arrow, "end-0")}>
+            <ChevronRightIcon aria-hidden className="size-4 rtl:-scale-x-100" />
+          </button>
+        </>
+      ) : null}
     </div>
   )
 }
@@ -145,9 +192,10 @@ function GradeCard({ href, grade, listings, rank, total }: { href: string; grade
   )
 }
 
-/** A seller's offer at one grade — a person, not a product tile: who,
- *  where, how much, at what price. One row of a list, an inset hairline
- *  under it from the name onwards. */
+/** A seller's offer at one grade — a person, not a product tile. The name
+ *  and place on top; underneath, the offer's values separated by dots, with
+ *  the price on the same line. On a wide screen it all sits on one row. The
+ *  hairline under it starts at the row's edge, so it runs under the avatar. */
 function SellerRow({ listing, href }: { listing: Listing; href: string }) {
   const country = countries.find((entry) => entry.code === listing.country)
   const initials = listing.sellerName
@@ -160,35 +208,35 @@ function SellerRow({ listing, href }: { listing: Listing; href: string }) {
     <li>
       <Link
         href={href}
-        className="chat-row group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-2xl px-2 py-3 outline-none transition-colors [--row-inset:3.75rem] hover:bg-card focus-visible:bg-card sm:gap-x-4 sm:gap-y-2 sm:px-3 sm:py-3.5 sm:grid-cols-[auto_minmax(0,1.4fr)_minmax(0,1fr)_auto_auto] sm:[--row-inset:4.75rem]"
+        className="chat-row group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 rounded-2xl px-3 py-3.5 outline-none transition-colors [--row-inset:0.75rem] hover:bg-card focus-visible:bg-card sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] sm:gap-x-6"
       >
-        <span aria-hidden className="grid size-10 place-items-center rounded-full bg-graphite text-[14px] font-semibold text-white sm:size-12 sm:text-[15px]">
+        <span aria-hidden className="grid size-9 place-items-center rounded-full bg-graphite text-[13px] font-semibold text-white">
           {initials}
         </span>
         <span className="min-w-0">
           <span className="flex items-center gap-1.5">
-            <span className="truncate text-[15px] font-semibold tracking-[-0.016em] sm:text-[16px]">{listing.sellerName}</span>
+            <span className="truncate text-[15px] font-semibold tracking-[-0.016em]">{listing.sellerName}</span>
             {listing.moderationStatus === "verified" ? <BadgeCheckIcon aria-label="Verified listing" className="size-4 shrink-0 text-amama-deep" /> : null}
           </span>
-          <span className="block truncate text-[13px] text-muted-foreground">
+          <span className="block truncate text-[12.5px] text-muted-foreground">
             {country ? `${countryCodeToFlag(country.code)} ` : ""}
             {listing.region}
             {country ? `, ${country.name}` : ""}
           </span>
         </span>
-        <span className="col-span-2 col-start-2 row-start-2 flex gap-4 text-[12.5px] sm:col-span-1 sm:col-start-auto sm:text-[13px]">
-          <span>
-            <span className="block text-muted-foreground">Variety</span>
-            <span className="font-medium">{listing.variety}</span>
+        <ChevronRightIcon aria-hidden className="size-4 shrink-0 text-muted-foreground/60 sm:hidden rtl:-scale-x-100" />
+
+        {/* Second line on a phone; on a wide row these two sit in the row. */}
+        <span className="col-span-3 flex items-baseline justify-between gap-3 sm:contents">
+          <span className="min-w-0 truncate text-[13px] text-muted-foreground sm:text-start">
+            <span className="text-foreground">{listing.variety}</span>
+            <span aria-hidden className="mx-1.5">·</span>
+            <span className="tabular-nums">{listing.quantityMt} MT</span>
           </span>
-          <span>
-            <span className="block text-muted-foreground">Available</span>
-            <span className="font-medium tabular-nums">{listing.quantityMt} MT</span>
+          <span className="shrink-0 whitespace-nowrap sm:text-end">
+            <span className="text-[16px] font-semibold tracking-[-0.02em] tabular-nums">{formatInr(listing.pricePerTonneUsd)}</span>
+            <span className="text-[12px] text-muted-foreground"> /t</span>
           </span>
-        </span>
-        <span className="col-start-3 row-start-1 text-end sm:col-start-auto sm:row-start-auto sm:text-start">
-          <span className="block text-[16px] font-semibold tracking-[-0.02em] tabular-nums sm:text-[18px]">{formatInr(listing.pricePerTonneUsd)}</span>
-          <span className="block text-[12px] text-muted-foreground">per tonne</span>
         </span>
         <span className="hidden h-9 items-center rounded-full border border-foreground/15 px-4 text-[14px] font-medium text-foreground transition-colors group-hover:bg-graphite group-hover:text-white sm:inline-flex">
           View offer

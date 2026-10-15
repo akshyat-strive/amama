@@ -4,10 +4,13 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AnimatePresence, motion } from "motion/react"
-import { StoreIcon, XIcon } from "lucide-react"
+import { CheckIcon, ChevronDownIcon, SearchIcon, SlidersHorizontalIcon, StoreIcon, XIcon } from "lucide-react"
 
-import { ButtonGroup } from "@/components/ui/button-group"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import { ColumnCard } from "@/components/ui/column-card"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Sheet, SheetClose, SheetContent } from "@/components/ui/sheet"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CATALOG_CATEGORIES, productLabel, slugify, gradeSlug } from "@/features/marketplace/catalog"
 import { CategoryTabs } from "@/features/marketplace/marketplace-ui"
@@ -44,7 +47,6 @@ function SourcingWorkspace() {
   const buyer = buyerIdentity(draft.buyer)
   const mySourcing = draft.buyer.sourcing
   const preferences = draft.buyer.preferences
-  const incoterm = draft.buyer.incoterm
 
   /** Products the buyer told us they buy — picked outright, or through
    *  one of their varieties or grades. */
@@ -92,6 +94,7 @@ function SourcingWorkspace() {
   const [wishlistOnly, setWishlistOnly] = React.useState(false)
   const [scope, setScope] = React.useState<"all" | "mine">("all")
   const [selectedId, setSelectedId] = React.useState<string>(ALL)
+  const [filtersOpen, setFiltersOpen] = React.useState(false)
   const [sort, setSort] = React.useState<Sort>("name")
   const wishlist = useWishlist(buyer.id)
 
@@ -163,50 +166,111 @@ function SourcingWorkspace() {
 
   const resultsRef = React.useRef<HTMLDivElement>(null)
 
-  const clearQuery = () => {
+  const setQuery = (value: string) => {
     const params = new URLSearchParams(searchParams.toString())
-    params.delete("q")
+    if (value) params.set("q", value)
+    else params.delete("q")
     const next = params.toString()
     router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false })
   }
+  const clearQuery = () => setQuery("")
 
   const selectCategory = (id: string) => setSelectedId(id)
 
+  const SCOPES = { all: "All products", mine: "My preferences" } as const
+
   return (
+    <>
     <ColumnCard
       title="Marketplace"
+      heading={
+        <div className="flex items-center gap-2">
+        <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl bg-card px-3 text-muted-foreground focus-within:ring-2 focus-within:ring-ring/30 sm:max-w-md">
+          <SearchIcon aria-hidden className="size-4 shrink-0" />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search products, grades, sellers"
+            aria-label="Search the marketplace"
+            className="min-w-0 flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
+          />
+          {query ? (
+            <button type="button" onClick={clearQuery} aria-label="Clear search" className="grid size-6 shrink-0 place-items-center rounded-full hover:bg-muted">
+              <XIcon className="size-3.5" />
+            </button>
+          ) : null}
+        </label>
+        {/* On a phone the filters live in a bottom sheet. */}
+        <button
+          type="button"
+          onClick={() => setFiltersOpen(true)}
+          aria-label="Filters"
+          className="relative grid size-10 shrink-0 place-items-center rounded-xl bg-card text-foreground transition-colors hover:bg-muted sm:hidden"
+        >
+          <SlidersHorizontalIcon aria-hidden className="size-[18px]" />
+          {scope === "mine" || wishlistOnly || sort !== "name" ? <span aria-hidden className="absolute end-2 top-2 size-2 rounded-full bg-amama-deep ring-2 ring-card" /> : null}
+        </button>
+        </div>
+      }
       action={
         <div className="flex items-center gap-2">
           {canScope && !flatMode ? (
-            <ButtonGroup
-              label="Products shown"
-              value={scope}
-              onChange={setScope}
-              options={[
-                { value: "all", label: "All products" },
-                { value: "mine", label: "My interests" },
-              ]}
-            />
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                aria-label="Products shown"
+                className="inline-flex h-9 min-w-0 items-center gap-1.5 rounded-xl bg-card px-3 text-[13.5px] font-medium text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/30"
+              >
+                <SlidersHorizontalIcon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+                <span className="truncate">
+                  <span className="sm:hidden">{scope === "all" ? "All" : "Mine"}</span>
+                  <span className="hidden sm:inline">{SCOPES[scope]}</span>
+                </span>
+                <ChevronDownIcon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-48 p-1">
+                {(Object.keys(SCOPES) as (keyof typeof SCOPES)[]).map((key) => (
+                  <DropdownMenuItem key={key} onClick={() => setScope(key)} className="justify-between gap-3 py-2 text-[13.5px]">
+                    {SCOPES[key]}
+                    <CheckIcon aria-hidden className={cn("size-3.5 text-amama-deep", scope === key ? "opacity-100" : "opacity-0")} />
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem render={<Link href="/buyer/onboarding/sourcing?from=marketplace" />} className="py-2 text-[13.5px]">
+                  {preferences?.products.length || preferences?.grades.length || preferences?.categories.length ? "Edit my preferences" : "Set my preferences"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : null}
-          <WishlistSwitch checked={wishlistOnly} onCheckedChange={setWishlistOnly} />
+          <div className="flex items-center gap-2">
+            <WishlistSwitch checked={wishlistOnly} onCheckedChange={setWishlistOnly} />
+            {!flatMode && categories.length > 0 ? (
+              <Select items={SORT_ITEMS} value={sort} onValueChange={(next) => next && setSort(next as Sort)}>
+                <SelectTrigger size="sm" aria-label="Sort products" className="h-9 rounded-xl border-transparent bg-card">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  {(Object.keys(SORT_ITEMS) as Sort[]).map((key) => (
+                    <SelectItem key={key} value={key}>
+                      {SORT_ITEMS[key]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+          </div>
         </div>
       }
-      // Categories sit right under the title, fixed in the header, while
-      // the products scroll beneath.
-      toolbar={!flatMode && categories.length > 0 ? <CategoryTabs items={railItems} selectedId={activeId} onSelect={selectCategory} /> : undefined}
     >
       {flatMode ? (
         <>
           <div className="flex flex-wrap items-center gap-2 px-1">
             {query ? (
-              <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-muted ps-3 pe-1 text-[12.5px] font-medium text-foreground">
-                Results for &ldquo;{query}&rdquo;
-                <button type="button" onClick={clearQuery} aria-label="Clear search" className="grid size-6 place-items-center rounded-full hover:bg-card">
-                  <XIcon className="size-3.5" />
-                </button>
+              <span className="text-[13px] text-muted-foreground">
+                Results for <span className="font-medium text-foreground">&ldquo;{query}&rdquo;</span>
               </span>
             ) : null}
-            {wishlistOnly ? <span className="text-[12.5px] text-muted-foreground">Wishlist</span> : null}
+            {wishlistOnly ? <span className="text-[13px] text-muted-foreground">{query ? "· " : ""}Wishlist</span> : null}
             <span className="ms-auto text-[12px] text-muted-foreground tabular-nums">
               {flatResults.length} {flatResults.length === 1 ? "listing" : "listings"}
             </span>
@@ -235,38 +299,94 @@ function SourcingWorkspace() {
         <EmptyState message="No sellers have listed anything yet." />
       ) : (
         <>
-          <div ref={resultsRef} className="mt-1.5 flex scroll-mt-14 items-center justify-between gap-2 px-1">
-            <p className="text-[13px] text-muted-foreground">
-              <span className="font-semibold text-foreground tabular-nums">{products.length}</span> {products.length === 1 ? "product" : "products"}
-              {activeId !== ALL ? ` in ${railItems.find((item) => item.id === activeId)?.label}` : ""}
-              {" · "}
-              {incoterm && incoterm !== "notSure" ? `${incoterm.toUpperCase()} · ` : ""}
-              <Link href="/buyer/onboarding/sourcing?from=marketplace" className="font-medium text-amama-deep hover:underline">
-                {preferences?.products.length || preferences?.grades.length || preferences?.categories.length ? "Matched to your picks" : "Set preferences"}
-              </Link>
-            </p>
-            <Select items={SORT_ITEMS} value={sort} onValueChange={(next) => next && setSort(next as Sort)}>
-              <SelectTrigger size="sm" aria-label="Sort products" className="bg-card">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="end">
-                {(Object.keys(SORT_ITEMS) as Sort[]).map((key) => (
-                  <SelectItem key={key} value={key}>
-                    {SORT_ITEMS[key]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Categories sit just under the header's divider and stay put
+              while the products scroll beneath. */}
+          <div ref={resultsRef} className="sticky top-0 z-20 -mx-1.5 -mt-1.5 bg-background px-3 pt-0.5">
+            <CategoryTabs items={railItems} selectedId={activeId} onSelect={selectCategory} />
+            <div aria-hidden className="mt-2 h-px bg-border" />
           </div>
 
           {products.length === 0 ? (
             <EmptyState message="No sellers have listed anything in this category yet." />
           ) : (
-            <ProductGrid products={products} />
+            <div className="pt-1">
+              <ProductGrid products={products} />
+            </div>
           )}
         </>
       )}
     </ColumnCard>
+
+    <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+      <SheetContent side="responsive" className="overflow-y-auto sm:max-w-sm">
+        <div className="flex flex-col gap-6 pb-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Filters</h2>
+            <SheetClose aria-label="Close filters" className="grid size-9 place-items-center rounded-full bg-card text-foreground/75 transition-colors hover:bg-muted">
+              <XIcon aria-hidden className="size-4" />
+            </SheetClose>
+          </div>
+
+          {canScope && !flatMode ? (
+            <fieldset className="flex flex-col gap-2">
+              <legend className="mb-2 text-[13px] font-medium text-muted-foreground">Products shown</legend>
+              {(Object.keys(SCOPES) as (keyof typeof SCOPES)[]).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  role="radio"
+                  aria-checked={scope === key}
+                  onClick={() => setScope(key)}
+                  className={cn(
+                    "flex h-12 items-center justify-between rounded-2xl px-4 text-[15px] font-medium transition-colors",
+                    scope === key ? "bg-graphite text-white" : "bg-card text-foreground"
+                  )}
+                >
+                  {SCOPES[key]}
+                  {scope === key ? <CheckIcon aria-hidden className="size-4" /> : null}
+                </button>
+              ))}
+              <Link href="/buyer/onboarding/sourcing?from=marketplace" className="mt-1 text-[13.5px] font-medium text-amama-deep">
+                {preferences?.products.length || preferences?.grades.length || preferences?.categories.length ? "Edit my preferences" : "Set my preferences"}
+              </Link>
+            </fieldset>
+          ) : null}
+
+          <div className="flex items-center justify-between gap-4 rounded-2xl bg-card px-4 py-3">
+            <span>
+              <span className="block text-[15px] font-medium">Wishlist only</span>
+              <span className="block text-[12.5px] text-muted-foreground">Show just the listings you saved</span>
+            </span>
+            <WishlistSwitch checked={wishlistOnly} onCheckedChange={setWishlistOnly} />
+          </div>
+
+          {!flatMode && categories.length > 0 ? (
+            <fieldset className="flex flex-col gap-2">
+              <legend className="mb-2 text-[13px] font-medium text-muted-foreground">Sort by</legend>
+              <div className="flex gap-2">
+                {(Object.keys(SORT_ITEMS) as Sort[]).map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="radio"
+                    aria-checked={sort === key}
+                    onClick={() => setSort(key)}
+                    className={cn("h-11 flex-1 rounded-2xl text-[14.5px] font-medium transition-colors", sort === key ? "bg-graphite text-white" : "bg-card text-foreground")}
+                  >
+                    {SORT_ITEMS[key]}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
+
+          <Button className="w-full" onClick={() => setFiltersOpen(false)}>
+            Show products
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
+    </>
   )
 }
 

@@ -36,12 +36,17 @@ function useBlockFill() {
  */
 function ColumnCard({
   title,
+  heading,
   action,
   toolbar,
   children,
   className,
 }: {
   title: string
+  /** Replaces the visible title — a search field, say. `title` stays as
+   *  the page's accessible name. With a heading slot the action is for
+   *  wide screens only; the heading carries its own phone controls. */
+  heading?: React.ReactNode
   action?: React.ReactNode
   toolbar?: React.ReactNode
   children: React.ReactNode
@@ -51,8 +56,15 @@ function ColumnCard({
     <OnWhite>
       <section aria-label={title} className={cn("flex min-w-0 flex-col overflow-hidden rounded-[24px] bg-background p-2", COLUMN_HEIGHT, className)}>
         <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-3 pt-1 pb-3">
-          <h1 className="text-[28px] font-semibold tracking-[-0.025em]">{title}</h1>
-          {action}
+          {heading ? (
+            <>
+              <h1 className="sr-only">{title}</h1>
+              <div className="min-w-[min(100%,15rem)] flex-1">{heading}</div>
+            </>
+          ) : (
+            <h1 className="text-[28px] font-semibold tracking-[-0.025em]">{title}</h1>
+          )}
+          {action ? <div className={cn(heading && "max-sm:hidden")}>{action}</div> : null}
         </header>
         {toolbar ? <div className="-mt-1 shrink-0 px-3 pb-2.5">{toolbar}</div> : null}
         {/* The header stays put and the rows scroll under it — an inset
@@ -129,7 +141,7 @@ function DetailColumnCard({
           </Link>
           <div className="min-w-0 flex-1">
             {crumbs?.length ? <RecordCrumbs crumbs={crumbs} /> : null}
-            <h1 className={cn("truncate text-[17px] leading-tight font-semibold tracking-[-0.02em]", crumbs?.length && "mt-1")}>{title}</h1>
+            <h1 className={cn("truncate font-semibold tracking-[-0.02em]", crumbs?.length ? "mt-1 text-[20px] leading-tight" : "text-[17px] leading-tight")}>{title}</h1>
             {meta ? <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">{meta}</p> : null}
           </div>
           {status ? <div className="shrink-0 ps-2">{status}</div> : null}

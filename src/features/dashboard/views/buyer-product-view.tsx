@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "motion/react"
 import { BadgeCheckIcon, ChevronLeftIcon, ClipboardListIcon, MessageCircleIcon, PackageSearchIcon, XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { catalogCategory, productLabel, slugify, gradeSlug } from "@/features/marketplace/catalog"
+import { productLabel, slugify, gradeSlug } from "@/features/marketplace/catalog"
 import { buyerIdentity } from "@/features/marketplace/identity"
 import { ConversationThread } from "@/features/marketplace/conversation-thread"
 import {

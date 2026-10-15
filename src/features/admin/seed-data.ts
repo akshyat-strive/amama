@@ -131,6 +131,19 @@ const SEED_CONVERSATIONS: Conversation[] = [
           joinedAt: null,
         },
       },
+      {
+        from: "buyer",
+        fromName: "Vikram Shah",
+        text: "Vikram Shah asked about your RFQ quote: Can you deliver sooner?",
+        at: "2026-09-09T08:00:00.000Z",
+        card: {
+          kind: "quote-question",
+          rfqId: "rfq-7",
+          quoteId: "quote-rfq7-2",
+          question: "Can you deliver sooner? November is later than we planned — October would work better for the retail packs.",
+          askedAt: "2026-09-09T08:00:00.000Z",
+        },
+      },
     ],
   },
   /* Proposal, counter, then acceptance — the buyer opened, the seller

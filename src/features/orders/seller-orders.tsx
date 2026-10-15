@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { PackageIcon, ShipIcon, WaypointsIcon } from "lucide-react"
 
 import { ButtonGroup } from "@/components/ui/button-group"
+import { ControlsSheet, SHEET_GROUP } from "@/components/ui/controls-sheet"
 import { ColumnCard } from "@/components/ui/column-card"
 import { OrdersView } from "@/features/dashboard/views/orders-view"
 import { SellerShipmentsView } from "@/features/dashboard/views/seller-shipments-view"
@@ -44,15 +45,27 @@ function SellerOrdersInner() {
   const view = (["shipments", "consignments"].includes(searchParams.get("view") ?? "") ? searchParams.get("view") : "orders") as View
 
   const switcher = (
-    <ButtonGroup
-      label="Show"
-      size="sm"
-      value={view}
-      onChange={(next) => router.replace(next === "orders" ? pathname : `${pathname}?view=${next}`, { scroll: false })}
-      options={[
-        { value: "orders", label: "Orders", icon: WaypointsIcon },
-        { value: "shipments", label: "Shipments", icon: ShipIcon },
-        { value: "consignments", label: "Consignments", icon: PackageIcon },
+    <ControlsSheet
+      title="View"
+      active={view !== "orders"}
+      controls={[
+        {
+          label: "Show",
+          render: (inSheet) => (
+            <ButtonGroup
+              label="Show"
+              size="sm"
+              className={inSheet ? SHEET_GROUP : undefined}
+              value={view}
+              onChange={(next) => router.replace(next === "orders" ? pathname : `${pathname}?view=${next}`, { scroll: false })}
+              options={[
+                { value: "orders", label: "Orders", icon: WaypointsIcon },
+                { value: "shipments", label: "Shipments", icon: ShipIcon },
+                { value: "consignments", label: "Consignments", icon: PackageIcon },
+              ]}
+            />
+          ),
+        },
       ]}
     />
   )

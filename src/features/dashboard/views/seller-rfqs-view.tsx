@@ -23,6 +23,7 @@ import {
   type Rfq,
   type RfqMatch,
 } from "@/features/marketplace/rfq-store"
+import { RfqRequirement } from "@/features/marketplace/rfq-requirement"
 import { RfqQuoteDialog } from "@/features/marketplace/rfq-quote-dialog"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 
@@ -254,68 +255,57 @@ function RfqListRow({
   )
 }
 
-/** The RFQ's own page — every spec field a seller needs to decide
- *  whether to quote, plus the one action that matters. */
+/** The RFQ's own page — the requirement a seller needs to decide whether
+ *  to quote on the right, their own quote and the one action that matters
+ *  on the left. */
 function RfqDetail({ rfq, sellerId, onQuote }: { rfq: Rfq; sellerId: string; onQuote: () => void }) {
   const quote = quoteFromSeller(rfq, sellerId)
+  const live = quote && quote.status !== "withdrawn" ? quote : null
   const canQuote = rfq.status === "open" && (!quote || quote.status === "withdrawn")
+  const stateLabel = live
+    ? live.status === "accepted" ? "Accepted" : live.status === "not-selected" ? "Not selected" : "Awaiting decision"
+    : null
 
   return (
-    <div className="flex flex-col gap-3 pb-2">
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-[20px] bg-card p-4 text-[13px]">
-        <RfqSpecField label="Quantity" value={rfq.spec.quantityMt ? `${rfq.spec.quantityMt} MT` : null} />
-        <RfqSpecField label="Variety" value={rfq.spec.variety} />
-        <RfqSpecField label="Grade" value={rfq.spec.grade} />
-        <RfqSpecField label="Packaging" value={rfq.spec.packaging} />
-        <RfqSpecField label="Container" value={rfq.spec.containerType} />
-        <RfqSpecField label="Destination" value={rfq.spec.destinationPort} />
-        <RfqSpecField label="Incoterm" value={rfq.spec.incoterm} />
-        <RfqSpecField
-          label="Shipping window"
-          value={
-            rfq.spec.shippingWindowFrom || rfq.spec.shippingWindowTo
-              ? `${rfq.spec.shippingWindowFrom ?? "…"} → ${rfq.spec.shippingWindowTo ?? "…"}`
-              : null
-          }
-        />
-        <RfqSpecField label="Payment ask" value={rfq.spec.paymentTermPreference} />
-        <RfqSpecField label="Monthly volume" value={rfq.spec.monthlyVolumeMt ? `${rfq.spec.monthlyVolumeMt} MT` : null} />
-      </dl>
+    <div className="grid grid-cols-1 gap-4 pb-2 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-5">
+      <RfqRequirement rfq={rfq} className="lg:sticky lg:top-0 lg:order-last lg:self-start" />
 
-      {rfq.spec.notes ? (
-        <section className="rounded-[20px] bg-card p-4">
-          <h2 className="text-[13px] font-semibold text-foreground">Notes</h2>
-          <p className="mt-1 text-[13px] leading-relaxed text-foreground/85">{rfq.spec.notes}</p>
-        </section>
-      ) : null}
-
-      <div className="flex flex-col gap-2 pt-1">
-        {quote && quote.status !== "withdrawn" ? (
-          <p className="rounded-2xl bg-muted px-4 py-3 text-[13px] font-semibold text-foreground">
-            Your quote: {formatInr(quote.pricePerTonneUsd)}/t ·{" "}
-            {quote.status === "accepted" ? "accepted" : quote.status === "not-selected" ? "not selected" : "awaiting decision"}
+      <section aria-label="Your quote" className="flex min-w-0 flex-col gap-3 self-start rounded-[20px] bg-card p-1.5">
+        <p className="px-2.5 pt-2 text-[14px] font-semibold text-foreground">Your quote</p>
+        {live ? (
+          <div className="rounded-[14px] bg-background px-4 py-3.5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[22px] leading-tight font-semibold tracking-tight text-foreground tabular-nums">
+                  {formatInr(live.pricePerTonneUsd)}/t
+                </p>
+                <p className="mt-0.5 text-[12.5px] text-muted-foreground tabular-nums">
+                  {live.quantityMt} MT · {formatInr(live.pricePerTonneUsd * live.quantityMt)}
+                  {live.incoterm ? ` · ${live.incoterm}` : ""}
+                </p>
+              </div>
+              <span
+                className={
+                  live.status === "accepted"
+                    ? "shrink-0 rounded-full bg-amama-subtle px-2.5 py-1 text-[11px] font-semibold text-amama-deep"
+                    : "shrink-0 rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-foreground"
+                }
+              >
+                {stateLabel}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <p className="rounded-[14px] bg-background px-4 py-6 text-center text-[13px] text-muted-foreground">
+            {canQuote ? "You haven't quoted on this requirement yet." : rfq.status === "cancelled" ? "This RFQ was cancelled." : "This RFQ has closed."}
           </p>
-        ) : null}
+        )}
         {canQuote ? (
-          <Button className="w-full rounded-xl" onClick={onQuote}>
+          <Button className="mx-1 mb-1 rounded-xl" onClick={onQuote}>
             {quote ? "Requote" : "Submit a quote"}
           </Button>
-        ) : !quote ? (
-          <p className="text-center text-[13px] font-medium text-muted-foreground">
-            {rfq.status === "cancelled" ? "This RFQ was cancelled." : "This RFQ has closed."}
-          </p>
         ) : null}
-      </div>
-    </div>
-  )
-}
-
-function RfqSpecField({ label, value }: { label: string; value: string | null }) {
-  if (!value) return null
-  return (
-    <div className="min-w-0">
-      <dt className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">{label}</dt>
-      <dd className="mt-0.5 truncate font-medium text-foreground">{value}</dd>
+      </section>
     </div>
   )
 }

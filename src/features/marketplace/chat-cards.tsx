@@ -28,6 +28,7 @@ import { DealTermsDialog } from "@/features/marketplace/deal-terms-dialog"
 import { FormRequestCard } from "@/features/marketplace/form-request-card"
 import { RfqCard } from "@/features/marketplace/rfq-card"
 import { RfqQuoteCard } from "@/features/marketplace/rfq-quote-card"
+import { QuoteQuestionCard } from "@/features/marketplace/quote-question-card"
 import {
   commentOnRound,
   confirmDeal,
@@ -356,6 +357,9 @@ function ChatCard({
   }
   if (card.kind === "rfq-quote") {
     return <RfqQuoteCard rfqId={card.rfqId} quoteId={card.quoteId} viewer={viewer} viewerName={viewerName} />
+  }
+  if (card.kind === "quote-question") {
+    return <QuoteQuestionCard rfqId={card.rfqId} quoteId={card.quoteId} question={card.question} viewer={viewer} />
   }
   if (card.kind === "kam-assist") {
     return <KamAssistCard card={card} viewer={viewer} />

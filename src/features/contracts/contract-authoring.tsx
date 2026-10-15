@@ -632,7 +632,7 @@ function AmendmentsPanel({ contract }: { contract: Contract }) {
         {contract.amendments
           .filter((amendment) => !amendment.resolved)
           .map((amendment) => (
-            <li key={amendment.id} className="flex items-start gap-2 rounded-[14px] bg-status-warning/10 p-3">
+            <li key={amendment.id} className="flex items-start gap-2 rounded-[14px] border-s-[3px] border-s-status-warning bg-card p-3">
               <div className="min-w-0 flex-1 text-[13px]">
                 <span className="font-semibold">{amendment.raisedByName}</span>
                 <p className="mt-0.5">{amendment.text}</p>

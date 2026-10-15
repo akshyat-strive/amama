@@ -7,7 +7,6 @@ import { ChevronLeftIcon, UserRoundSearchIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ColumnCard, OnWhite, RecordCrumbs } from "@/components/ui/column-card"
 import { productLabel } from "@/features/marketplace/catalog"
-import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
 import { BUYER_LEADS } from "@/features/marketplace/buyer-leads"
 import { useBuyerProfiles } from "@/features/marketplace/buyer-directory"
 import { ConversationThread } from "@/features/marketplace/conversation-thread"
@@ -68,7 +67,6 @@ function SellerBuyerLeadView({ leadId }: { leadId: string }) {
   }
 
   const cropLabel = productLabel(listing.cropId)
-  const country = countries.find((entry) => entry.code === lead.country)
 
   const conversationHeader = (
     <div>
@@ -109,10 +107,7 @@ function SellerBuyerLeadView({ leadId }: { leadId: string }) {
             </Link>
             <div className="min-w-0 flex-1">
               <RecordCrumbs crumbs={[{ label: "Buyers", href: "/seller/dashboard/buyers" }]} />
-              <h1 className="mt-1 truncate text-[17px] leading-tight font-semibold tracking-[-0.02em]">{lead.name}</h1>
-              <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
-                {country ? `${countryCodeToFlag(country.code)} ${country.name}` : lead.country}
-              </p>
+              <h1 className="mt-1 truncate text-[20px] leading-tight font-semibold tracking-[-0.02em]">{lead.name}</h1>
             </div>
           </header>
           <div aria-hidden className="mx-3 h-px shrink-0 bg-border" />

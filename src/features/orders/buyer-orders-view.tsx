@@ -6,6 +6,7 @@ import { CheckIcon, PackageIcon, SearchIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { ButtonGroup } from "@/components/ui/button-group"
+import { ControlsSheet, SHEET_GROUP } from "@/components/ui/controls-sheet"
 import { ColumnCard, DetailColumnCard } from "@/components/ui/column-card"
 import { Input } from "@/components/ui/input"
 import * as W from "@/features/tradechain/demo-world"
@@ -69,14 +70,26 @@ function BuyerOrdersPage() {
     <ColumnCard
       title="Orders"
       action={
-        <ButtonGroup
-          label="Order lists"
-          size="sm"
-          value={tab}
-          onChange={setTab}
-          options={[
-            { value: "open", label: `Open · ${open.length}` },
-            { value: "completed", label: `Completed · ${completed.length}` },
+        <ControlsSheet
+          title="Orders"
+          active={tab !== "open"}
+          controls={[
+            {
+              label: "Show",
+              render: (inSheet) => (
+                <ButtonGroup
+                  label="Order lists"
+                  size="sm"
+                  className={inSheet ? SHEET_GROUP : undefined}
+                  value={tab}
+                  onChange={setTab}
+                  options={[
+                    { value: "open", label: `Open · ${open.length}` },
+                    { value: "completed", label: `Completed · ${completed.length}` },
+                  ]}
+                />
+              ),
+            },
           ]}
         />
       }

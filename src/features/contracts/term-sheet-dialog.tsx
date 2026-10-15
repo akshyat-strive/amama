@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { StatusPill } from "@/features/admin/review-ui"
+import { AmberNote, WarnPill } from "@/features/contracts/contract-ui"
 import {
   attachFile,
   itemState,
@@ -39,20 +40,20 @@ import {
  *  coarse version — a saved-but-unsent draft reads as "Not submitted". */
 function ItemStatusChip({ state, perspective = "owner" }: { state: ItemState; perspective?: "owner" | "other" | "kam" }) {
   if (state === "approved") return <StatusPill tone="success">Approved</StatusPill>
-  if (state === "changes-requested") return <StatusPill tone="warning">Update requested</StatusPill>
+  if (state === "changes-requested") return <WarnPill>Update requested</WarnPill>
   if (state === "submitted") return <StatusPill tone="info">Submitted</StatusPill>
   if (state === "draft" && perspective !== "other") return <StatusPill tone="neutral">Draft</StatusPill>
-  return <StatusPill tone={perspective === "owner" ? "warning" : "neutral"}>Not submitted</StatusPill>
+  return perspective === "owner" ? <WarnPill>Not submitted</WarnPill> : <StatusPill tone="neutral">Not submitted</StatusPill>
 }
 
 /** The KAM's note on an item sent back, highlighted so it's the first thing seen. */
 function ReviewerNote({ review }: { review: TermSheetField["review"] }) {
   if (review?.status !== "changes-requested") return null
   return (
-    <p className="rounded-xl bg-status-warning/12 px-3 py-2 text-[12.5px] text-foreground">
-      <span className="font-semibold text-status-warning">{review.by ?? "Account manager"} asked for an update</span>
+    <AmberNote>
+      <span className="font-semibold">{review.by ?? "Account manager"} asked for an update</span>
       {review.note ? `: ${review.note}` : "."}
-    </p>
+    </AmberNote>
   )
 }
 

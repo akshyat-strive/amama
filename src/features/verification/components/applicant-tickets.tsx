@@ -54,7 +54,7 @@ function TicketIcon({ origin, active, size = "md" }: { origin: KycTicketOrigin; 
       className={cn(
         "grid shrink-0 place-items-center rounded-full",
         size === "lg" ? "size-11" : "size-10",
-        active ? "bg-sun text-sun-foreground" : origin === "staff" ? "bg-status-warning/15 text-status-warning" : "bg-amama-subtle text-amama-deep"
+        active ? "bg-sun text-sun-foreground" : "bg-card text-foreground/70"
       )}
     >
       <Icon className="size-[18px]" />
@@ -151,7 +151,7 @@ function TicketListColumn({
                         <span className={cn("block truncate text-[12.5px]", on ? "text-white/75" : "text-muted-foreground")}>
                           {ticketOrigin[ticket.origin].applicantLabel} · {ticket.items.length} document{ticket.items.length === 1 ? "" : "s"}
                         </span>
-                        <span className={cn("mt-1 flex items-center gap-1.5 text-[11.5px]", on ? "text-white/80" : waiting ? "font-semibold text-destructive" : "text-muted-foreground")}>
+                        <span className={cn("mt-1 flex items-center gap-1.5 text-[11.5px]", on ? "text-white/80" : "text-muted-foreground")}>
                           <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", on ? "bg-white/80" : status.dot)} />
                           <span className="truncate">{status.applicantLabel}</span>
                           <span aria-hidden>·</span>
@@ -242,8 +242,9 @@ function TicketDetailColumn({
           <Progress stage={stage} waiting={ticket.status === "waiting"} />
 
           {owed > 0 && !resolved ? (
-            <p className="mt-3 rounded-2xl bg-status-warning/12 px-3.5 py-2.5 text-[13px] leading-relaxed">
-              <span className="font-semibold">Waiting on you.</span> Upload {owed === 1 ? "the document" : `the ${owed} documents`} below and this ticket goes straight back to {ticket.assignee?.name ?? "your KAM"}.
+            <p className="mt-3 flex items-start gap-2 rounded-2xl bg-card px-3.5 py-2.5 text-[13px] leading-relaxed">
+              <span aria-hidden className="mt-[7px] size-1.5 shrink-0 rounded-full bg-status-warning" />
+              <span><span className="font-semibold">Waiting on you.</span> Upload {owed === 1 ? "the document" : `the ${owed} documents`} below and this ticket goes straight back to {ticket.assignee?.name ?? "your KAM"}.</span>
             </p>
           ) : null}
 
@@ -276,13 +277,13 @@ function TicketDetailColumn({
               const style = documentStatus[entry.status]
               const owes = owesUpload(entry.status) && !resolved
               return (
-                <li key={entry.docId} className={cn("rounded-[18px] p-3.5", owes ? "bg-status-warning/10" : "bg-card")}>
+                <li key={entry.docId} className={cn("rounded-[18px] p-3.5", "bg-card")}>
                   <div className="flex items-start gap-3">
                     <span
                       aria-hidden
                       className={cn(
                         "grid size-9 shrink-0 place-items-center rounded-xl",
-                        entry.status === "approved" ? "bg-amama-subtle text-amama-deep" : owes ? "bg-status-warning/15 text-status-warning" : "bg-background text-muted-foreground"
+                        entry.status === "approved" ? "bg-amama-subtle text-amama-deep" : "bg-background text-muted-foreground"
                       )}
                     >
                       {entry.status === "approved" ? <BadgeCheckIcon className="size-4" /> : entry.kind === "new" ? <FilePlusIcon className="size-4" /> : entry.kind === "update" ? <RefreshCwIcon className="size-4" /> : <UploadIcon className="size-4" />}
@@ -291,7 +292,7 @@ function TicketDetailColumn({
                       <p className="truncate text-[14px] font-semibold">{label}</p>
                       <p className="text-[12px] text-muted-foreground">{itemKind[entry.kind]}</p>
                     </div>
-                    <StatusPill tone={owes ? "warning" : style.tone}>{entry.status === "missing" ? "Needs filling" : style.label}</StatusPill>
+                    <StatusPill tone={owes ? "warning" : style.tone} className="bg-background">{entry.status === "missing" ? "Needs filling" : style.label}</StatusPill>
                   </div>
                   {entry.note ? (
                     <p className="mt-2.5 rounded-xl bg-background px-3 py-2 text-[13px] leading-relaxed">

@@ -7,7 +7,6 @@ import {
   ChevronRightIcon,
   FilePlusIcon,
   FileTextIcon,
-  HourglassIcon,
   RefreshCwIcon,
   SendIcon,
   UploadIcon,
@@ -245,44 +244,34 @@ function DocumentsColumn({
 }
 
 function AccountSummary({ application, needs, inReview, onFile }: { application: KycApplication; needs: number; inReview: number; onFile: number }) {
-  const approvedAt = application.reviewedAt
-  const kam = application.tickets.find((ticket) => ticket.assignee?.id === application.assigneeId)?.assignee?.name ?? null
-  const state =
+  const status =
     application.reviewStatus === "approved"
-      ? {
-          icon: BadgeCheckIcon,
-          tone: "bg-amama-deep text-white",
-          title: "Verified account",
-          text: `${approvedAt ? `Approved ${formatDate(approvedAt)}` : "Approved"}${kam ? ` · your KAM is ${kam}` : ""}. Keep your documents current — anything that changes or expires goes through a ticket.`,
-        }
+      ? { label: "Verified", dot: "bg-amama-deep" }
       : application.reviewStatus === "changes-requested"
-        ? { icon: AlertTriangleIcon, tone: "bg-status-warning text-white", title: "Changes requested", text: "Your account manager needs a few things before approving your account." }
+        ? { label: "Changes requested", dot: "bg-status-warning" }
         : application.reviewStatus === "pending"
-          ? { icon: HourglassIcon, tone: "bg-amama-subtle text-amama-deep", title: "In review", text: "Your account manager is checking your documents. The rest of amama opens once they approve." }
-          : { icon: FileTextIcon, tone: "bg-muted text-foreground", title: "Finish your KYC", text: "Upload the documents below, then submit them for review. The rest of amama opens once your account manager approves them." }
-  const Icon = state.icon
+          ? { label: "In review", dot: "bg-status-warning" }
+          : { label: "Not submitted", dot: "bg-muted-foreground/50" }
 
   return (
-    <div className="rounded-[20px] bg-card p-4">
-      <div className="flex items-start gap-3.5">
-        <span aria-hidden className={cn("grid size-11 shrink-0 place-items-center rounded-full", state.tone)}>
-          <Icon className="size-5" strokeWidth={2.25} />
-        </span>
-        <div className="min-w-0">
-          <p className="text-[17px] font-semibold tracking-[-0.02em]">{state.title}</p>
-          <p className="mt-0.5 text-[13px] leading-relaxed text-pretty text-muted-foreground">{state.text}</p>
+    <div className="rounded-[20px] bg-card p-2">
+      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="rounded-2xl bg-background px-3 py-2.5">
+          <dt className="text-[11.5px] text-muted-foreground">Status</dt>
+          <dd className="mt-1 flex items-center gap-1.5 text-[15px] font-semibold tracking-[-0.01em]">
+            <span aria-hidden className={cn("size-2 shrink-0 rounded-full", status.dot)} />
+            {status.label}
+          </dd>
         </div>
-      </div>
+        <Stat label="On file" value={onFile} />
+        <Stat label="Need action" value={needs} />
+        <Stat label="In review" value={inReview} />
+      </dl>
       {application.reviewerNote ? (
-        <p className="mt-3 rounded-2xl bg-status-warning/12 px-3.5 py-2.5 text-[13px] leading-relaxed">
+        <p className="mt-2 rounded-2xl bg-background px-3.5 py-2.5 text-[13px] leading-relaxed">
           <span className="font-semibold">{application.reviewedByName ?? "Your KAM"}:</span> {application.reviewerNote}
         </p>
       ) : null}
-      <dl className="mt-4 grid grid-cols-3 gap-2">
-        <Stat label="On file" value={onFile} />
-        <Stat label="Need action" value={needs} tone={needs > 0 ? "text-status-warning" : undefined} />
-        <Stat label="In review" value={inReview} />
-      </dl>
     </div>
   )
 }

@@ -4,7 +4,7 @@ import * as React from "react"
 import { InboxIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { ButtonGroup } from "@/components/ui/button-group"
+import { CategoryTabs } from "@/features/marketplace/marketplace-ui"
 import { ChatLayout, useChatSelection } from "@/features/chat/chat-layout"
 import {
   listTimeLabel,
@@ -34,6 +34,8 @@ function TicketsList(props: {
   emptyText: string
   title: string
   heightClassName?: string
+  /** Beside the title — a switch between kinds of tickets, say. */
+  listAction?: React.ReactNode
 }) {
   return (
     <React.Suspense fallback={null}>
@@ -49,6 +51,7 @@ function TicketsListInner({
   emptyText,
   title,
   heightClassName,
+  listAction,
 }: {
   tickets: SupportTicket[]
   me: TicketAuthor
@@ -56,6 +59,7 @@ function TicketsListInner({
   emptyText: string
   title: string
   heightClassName?: string
+  listAction?: React.ReactNode
 }) {
   const { selectedId, select, clear } = useChatSelection("ticket")
   const [filter, setFilter] = React.useState<Filter>("all")
@@ -71,48 +75,47 @@ function TicketsListInner({
     <ChatLayout
       title={title}
       heightClassName={heightClassName}
+      listAction={listAction}
       open={!!selected}
       onClose={clear}
       list={
         <>
-          <div className="px-1.5 pt-1 pb-2">
-            <ButtonGroup
+          <div className="flex flex-col gap-1.5 px-1.5 pt-1 pb-2">
+            <CategoryTabs
               label="Status"
-              size="sm"
-              value={filter}
-              onChange={setFilter}
-              options={[
-                { value: "all", label: "All" },
-                { value: "open", label: "Open" },
-                { value: "waiting", label: "Waiting" },
-                { value: "resolved", label: "Resolved" },
-              ]}
+              items={(["all", "open", "waiting", "resolved"] as const).map((value) => ({
+                id: value,
+                label: value === "all" ? "All" : value.charAt(0).toUpperCase() + value.slice(1),
+                count: tickets.filter((ticket) => (value === "all" || ticket.status === value) && (kind === "all" || ticket.kind === kind)).length,
+              }))}
+              selectedId={filter}
+              onSelect={(value) => setFilter(value as Filter)}
             />
+            {staff ? (
+              <div role="group" aria-label="Kind" className="flex flex-wrap gap-1.5">
+                {(
+                  [
+                    ["all", "Everything"],
+                    ["catalog-request", "Catalog requests"],
+                    ["support", "Support"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={kind === value}
+                    onClick={() => setKind(value)}
+                    className={cn(
+                      "h-7 rounded-full px-3 text-[12.5px] font-medium transition-colors",
+                      kind === value ? "bg-foreground/[0.08] text-foreground" : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
-          {staff ? (
-            <div className="flex flex-wrap gap-1.5 px-1.5 pt-1 pb-2">
-              {(
-                [
-                  ["all", "Everything"],
-                  ["catalog-request", "Catalog requests"],
-                  ["support", "Support"],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={kind === value}
-                  onClick={() => setKind(value)}
-                  className={cn(
-                    "h-8 rounded-[10px] border px-3 text-[12.5px] font-medium transition-colors",
-                    kind === value ? "border-amama-deep bg-amama-subtle text-amama-deep" : "border-input text-foreground hover:bg-card"
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          ) : null}
           {visible.length === 0 ? (
             <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
               <InboxIcon aria-hidden className="size-6 text-muted-foreground" />

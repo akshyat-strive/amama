@@ -123,7 +123,8 @@ function DetailColumnCard({
   /** The trail above the heading. */
   crumbs?: Crumb[]
   /** Controls that belong to the heading — a sort, a filter — kept above
-   *  the divider; on a phone they drop to their own row. */
+   *  the divider. Keep it compact: on a phone it shares the heading's row
+   *  (use `ControlsSheet` for anything wider). */
   action?: React.ReactNode
   children: React.ReactNode
 }) {
@@ -145,7 +146,7 @@ function DetailColumnCard({
             {meta ? <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">{meta}</p> : null}
           </div>
           {status ? <div className="shrink-0 ps-2">{status}</div> : null}
-          {action ? <div className="max-sm:order-last max-sm:w-full sm:shrink-0 sm:ps-2">{action}</div> : null}
+          {action ? <div className="shrink-0 ps-1 sm:ps-2">{action}</div> : null}
         </header>
         <div aria-hidden className="mx-3 h-px shrink-0 bg-border" />
         <div data-scroll-root className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2 pt-3 pb-2">

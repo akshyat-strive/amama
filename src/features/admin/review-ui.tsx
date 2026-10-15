@@ -34,12 +34,12 @@ function ReviewGroup({
 
 type Tone = "neutral" | "warning" | "success" | "danger" | "info"
 
-const TONES: Record<Tone, string> = {
-  neutral: "bg-muted text-muted-foreground",
-  warning: "bg-status-warning/12 text-status-warning",
-  success: "bg-amama-subtle text-amama-deep",
-  danger: "bg-destructive/10 text-destructive",
-  info: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
+const DOTS: Record<Tone, string> = {
+  neutral: "bg-muted-foreground/50",
+  warning: "bg-status-warning",
+  success: "bg-amama-deep",
+  danger: "bg-destructive",
+  info: "bg-sky-500",
 }
 
 /** A status as a dot and a word — quieter than a filled badge. */
@@ -47,12 +47,11 @@ function StatusPill({ tone, children, className }: { tone: Tone; children: React
   return (
     <span
       className={cn(
-        "inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[11.5px] font-semibold whitespace-nowrap",
-        TONES[tone],
+        "inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full bg-card px-2.5 text-[11.5px] font-medium whitespace-nowrap text-foreground",
         className
       )}
     >
-      <span aria-hidden className="size-1.5 rounded-full bg-current" />
+      <span aria-hidden className={cn("size-1.5 rounded-full", DOTS[tone])} />
       {children}
     </span>
   )

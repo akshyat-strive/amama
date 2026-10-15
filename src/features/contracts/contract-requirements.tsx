@@ -24,6 +24,7 @@ import {
   type TermSheetField,
   type TermSheetRequest,
 } from "@/features/contracts/contract-store"
+import { AmberDot, AmberNote, WarnPill } from "@/features/contracts/contract-ui"
 import { ItemStatusChip, TermSheetDialog } from "@/features/contracts/term-sheet-dialog"
 import type { ChatParty } from "@/features/marketplace/conversation-store"
 
@@ -115,11 +116,14 @@ function ItemRow({
   const canApprove = perspective === "kam" && (state === "submitted" || state === "draft")
 
   return (
-    <div className={cn(perspective === "owner" && needsOwnerAction(state) && "bg-status-warning/[0.05]")}>
+    <div>
       <div className="px-4 py-3">
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[14px] font-semibold text-foreground">{item.label}</p>
+            <p className="flex items-center gap-2 text-[14px] font-semibold text-foreground">
+              {perspective === "owner" && needsOwnerAction(state) ? <AmberDot /> : null}
+              {item.label}
+            </p>
             <p className="mt-0.5 text-[12px] text-muted-foreground">
               {item.required ? "Required" : "Optional"} · {isDoc ? "Document" : "Detail"}
             </p>
@@ -149,10 +153,10 @@ function ItemRow({
         </div>
         {showAnswer ? <Answer item={item} /> : null}
         {showAnswer && note ? (
-          <p className="mt-2 rounded-xl bg-status-warning/12 px-3 py-2 text-[12.5px] text-foreground">
-            <span className="font-semibold text-status-warning">{item.review?.by ?? "Account manager"} asked for an update: </span>
+          <AmberNote className="mt-2">
+            <span className="font-semibold">{item.review?.by ?? "Account manager"} asked for an update: </span>
             {note}
-          </p>
+          </AmberNote>
         ) : null}
       </div>
       {asking ? (
@@ -259,7 +263,7 @@ function RequestBlock({
             {review.approved} of {review.total} approved
           </p>
         </div>
-        <StatusPill tone={submitted ? "success" : "warning"}>{submitted ? "Submitted" : "Open"}</StatusPill>
+        {submitted ? <StatusPill tone="success">Submitted</StatusPill> : <WarnPill>Open</WarnPill>}
         {perspective === "owner" ? (
           <Button size="sm" variant={submitted ? "outline" : "default"} onClick={() => setOpen(true)}>
             {submitted ? "View" : hasAnswers ? "Edit" : "Fill in"}

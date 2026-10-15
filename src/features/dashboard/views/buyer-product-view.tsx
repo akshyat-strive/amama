@@ -180,10 +180,7 @@ function BuyerProductView({ listingId }: { listingId: string }) {
                   { label: listing.grade || "Ungraded", href: `/buyer/dashboard/sourcing/${listing.categoryId}/${listing.cropId}/${gradeSlug(listing.grade)}` },
                 ]}
               />
-              <h1 className="mt-1 truncate text-[17px] leading-tight font-semibold tracking-[-0.02em]">{listing.sellerName}</h1>
-              <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
-                {cropLabel} · {listing.variety}
-              </p>
+              <h1 className="mt-1 truncate text-[20px] leading-tight font-semibold tracking-[-0.02em]">{listing.sellerName}</h1>
             </div>
             {/* A buyer only ever sees a positive verdict here, never
                 "pending"/"flagged" — same rule the marketplace cards follow. */}

@@ -23,7 +23,7 @@ import {
 import type { ChatParty } from "@/features/marketplace/conversation-store"
 
 const statusCopy: Record<ClauseStatus, { label: string; icon: typeof CheckIcon; className: string }> = {
-  pending: { label: "Pending", icon: ClockIcon, className: "bg-status-warning/15 text-status-warning" },
+  pending: { label: "Pending", icon: ClockIcon, className: "bg-muted text-foreground" },
   agreed: { label: "Agreed", icon: CheckIcon, className: "bg-amama-subtle text-amama-deep" },
   disputed: { label: "Disputed", icon: AlertTriangleIcon, className: "bg-destructive/10 text-destructive" },
 }

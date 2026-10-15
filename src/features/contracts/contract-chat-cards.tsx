@@ -80,6 +80,7 @@ function ContractChatCard({
     card.kind === "form-request" ||
     card.kind === "rfq" ||
     card.kind === "rfq-quote" ||
+    card.kind === "quote-question" ||
     card.kind === "contract-request" ||
     card.kind === "kam-assist"
   ) {

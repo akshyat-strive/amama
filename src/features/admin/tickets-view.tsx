@@ -2,12 +2,14 @@
 
 import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { ChevronDownIcon, Columns3Icon, Inbox, ListIcon, SearchIcon } from "lucide-react"
+import { ChevronDownIcon, Columns3Icon, Inbox, ListIcon, SearchIcon, SlidersHorizontalIcon, XIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import { ButtonGroup } from "@/components/ui/button-group"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { ColumnCard } from "@/components/ui/column-card"
+import { Sheet, SheetClose, SheetContent } from "@/components/ui/sheet"
 import { DetailPage, useDetailRoute } from "@/components/ui/detail-page"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { AdminEmptyState, AdminListSkeleton } from "@/features/admin/admin-ui"
@@ -17,7 +19,7 @@ import { SubmissionCard } from "@/features/admin/review-queue-view"
 import { useUsers } from "@/features/admin/user-store"
 import { TicketsList } from "@/features/tickets/tickets-list"
 import { useTickets } from "@/features/tickets/ticket-store"
-import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
+import { CategoryTabs } from "@/features/marketplace/marketplace-ui"
 import { countries } from "@/features/onboarding/countries"
 import {
   approveApplication,
@@ -128,6 +130,7 @@ function TicketsWorkspace() {
   const activeTags = searchParams.get("tag")?.split(",").filter(Boolean) ?? []
   const [query, setQuery] = React.useState("")
   const [openId, setOpenId] = React.useState<string | null>(null)
+  const [filtersOpen, setFiltersOpen] = React.useState(false)
 
   const setParams = (next: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -222,11 +225,12 @@ function TicketsWorkspace() {
   // every role, scoped by level inside `RequestsPanel`.
   const canKyc = admin.can("onboarding.review") || seesAll
   const type: "kyc" | "requests" = searchParams.get("type") === "requests" || !canKyc ? "requests" : "kyc"
+  const setType = (value: "kyc" | "requests") => setParams({ type: value === "kyc" ? null : value, status: null, tag: null, view: null, owner: null })
   const typeSwitch = canKyc ? (
     <ButtonGroup
       label="Ticket type"
       value={type}
-      onChange={(value) => setParams({ type: value === "kyc" ? null : value, status: null, tag: null, view: null })}
+      onChange={setType}
       options={[
         { value: "kyc", label: "KYC" },
         { value: "requests", label: "Requests" },
@@ -234,161 +238,263 @@ function TicketsWorkspace() {
     />
   ) : null
 
-  if (type === "requests") {
-    return (
-      <div>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="me-auto page-title text-[28px] font-semibold tracking-[-0.025em]">Tickets</h1>
-          {typeSwitch}
-        </div>
-        <div className="mt-3">
-          <RequestsPanel />
-        </div>
-      </div>
-    )
-  }
+  if (type === "requests") return <RequestsPanel action={typeSwitch} />
+
   const ownerName = (ticket: KycTicket) => (ticket.assignee ? (users.find((user) => user.id === ticket.assignee!.id)?.name ?? ticket.assignee.name) : "Unassigned")
+  const filterCount = activeTags.length + (mineOnly ? 1 : 0)
+  const clearFilters = () => setParams({ tag: null, owner: null })
 
   return (
-    <div className={PAGE_TABS_SPACE}>
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="me-auto page-title text-[28px] font-semibold tracking-[-0.025em]">Tickets</h1>
-        {typeSwitch}
-        <ButtonGroup
-          label="View"
-          value={view}
-          onChange={(value) => setParams({ view: value === "list" ? null : value })}
-          options={VIEWS.map((option) => ({ value: option.value, label: option.label, icon: option.icon }))}
-        />
-      </div>
+    <>
+      <ColumnCard
+        title="Tickets"
+        heading={
+          <div className="flex items-center gap-2">
+            <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl bg-card px-3 text-muted-foreground focus-within:ring-2 focus-within:ring-ring/30 sm:max-w-sm">
+              <SearchIcon aria-hidden className="size-4 shrink-0" />
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search tickets, names, emails"
+                aria-label="Search tickets"
+                className="min-w-0 flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
+              />
+              {query ? (
+                <button type="button" onClick={() => setQuery("")} aria-label="Clear search" className="grid size-6 shrink-0 place-items-center rounded-full hover:bg-muted">
+                  <XIcon className="size-3.5" />
+                </button>
+              ) : null}
+            </label>
+            {/* On a phone every switch and filter lives in one bottom sheet. */}
+            <FiltersButton count={filterCount || (type !== "kyc" || view !== "list" ? 1 : 0)} onClick={() => setFiltersOpen(true)} className="sm:hidden" />
+          </div>
+        }
+        action={
+          <div className="flex items-center gap-2">
+            {typeSwitch}
+            <ButtonGroup
+              label="View"
+              value={view}
+              onChange={(value) => setParams({ view: value === "list" ? null : value })}
+              options={VIEWS.map((option) => ({ value: option.value, label: option.label, icon: option.icon }))}
+            />
+            <FiltersButton count={filterCount} onClick={() => setFiltersOpen(true)} labelled />
+          </div>
+        }
+      >
+        {view === "list" ? (
+          // The status pills sit just under the header's divider and stay
+          // put while the tickets scroll beneath.
+          <div className="sticky -top-1.5 z-20 -mx-1.5 -mt-1.5 bg-background px-3 pt-2">
+            <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <CategoryTabs
+                  label="Ticket status"
+                  items={[
+                    { id: "open", label: "Open", count: count("open") },
+                    { id: "waiting", label: "Waiting", count: count("waiting") },
+                    { id: "resolved", label: "Resolved", count: count("resolved") },
+                    { id: "all", label: "All", count: count("all") },
+                  ]}
+                  selectedId={filter}
+                  onSelect={(next) => setParams({ status: next === "open" ? null : next })}
+                />
+              </div>
+              {filterCount ? (
+                <button type="button" onClick={clearFilters} className="shrink-0 text-[12.5px] font-medium text-muted-foreground transition-colors hover:text-foreground">
+                  Clear {filterCount} filter{filterCount === 1 ? "" : "s"}
+                </button>
+              ) : null}
+            </div>
+            <div aria-hidden className="mt-2 h-px bg-border" />
+          </div>
+        ) : null}
 
-      {view === "list" ? (
-        <PageTabs
-          label="Ticket status"
-          className="mt-5"
-          value={filter}
-          onChange={(next) => setParams({ status: next === "open" ? null : next })}
-          tabs={[
-            { value: "open", label: "Open", count: count("open") },
-            { value: "waiting", label: "Waiting", count: count("waiting") },
-            { value: "resolved", label: "Resolved", count: count("resolved") },
-            { value: "all", label: "All", count: count("all") },
-          ]}
-        />
-      ) : null}
-
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <div className="relative w-full sm:w-64">
-          <SearchIcon aria-hidden className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Ticket, name or email"
-            aria-label="Search tickets"
-            className="h-9 rounded-full ps-9"
-          />
-        </div>
-        <div role="group" aria-label="Filter by tag" className="flex flex-wrap gap-1.5">
-          {admin.can("onboarding.review") ? (
-            <button
-              type="button"
-              aria-pressed={mineOnly}
-              onClick={() => setParams({ owner: mineOnly ? null : "me" })}
-              className={cn(
-                "h-8 rounded-full border px-3 text-[12.5px] font-medium transition-colors",
-                mineOnly ? "border-amama-deep bg-amama-subtle text-amama-deep" : "border-border bg-card text-foreground hover:bg-muted"
-              )}
-            >
-              Mine
-            </button>
-          ) : null}
-          {FILTER_TAGS.map((tag) => {
-            const on = activeTags.includes(tag.id)
-            return (
-              <button
-                key={tag.id}
-                type="button"
-                aria-pressed={on}
-                onClick={() => toggleTag(tag.id)}
-                className={cn(
-                  "h-8 rounded-full border px-3 text-[12.5px] font-medium transition-colors",
-                  on ? "border-foreground bg-foreground text-background" : "border-border bg-card text-foreground hover:bg-muted"
-                )}
-              >
-                {tag.label}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {!loaded ? (
-        <div className="mt-4 overflow-hidden rounded-2xl bg-background">
+        {!loaded ? (
           <AdminListSkeleton rows={4} />
-        </div>
-      ) : view === "board" ? (
-        <TicketBoard tickets={tagged} onOpen={detail.open} onMove={moveTicket} ownerName={ownerName} />
-      ) : visible.length === 0 ? (
-        <AdminEmptyState
-          icon={Inbox}
-          title={filter === "open" ? "No open tickets" : "No tickets here"}
-          description="A ticket opens when someone submits their KYC, raises a document update, or a KAM asks for a document."
-        />
-      ) : (
-        <TooltipProvider delay={300}>
-          <ul className="mt-4 flex flex-col overflow-hidden rounded-2xl bg-background">
-            {visible.map((ticket) => {
-              const open = openId === ticket.id
-              const state = STATE_LABEL[ticket.state]
-              return (
-                <li key={ticket.id} className="border-b border-border last:border-b-0">
-                  <button
-                    type="button"
-                    aria-expanded={open}
-                    onClick={() => setOpenId(open ? null : ticket.id)}
-                    className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 px-4 py-3.5 text-start transition-colors hover:bg-muted/50 sm:grid-cols-[7rem_minmax(0,1.4fr)_minmax(0,1.4fr)_7.5rem_9.5rem_3rem_1rem]"
-                  >
-                    <span className="font-mono text-[12px] text-muted-foreground">{ticket.id}</span>
-                    <span className="min-w-0 max-sm:col-span-2 max-sm:row-start-2">
-                      <span className="block truncate text-[13.5px] font-semibold text-foreground">{ticket.submission.fullName || "Unnamed applicant"}</span>
-                      <span className="block truncate text-[12px] text-muted-foreground">
-                        {ticket.ticket.title} · {ticket.ticket.items.length} doc{ticket.ticket.items.length === 1 ? "" : "s"}
-                      </span>
-                    </span>
-                    <span className="flex min-w-0 flex-wrap gap-1 max-sm:col-span-2 max-sm:row-start-3">
-                      {ticket.tags.map((tag) => (
-                        <span
-                          key={tag.id}
-                          className={cn(
-                            "rounded-full px-2 py-0.5 text-[11.5px] font-medium",
-                            tag.id.endsWith("-kyc") ? "bg-foreground/[0.07] text-foreground" : "bg-muted text-muted-foreground"
-                          )}
-                        >
-                          {tag.label}
+        ) : view === "board" ? (
+          <TicketBoard tickets={tagged} onOpen={detail.open} onMove={moveTicket} ownerName={ownerName} />
+        ) : visible.length === 0 ? (
+          <AdminEmptyState
+            icon={Inbox}
+            title={filter === "open" ? "No open tickets" : "No tickets here"}
+            description="A ticket opens when someone submits their KYC, raises a document update, or a KAM asks for a document."
+          />
+        ) : (
+          <TooltipProvider delay={300}>
+            <ul className="divide-inset pt-1">
+              {visible.map((ticket) => {
+                const open = openId === ticket.id
+                const state = STATE_LABEL[ticket.state]
+                const docs = `${ticket.ticket.items.length} doc${ticket.ticket.items.length === 1 ? "" : "s"}`
+                return (
+                  <li key={ticket.id}>
+                    <button
+                      type="button"
+                      aria-expanded={open}
+                      onClick={() => setOpenId(open ? null : ticket.id)}
+                      className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 rounded-xl px-3 py-3 text-start transition-colors hover:bg-card/70 sm:grid-cols-[6.5rem_minmax(0,1.3fr)_minmax(0,1fr)_8rem_auto_2.25rem_1rem]"
+                    >
+                      <span className="hidden font-mono text-[12px] text-muted-foreground sm:block">{ticket.id}</span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-[14px] font-semibold text-foreground">{ticket.submission.fullName || "Unnamed applicant"}</span>
+                        <span className="block truncate text-[12.5px] text-muted-foreground">
+                          <span className="sm:hidden">{ticket.id} · </span>
+                          {ticket.ticket.title} · {docs}
                         </span>
-                      ))}
-                    </span>
-                    <span className="hidden truncate text-[12.5px] sm:block">
-                      <span className={ticket.ticket.assignee ? "text-foreground" : "text-muted-foreground"}>{ownerName(ticket.ticket)}</span>
-                    </span>
-                    <span className="justify-self-end sm:justify-self-start max-sm:col-start-2 max-sm:row-start-1">
-                      <StatusPill tone={state.tone}>{state.label}</StatusPill>
-                    </span>
-                    <span className="hidden text-[12px] text-muted-foreground tabular-nums sm:block">{ago(ticket.ticket.openedAt)}</span>
-                    <ChevronDownIcon aria-hidden className={cn("hidden size-4 text-muted-foreground transition-transform sm:block", open && "rotate-180")} />
-                  </button>
-                  {open ? (
-                    <div className="border-t border-border bg-muted/30 p-3">
-                      <SubmissionCard submission={ticket.submission} ticketId={ticket.id} onOpenTicket={detail.open} />
-                    </div>
-                  ) : null}
-                </li>
-              )
-            })}
-          </ul>
-        </TooltipProvider>
-      )}
-    </div>
+                      </span>
+                      <span className="hidden truncate text-[12.5px] text-muted-foreground sm:block">{ticket.tags.map((tag) => tag.label).join(" · ")}</span>
+                      <span className={cn("hidden truncate text-[12.5px] sm:block", ticket.ticket.assignee ? "text-foreground" : "text-muted-foreground")}>{ownerName(ticket.ticket)}</span>
+                      <span className="justify-self-end sm:justify-self-start">
+                        <StatusPill tone={state.tone}>{state.label}</StatusPill>
+                      </span>
+                      <span className="hidden text-end text-[12px] text-muted-foreground tabular-nums sm:block">{ago(ticket.ticket.openedAt)}</span>
+                      <ChevronDownIcon aria-hidden className={cn("hidden size-4 text-muted-foreground transition-transform sm:block", open && "rotate-180")} />
+                    </button>
+                    {open ? (
+                      <div className="px-1 pb-3">
+                        <SubmissionCard submission={ticket.submission} ticketId={ticket.id} onOpenTicket={detail.open} />
+                      </div>
+                    ) : null}
+                  </li>
+                )
+              })}
+            </ul>
+          </TooltipProvider>
+        )}
+      </ColumnCard>
+
+      <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <SheetContent side="responsive" className="overflow-y-auto sm:max-w-sm">
+          <div className="flex flex-col gap-6 pb-2">
+            <div className="flex items-center justify-between">
+              <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Filters</h2>
+              <SheetClose aria-label="Close filters" className="grid size-9 place-items-center rounded-full bg-card text-foreground/75 transition-colors hover:bg-muted">
+                <XIcon aria-hidden className="size-4" />
+              </SheetClose>
+            </div>
+
+            {/* The header's switches, for phones where the header has no room. */}
+            <div className="flex flex-col gap-6 sm:hidden">
+              {canKyc ? (
+                <SheetChoice
+                  legend="Tickets"
+                  value={type}
+                  onChange={setType}
+                  options={[
+                    { value: "kyc", label: "KYC" },
+                    { value: "requests", label: "Requests" },
+                  ]}
+                />
+              ) : null}
+              <SheetChoice legend="View" value={view} onChange={(value) => setParams({ view: value === "list" ? null : value })} options={VIEWS.map((option) => ({ value: option.value, label: option.label }))} />
+            </div>
+
+            {admin.can("onboarding.review") ? (
+              <button
+                type="button"
+                role="switch"
+                aria-checked={mineOnly}
+                onClick={() => setParams({ owner: mineOnly ? null : "me" })}
+                className="flex items-center justify-between gap-4 rounded-2xl bg-card px-4 py-3 text-start"
+              >
+                <span>
+                  <span className="block text-[15px] font-medium">Only mine</span>
+                  <span className="block text-[12.5px] text-muted-foreground">Tickets assigned to you</span>
+                </span>
+                <span aria-hidden className={cn("relative h-6 w-10 shrink-0 rounded-full transition-colors", mineOnly ? "bg-amama-deep" : "bg-foreground/15")}>
+                  <span className={cn("absolute top-0.5 size-5 rounded-full bg-white transition-[inset-inline-start]", mineOnly ? "start-[18px]" : "start-0.5")} />
+                </span>
+              </button>
+            ) : null}
+
+            <fieldset className="flex flex-col gap-2">
+              <legend className="mb-2 text-[13px] font-medium text-muted-foreground">Tags</legend>
+              <div className="flex flex-wrap gap-1.5">
+                {FILTER_TAGS.map((tag) => {
+                  const on = activeTags.includes(tag.id)
+                  return (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => toggleTag(tag.id)}
+                      className={cn("h-9 rounded-full px-3.5 text-[13.5px] font-medium transition-colors", on ? "bg-graphite text-white" : "bg-card text-foreground hover:bg-muted")}
+                    >
+                      {tag.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </fieldset>
+
+            <div className="flex gap-2">
+              {filterCount ? (
+                <Button variant="outline" className="flex-1" onClick={clearFilters}>
+                  Clear
+                </Button>
+              ) : null}
+              <Button className="flex-1" onClick={() => setFiltersOpen(false)}>
+                Show {view === "list" ? visible.length : tagged.length} ticket{(view === "list" ? visible.length : tagged.length) === 1 ? "" : "s"}
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
+  )
+}
+
+/** Opens the filter sheet. A dot (or, labelled, a count) shows when
+ *  something is filtered. */
+function FiltersButton({ count, onClick, labelled = false, className }: { count: number; onClick: () => void; labelled?: boolean; className?: string }) {
+  if (labelled) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn("inline-flex h-9 items-center gap-1.5 rounded-xl bg-card px-3 text-[13.5px] font-medium text-foreground transition-colors hover:bg-muted", className)}
+      >
+        <SlidersHorizontalIcon aria-hidden className="size-4 text-muted-foreground" />
+        Filters
+        {count ? <span className="grid h-5 min-w-5 place-items-center rounded-full bg-graphite px-1.5 text-[11px] text-white tabular-nums">{count}</span> : null}
+      </button>
+    )
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Filters"
+      className={cn("relative grid size-10 shrink-0 place-items-center rounded-xl bg-card text-foreground transition-colors hover:bg-muted", className)}
+    >
+      <SlidersHorizontalIcon aria-hidden className="size-[18px]" />
+      {count ? <span aria-hidden className="absolute end-2 top-2 size-2 rounded-full bg-amama-deep ring-2 ring-card" /> : null}
+    </button>
+  )
+}
+
+/** One choice in the filter sheet, as full-width radio rows. */
+function SheetChoice<T extends string>({ legend, value, onChange, options }: { legend: string; value: T; onChange: (value: T) => void; options: { value: T; label: string }[] }) {
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="mb-2 text-[13px] font-medium text-muted-foreground">{legend}</legend>
+      <div className="flex gap-2">
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={value === option.value}
+            onClick={() => onChange(option.value)}
+            className={cn("h-11 flex-1 rounded-2xl text-[14.5px] font-medium transition-colors", value === option.value ? "bg-graphite text-white" : "bg-card text-foreground")}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </fieldset>
   )
 }
 
@@ -409,7 +515,7 @@ function TicketBoard({
   const [over, setOver] = React.useState<TicketState | null>(null)
 
   return (
-    <div className="-mx-4 mt-4 flex snap-x gap-3 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
+    <div className="-mx-1.5 flex snap-x gap-2 overflow-x-auto px-1.5 pb-1.5 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
       {BOARD_COLUMNS.map((state) => {
         const column = tickets.filter((ticket) => ticket.state === state)
         const label = STATE_LABEL[state]
@@ -431,7 +537,7 @@ function TicketBoard({
               if (ticket) onMove(ticket, state)
             }}
             className={cn(
-              "flex w-[82%] shrink-0 snap-start flex-col rounded-[20px] bg-muted/60 p-2 transition-colors sm:w-auto",
+              "flex w-[82%] shrink-0 snap-start flex-col rounded-[20px] bg-card p-2 transition-colors sm:w-auto",
               over === state && "bg-amama-subtle ring-2 ring-amama-deep/30"
             )}
           >
@@ -440,7 +546,7 @@ function TicketBoard({
               <span className="text-[12px] font-medium text-muted-foreground tabular-nums">{column.length}</span>
             </header>
             {column.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-border px-3 py-6 text-center text-[12.5px] text-muted-foreground">
+              <p className="rounded-2xl bg-background/60 px-3 py-6 text-center text-[12.5px] text-muted-foreground">
                 No tickets
               </p>
             ) : (
@@ -460,7 +566,7 @@ function TicketBoard({
                       }}
                       onClick={() => onOpen(ticket.id)}
                       className={cn(
-                        "w-full cursor-grab rounded-2xl bg-background p-3 text-start transition-shadow hover:shadow-md active:cursor-grabbing",
+                        "w-full cursor-grab rounded-2xl bg-background p-3 text-start transition-colors hover:ring-1 hover:ring-border active:cursor-grabbing",
                         dragging === ticket.id && "opacity-50"
                       )}
                     >
@@ -473,19 +579,7 @@ function TicketBoard({
                       </span>
                       <span className="block truncate text-[12px] text-muted-foreground">{ticket.ticket.title}</span>
                       <span className="mt-1 block truncate text-[11.5px] text-muted-foreground">Owner · {ownerName(ticket.ticket)}</span>
-                      <span className="mt-2 flex flex-wrap gap-1">
-                        {ticket.tags.map((tag) => (
-                          <span
-                            key={tag.id}
-                            className={cn(
-                              "rounded-full px-2 py-0.5 text-[11px] font-medium",
-                              tag.id.endsWith("-kyc") ? "bg-foreground/[0.07] text-foreground" : "bg-muted text-muted-foreground"
-                            )}
-                          >
-                            {tag.label}
-                          </span>
-                        ))}
-                      </span>
+                      <span className="mt-1.5 block truncate text-[11.5px] text-muted-foreground">{ticket.tags.map((tag) => tag.label).join(" · ")}</span>
                     </button>
                   </li>
                 ))}
@@ -503,7 +597,7 @@ function TicketBoard({
  * KAMs (who hold `overview.view`) see every one; anyone else sees what's
  * assigned to them or what they raised.
  */
-function RequestsPanel() {
+function RequestsPanel({ action }: { action?: React.ReactNode }) {
   const admin = useCurrentAdmin()
   const users = useUsers()
   const tickets = useTickets()
@@ -512,8 +606,8 @@ function RequestsPanel() {
   const visible = seesAll ? tickets : tickets.filter((ticket) => ticket.assigneeId === admin.user.id || ticket.raisedBy.id === admin.user.id)
   return (
     <TicketsList
-      title="Requests"
-      heightClassName="h-[calc(100dvh-152px)] sm:h-[calc(100dvh-156px)]"
+      title="Tickets"
+      listAction={action}
       tickets={visible}
       me={{ kind: "staff", id: admin.user.id, name: admin.user.name, title: admin.role.name }}
       staff={users.map((user) => ({ id: user.id, name: user.name }))}

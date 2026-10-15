@@ -74,6 +74,9 @@ export type ConversationCard =
   /** One seller's formal quote against an RFQ — posted only into that
    *  seller's own thread with the buyer. */
   | { kind: "rfq-quote"; rfqId: string; quoteId: string }
+  /** The buyer asking one seller a question about their quote — posted into
+   *  that seller's own thread, next to the quote itself. */
+  | { kind: "quote-question"; rfqId: string; quoteId: string; question: string; askedAt: string }
   /** The term sheet opened once a contract exists — clicking it opens the
    *  clause-by-clause negotiation panel. */
   | { kind: "term-sheet"; contractId: string }

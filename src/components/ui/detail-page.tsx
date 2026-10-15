@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation"
-import { ChevronLeftIcon } from "lucide-react"
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { COLUMN_HEIGHT, OnWhite, useOnWhite } from "@/components/ui/column-card"
@@ -59,6 +59,9 @@ function DetailPage({
   children: React.ReactNode
 }) {
   const title = trail[trail.length - 1] ?? backLabel
+  // Every step before the record is a way back, in small type above it —
+  // the same trail the marketplace's record pages carry.
+  const crumbs = trail.slice(0, -1)
   // Already inside a white column (a list embedded in another page's
   // card): no second card, just the header and the record.
   const embedded = useOnWhite()
@@ -95,7 +98,25 @@ function DetailPage({
         <header className="flex shrink-0 items-center gap-2.5 px-2 pt-1.5 pb-3">
           {back}
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-[17px] leading-tight font-semibold tracking-[-0.02em]">{title}</h1>
+            {crumbs.length ? (
+              <nav aria-label="Breadcrumb" className="min-w-0">
+                <ol className="flex items-center gap-1 overflow-hidden text-[11.5px] leading-none whitespace-nowrap text-muted-foreground">
+                  {crumbs.map((crumb, index) => (
+                    <li key={`${crumb}-${index}`} className="flex min-w-0 shrink-0 items-center gap-1 last:shrink">
+                      {index === 0 ? (
+                        <button type="button" onClick={onBack} className="truncate transition-colors hover:text-foreground">
+                          {crumb}
+                        </button>
+                      ) : (
+                        <span className="truncate">{crumb}</span>
+                      )}
+                      <ChevronRightIcon aria-hidden className="size-3 shrink-0 text-muted-foreground/60 rtl:-scale-x-100" />
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+            ) : null}
+            <h1 className={cn("truncate leading-tight font-semibold tracking-[-0.02em]", crumbs.length ? "mt-1 text-[20px]" : "text-[17px]")}>{title}</h1>
             {meta ? <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">{meta}</p> : null}
           </div>
           {status ? <div className="shrink-0 ps-2">{status}</div> : null}

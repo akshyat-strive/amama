@@ -5,6 +5,7 @@ import Link from "next/link"
 import { PackageSearchIcon } from "lucide-react"
 
 import { ButtonGroup } from "@/components/ui/button-group"
+import { ControlsSheet, SHEET_GROUP } from "@/components/ui/controls-sheet"
 import { DetailColumnCard } from "@/components/ui/column-card"
 import { catalogCategory, productLabel, gradeSlug } from "@/features/marketplace/catalog"
 import { useListings } from "@/features/marketplace/listing-store"
@@ -67,14 +68,26 @@ function VariantSellersView({ categoryId, productId, variantSlug }: { categoryId
       crumbs={crumbs}
       title={grade}
       action={
-        <ButtonGroup
-          label="Sort sellers"
-          size="sm"
-          value={sort}
-          onChange={setSort}
-          options={[
-            { value: "price", label: "Lowest price" },
-            { value: "volume", label: "Most available" },
+        <ControlsSheet
+          title="Sort"
+          active={sort !== "price"}
+          controls={[
+            {
+              label: "Sort sellers",
+              render: (inSheet) => (
+                <ButtonGroup
+                  label="Sort sellers"
+                  size="sm"
+                  className={inSheet ? SHEET_GROUP : undefined}
+                  value={sort}
+                  onChange={setSort}
+                  options={[
+                    { value: "price", label: "Lowest price" },
+                    { value: "volume", label: "Most available" },
+                  ]}
+                />
+              ),
+            },
           ]}
         />
       }

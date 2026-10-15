@@ -41,10 +41,12 @@ function CategoryTabs({
   items,
   selectedId,
   onSelect,
+  label = "Categories",
 }: {
   items: { id: string; label: string; count: number }[]
   selectedId: string
   onSelect: (id: string) => void
+  label?: string
 }) {
   const track = React.useRef<HTMLDivElement>(null)
   const [edge, setEdge] = React.useState({ start: false, end: false })
@@ -76,7 +78,7 @@ function CategoryTabs({
 
   return (
     <div className="relative">
-      <div ref={track} role="tablist" aria-label="Categories" onScroll={measure} className="flex gap-1.5 overflow-x-auto py-0.5 scrollbar-none">
+      <div ref={track} role="tablist" aria-label={label} onScroll={measure} className="flex gap-1.5 overflow-x-auto py-0.5 scrollbar-none">
         {items.map((item) => {
           const on = item.id === selectedId
           return (

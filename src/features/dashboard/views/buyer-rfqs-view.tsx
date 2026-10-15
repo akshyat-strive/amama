@@ -1,7 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { CheckIcon, ClipboardListIcon } from "lucide-react"
+import { CheckIcon, ClipboardListIcon, MessageSquareIcon, SendIcon } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -15,6 +17,11 @@ import {
 } from "@/components/ui/dialog"
 import { ColumnCard } from "@/components/ui/column-card"
 import { DetailPage, useDetailRoute } from "@/components/ui/detail-page"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Textarea } from "@/components/ui/textarea"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { postCard, startConversation } from "@/features/marketplace/conversation-store"
+import { RfqRequirement } from "@/features/marketplace/rfq-requirement"
 import { formatInr } from "@/features/marketplace/currency"
 import { buyerIdentity } from "@/features/marketplace/identity"
 import { acceptQuote, rfqsForBuyer, useRfqs, type Rfq, type RfqQuote } from "@/features/marketplace/rfq-store"
@@ -137,58 +144,42 @@ function RfqComparison({ rfq, myName }: { rfq: Rfq; myName: string }) {
   const selected = sorted.find((quote) => quote.id === selectedId) ?? null
   const others = sorted.filter((quote) => quote.id !== selectedId && quote.status === "submitted").length
 
-  const facts = [
-    { label: "Quantity", value: rfq.spec.quantityMt ? `${rfq.spec.quantityMt} MT` : null },
-    { label: "Destination", value: rfq.spec.destinationPort },
-    { label: "Incoterm", value: rfq.spec.incoterm },
-    { label: "Payment ask", value: rfq.spec.paymentTermPreference },
-  ].filter((fact): fact is { label: string; value: string } => Boolean(fact.value))
-
   return (
-    <div className="flex flex-1 flex-col gap-5">
-      {facts.length > 0 ? (
-        <section aria-label="Requirement" className="rounded-[20px] bg-card p-4">
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-            {facts.map((fact) => (
-              <div key={fact.label} className="min-w-0">
-                <dt className="text-[11.5px] text-muted-foreground">{fact.label}</dt>
-                <dd className="truncate text-[13px] font-semibold text-foreground">{fact.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      ) : null}
+    <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-5">
+      <RfqRequirement rfq={rfq} className="lg:sticky lg:top-0 lg:order-last lg:self-start" />
 
-      <section aria-label="Quotes" className="rounded-[20px] bg-card p-2">
-        <p className="px-3 pt-1.5 pb-2.5 text-[13px] font-semibold text-foreground">
-          Quotes{sorted.length > 0 ? ` · ${sorted.length}` : ""}
-        </p>
-        {sorted.length === 0 ? (
-          <p className="rounded-[14px] bg-background px-4 py-8 text-center text-[13px] text-muted-foreground">
-            No quotes yet
+      <div className="flex min-w-0 flex-col gap-3">
+        <section aria-label="Quotations" className="rounded-[20px] bg-card p-1.5">
+          <p className="px-2.5 pt-2 pb-2 text-[14px] font-semibold text-foreground">
+            Quotations{sorted.length > 0 ? ` · ${sorted.length}` : ""}
           </p>
-        ) : (
-          <div
-            role={decidable ? "radiogroup" : "list"}
-            aria-label="Quotes"
-            className="flex flex-col divide-inset overflow-hidden rounded-[14px] bg-background"
-          >
-            {sorted.map((quote, index) => (
-              <QuoteRow
-                key={quote.id}
-                quote={quote}
-                lowest={index === 0 && sorted.length > 1}
-                selectable={decidable && quote.status === "submitted"}
-                selected={quote.id === selectedId}
-                onSelect={() => setSelectedId(quote.id)}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+          {sorted.length === 0 ? (
+            <p className="rounded-[14px] bg-background px-4 py-8 text-center text-[13px] text-muted-foreground">
+              No quotes yet
+            </p>
+          ) : (
+            <div
+              role={decidable ? "radiogroup" : "list"}
+              aria-label="Quotations"
+              className="flex flex-col divide-inset overflow-hidden rounded-[14px] bg-background"
+            >
+              {sorted.map((quote, index) => (
+                <QuoteRow
+                  key={quote.id}
+                  rfq={rfq}
+                  quote={quote}
+                  lowest={index === 0 && sorted.length > 1}
+                  selectable={decidable && quote.status === "submitted"}
+                  selected={quote.id === selectedId}
+                  onSelect={() => setSelectedId(quote.id)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
 
       {decidable && sorted.length > 0 ? (
-        <div className="sticky bottom-0 -mx-3 mt-auto -mb-3 border-t border-border bg-background px-3 py-3 sm:-mx-4 sm:px-4">
+        <div className="sticky bottom-0 -mx-3 mt-auto -mb-3 border-t border-border bg-background px-3 py-3 sm:-mx-4 sm:px-4 lg:me-0">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate text-[12px] text-muted-foreground">{selected ? selected.sellerName : "Pick a quote"}</p>
@@ -244,6 +235,7 @@ function RfqComparison({ rfq, myName }: { rfq: Rfq; myName: string }) {
           </DialogContent>
         </Dialog>
       ) : null}
+      </div>
     </div>
   )
 }
@@ -253,15 +245,114 @@ const QUOTE_STATE: Partial<Record<RfqQuote["status"], { label: string; className
   "not-selected": { label: "Not selected", className: "bg-muted text-muted-foreground" },
 }
 
+const QUESTION_CHIPS = [
+  "Can you improve the price?",
+  "Can you deliver sooner?",
+  "Can you split the quantity?",
+  "Can you confirm the grade and packaging?",
+]
+
+/** Asks the seller about this one quote. It lands as a card in the same
+ *  thread their quote card already lives in (the one the RFQ opened for
+ *  them), so the answer comes back right beside the numbers it's about. */
+function MessageSellerButton({ rfq, quote }: { rfq: Rfq; quote: RfqQuote }) {
+  const router = useRouter()
+  const [open, setOpen] = React.useState(false)
+  const [text, setText] = React.useState("")
+  const target = rfq.sellers.find((entry) => entry.sellerId === quote.sellerId)
+  if (!target) return null
+
+  const send = () => {
+    const question = text.trim()
+    if (!question) return
+    // Idempotent: finds the RFQ thread with this seller, or opens one.
+    const id = startConversation({
+      buyerId: rfq.buyerId,
+      buyerName: rfq.buyerName,
+      sellerId: target.sellerId,
+      sellerName: target.sellerName,
+      listingId: target.listingId,
+      listingTitle: target.listingTitle,
+      openingMessage: `${rfq.buyerName} sent an RFQ: "${rfq.title}".`,
+    })
+    postCard({
+      conversationId: id,
+      from: "buyer",
+      fromName: rfq.buyerName,
+      text: `${rfq.buyerName} asked about your RFQ quote: ${question}`,
+      card: { kind: "quote-question", rfqId: rfq.id, quoteId: quote.id, question, askedAt: new Date().toISOString() },
+    })
+    setOpen(false)
+    setText("")
+    toast.success(`Question sent to ${quote.sellerName}`, {
+      action: { label: "Open chat", onClick: () => router.push(`/buyer/dashboard/messages?conversation=${encodeURIComponent(id)}`) },
+    })
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <Tooltip>
+        <PopoverTrigger
+          render={
+            <TooltipTrigger
+              render={
+                <button
+                  type="button"
+                  aria-label={`Message ${quote.sellerName}`}
+                  className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-[12.5px] font-medium text-foreground/75 transition-colors hover:bg-muted hover:text-foreground sm:px-3"
+                >
+                  <MessageSquareIcon aria-hidden className="size-4" />
+                  <span className="hidden lg:inline">Message seller</span>
+                </button>
+              }
+            />
+          }
+        />
+        <TooltipContent side="top">Message seller</TooltipContent>
+      </Tooltip>
+      <PopoverContent side="bottom" align="end" className="w-[min(22rem,calc(100vw-2rem))]">
+        <p className="text-[13.5px] font-semibold text-foreground">Ask {quote.sellerName}</p>
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {QUESTION_CHIPS.map((chip) => (
+            <button
+              key={chip}
+              type="button"
+              onClick={() => setText(chip)}
+              className="rounded-full bg-muted px-2.5 py-1 text-[12px] font-medium text-foreground transition-colors hover:bg-muted/70"
+            >
+              {chip}
+            </button>
+          ))}
+        </div>
+        <Textarea
+          rows={3}
+          aria-label="Your question"
+          placeholder="Write your question about this quote…"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          className="mt-2.5"
+        />
+        <Button size="sm" disabled={!text.trim()} onClick={send} className="mt-2.5 w-full rounded-xl">
+          <SendIcon className="size-3.5 rtl:-scale-x-100" />
+          Send
+        </Button>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 /** One quote. When the RFQ is still open the whole row is the choice
- *  (a radio), never a button of its own. */
+ *  (a radio), never a button of its own — the message action sits beside
+ *  it, not inside it. */
 function QuoteRow({
+  rfq,
   quote,
   lowest,
   selectable,
   selected,
   onSelect,
 }: {
+  rfq: Rfq
   quote: RfqQuote
   lowest: boolean
   selectable: boolean
@@ -270,6 +361,7 @@ function QuoteRow({
 }) {
   const total = quote.pricePerTonneUsd * quote.quantityMt
   const state = QUOTE_STATE[quote.status]
+  const canMessage = rfq.status === "open" && quote.status === "submitted"
   const body = (
     <>
       {selectable ? (
@@ -307,26 +399,23 @@ function QuoteRow({
     </>
   )
 
-  if (!selectable) {
-    return (
-      <div role="listitem" className="flex items-center gap-3 px-4 py-3.5">
-        {body}
-      </div>
-    )
-  }
   return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={selected}
-      onClick={onSelect}
-      className={cn(
-        "flex w-full items-center gap-3 px-4 py-3.5 text-start transition-colors",
-        selected ? "bg-muted" : "hover:bg-muted/60"
+    <div role={selectable ? "none" : "listitem"} className={cn("flex items-center gap-1 pe-2", selected && "bg-muted")}>
+      {selectable ? (
+        <button
+          type="button"
+          role="radio"
+          aria-checked={selected}
+          onClick={onSelect}
+          className={cn("flex min-w-0 flex-1 items-center gap-3 py-3 ps-4 pe-2 text-start transition-colors", !selected && "hover:bg-muted/60")}
+        >
+          {body}
+        </button>
+      ) : (
+        <div className="flex min-w-0 flex-1 items-center gap-3 py-3 ps-4 pe-2">{body}</div>
       )}
-    >
-      {body}
-    </button>
+      {canMessage ? <MessageSellerButton rfq={rfq} quote={quote} /> : null}
+    </div>
   )
 }
 

@@ -74,7 +74,7 @@
 
 :root {
   /*
-   * Apple's ground, as in public/visual.html: a white page, mist tiles,
+   * The ground, as in public/visual.html: a white page, mist tiles,
    * graphite type. Deep green is the one brand colour — primary actions,
    * the selected item, the logo. Bright yellow is the accent and only
    * ever sits on deep green (the icon on a selected nav row, a button on
@@ -101,7 +101,7 @@
   --lime-foreground: #0b1f12;
   --surface-base: #ffffff;
   --surface-card: #f5f5f7;
-  /* Apple's tonal fill — a chip or hover inside a mist tile. */
+  /* The tonal fill — a chip or hover inside a mist tile. */
   --surface-elevated: #e8e8ed;
   /* Barely off the mist tile, so a tile's edge reads as the tile itself
      rather than a drawn outline; between rows inside it, a hairline. */
@@ -208,7 +208,7 @@
   --sidebar-ring: var(--amama);
 }
 
-/* No shadows anywhere — surfaces separate by fill, the way Apple's do.
+/* No shadows anywhere — surfaces separate by fill.
    The only depth cue left is the dimmed backdrop behind a modal. */
 @theme {
   --shadow-2xs: 0 0 #0000;
@@ -230,7 +230,7 @@
     -webkit-font-smoothing: antialiased;
     font-feature-settings: "cv11", "ss01";
   }
-  /* Apple's headline voice: semibold, tight tracking. */
+  /* The headline voice: semibold, tight tracking. */
   h1,
   h2,
   h3 {
@@ -449,7 +449,7 @@ html[lang="kn"] {
     animation: none;
   }
 }
-/* Apple-style list dividers: hairlines inset from both edges instead of
+/* List dividers: hairlines inset from both edges instead of
  * running wall to wall. Drawn as a background line, so row hover and
  * selected fills still work on top of it. */
 @utility divide-inset {

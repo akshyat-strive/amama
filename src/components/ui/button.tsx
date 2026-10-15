@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
  * Pinterest-flavoured button: full pill, semibold label, chunky touch target,
  * and a springy press that scales down instead of nudging down a pixel.
  *
- * Apple's set, as in public/visual.html:
+ * The set, as in public/visual.html:
  * - `default`: near-black (#1d1d1f) with white text — the primary action.
  * - `brand`: deep green, kept for the rare green moment.
  * - `outline`: the secondary — transparent with a quiet grey ring, tinting
@@ -44,7 +44,7 @@ const buttonVariants = cva(
         link: "h-auto rounded-none px-0 font-semibold text-foreground underline underline-offset-4 hover:text-muted-foreground",
       },
       size: {
-        /** 44px — the smallest comfortable touch target (Apple HIG). */
+        /** 44px — the smallest comfortable touch target. */
         default: "h-11 gap-2 px-5 text-[15px]",
         sm: "h-9 gap-1.5 rounded-[10px] px-3.5 text-sm [&_svg:not([class*='size-'])]:size-4",
         /** 48px — Material's touch minimum; the standard onboarding CTA. */

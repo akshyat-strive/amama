@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { ChevronDownIcon, Columns3Icon, Inbox, ListIcon } from "lucide-react"
+import { ChevronRightIcon, Columns3Icon, Inbox, ListIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
@@ -128,7 +128,6 @@ function TicketsWorkspace() {
   const detail = useDetailRoute({ query: "ticket" })
   const activeTags = searchParams.get("tag")?.split(",").filter(Boolean) ?? []
   const [query, setQuery] = React.useState("")
-  const [openId, setOpenId] = React.useState<string | null>(null)
   const [filtersOpen, setFiltersOpen] = React.useState(false)
 
   const setParams = (next: Record<string, string | null>) => {
@@ -213,7 +212,12 @@ function TicketsWorkspace() {
   if (!admin) return null
   if (sheetTicket) {
     return (
-      <DetailPage backLabel="Tickets" onBack={detail.close} trail={["Tickets", sheetTicket.id]}>
+      <DetailPage
+        backLabel="Tickets"
+        onBack={detail.close}
+        trail={["Tickets", sheetTicket.ticket.title]}
+        status={<StatusPill tone={STATE_LABEL[sheetTicket.state].tone}>{STATE_LABEL[sheetTicket.state].label}</StatusPill>}
+      >
         <TooltipProvider delay={300}>
           <SubmissionCard submission={sheetTicket.submission} ticketId={sheetTicket.id} onOpenTicket={detail.open} />
         </TooltipProvider>
@@ -305,15 +309,13 @@ function TicketsWorkspace() {
           <TooltipProvider delay={300}>
             <ul className="divide-inset pt-1">
               {visible.map((ticket) => {
-                const open = openId === ticket.id
                 const state = STATE_LABEL[ticket.state]
                 const docs = `${ticket.ticket.items.length} doc${ticket.ticket.items.length === 1 ? "" : "s"}`
                 return (
                   <li key={ticket.id}>
                     <button
                       type="button"
-                      aria-expanded={open}
-                      onClick={() => setOpenId(open ? null : ticket.id)}
+                      onClick={() => detail.open(ticket.id)}
                       className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 rounded-xl px-3 py-3 text-start transition-colors hover:bg-card/70 sm:grid-cols-[6.5rem_minmax(0,1.3fr)_minmax(0,1fr)_8rem_auto_2.25rem_1rem]"
                     >
                       <span className="hidden font-mono text-[12px] text-muted-foreground sm:block">{ticket.id}</span>
@@ -330,13 +332,8 @@ function TicketsWorkspace() {
                         <StatusPill tone={state.tone}>{state.label}</StatusPill>
                       </span>
                       <span className="hidden text-end text-[12px] text-muted-foreground tabular-nums sm:block">{ago(ticket.ticket.openedAt)}</span>
-                      <ChevronDownIcon aria-hidden className={cn("hidden size-4 text-muted-foreground transition-transform sm:block", open && "rotate-180")} />
+                      <ChevronRightIcon aria-hidden className="hidden size-4 text-muted-foreground sm:block rtl:-scale-x-100" />
                     </button>
-                    {open ? (
-                      <div className="px-1 pb-3">
-                        <SubmissionCard submission={ticket.submission} ticketId={ticket.id} onOpenTicket={detail.open} />
-                      </div>
-                    ) : null}
                   </li>
                 )
               })}

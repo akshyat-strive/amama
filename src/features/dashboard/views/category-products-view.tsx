@@ -47,6 +47,7 @@ function CategoryProductsView({ categoryId }: { categoryId: string }) {
     <DetailColumnCard
       backHref="/buyer/dashboard/sourcing"
       backLabel="Marketplace"
+      crumbs={[{ label: "Marketplace", href: "/buyer/dashboard/sourcing" }]}
       title={category.label}
       meta={`${products.length} ${products.length === 1 ? "product" : "products"}`}
     >

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { ColumnCard } from "@/components/ui/column-card"
 import { Panel } from "@/features/dashboard/dashboard-ui"
 import { PlansPanel } from "@/features/dashboard/plans-panel"
+import { LanguageSwitcher } from "@/features/i18n/components/language-switcher"
 import { usePlan } from "@/features/dashboard/plan-store"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import { useVerification } from "@/features/verification/verification-context"
@@ -75,6 +76,13 @@ function SettingsView({ role }: { role: OnboardingRole }) {
               { label: "Plan", value: tier === "gold" ? "amama Gold" : tier === "pro" ? "amama Pro" : "No plan" },
             ]}
           />
+        </Panel>
+
+        <Panel title="Preferences" className="bg-card">
+          <div className="flex items-center justify-between gap-4 px-5 py-3">
+            <span className="text-[14px] text-muted-foreground">Language</span>
+            <LanguageSwitcher variant="field" />
+          </div>
         </Panel>
 
         <Panel title="Verification" className="bg-card">

@@ -247,6 +247,7 @@ function ListingFormView({ listingId }: { listingId?: string }) {
 
   return (
     <DetailColumnCard
+      crumbs={[{ label: "Listings", href: "/seller/dashboard/listings" }]}
       backHref={editing ? `/seller/dashboard/listings/${editing.id}` : "/seller/dashboard/listings"}
       backLabel={editing ? "Listing" : "Listings"}
       title={editing ? "Edit listing" : "Add a listing"}

@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { CardShell } from "@/features/marketplace/chat-card-shell"
 import { postCard, replaceCard, sendMessage, useConversations, type ChatParty, type ConversationCard } from "@/features/marketplace/conversation-store"
+import { contractForDeal, createContract, useContracts } from "@/features/contracts/contract-store"
 import { latestDealForConversation, requestContract, useDeals } from "@/features/marketplace/deal-store"
 import { sendToKam } from "@/features/marketplace/kam-thread-store"
 
@@ -77,11 +78,11 @@ function requestKamAssist(input: {
       conversationId: input.conversationId,
       from: input.party,
       fromName: input.partyName,
-      text: `${input.partyName} asked an account manager to help: ${topicLabel(input.topic).toLowerCase()}.`,
+      text: `${input.partyName} invited an account manager to help: ${topicLabel(input.topic).toLowerCase()}.`,
       card,
     })
   }
-  sendToKam(input.partyId, input.party, `I've asked for help on ${input.listingTitle}: ${topicLabel(input.topic).toLowerCase()}.${input.note.trim() ? ` ${input.note.trim()}` : ""}`)
+  sendToKam(input.partyId, input.party, `I've invited you into ${input.listingTitle}: ${topicLabel(input.topic).toLowerCase()}.${input.note.trim() ? ` ${input.note.trim()}` : ""}`)
 }
 
 /** A KAM steps in: the card flips to "helping", and their hello lands in
@@ -118,7 +119,9 @@ function RequestKamButton({
   const conversation = conversations.find((entry) => entry.id === conversationId)
   const deal = conversation ? latestDealForConversation(deals, conversationId) : null
   const assist = conversation ? latestAssist(conversation.messages.map((message) => message.card)) : null
-  const contractAsked = !!deal?.contractRequestedAt && deal.status !== "declined"
+  const contracts = useContracts()
+  const hasContract = !!deal && !!contractForDeal(contracts, deal.id)
+  const contractAsked = (!!deal?.contractRequestedAt && deal.status !== "declined") || hasContract
   const canContract = !!deal && deal.status === "active" && !deal.contractRequestedAt
 
   const [open, setOpen] = React.useState(false)
@@ -132,7 +135,7 @@ function RequestKamButton({
     return (
       <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-status-warning/12 px-3 text-[12.5px] font-medium text-status-warning">
         <span aria-hidden className="size-1.5 animate-pulse rounded-full bg-status-warning" />
-        KAM requested
+        KAM invited
       </span>
     )
   }
@@ -146,21 +149,21 @@ function RequestKamButton({
   const submit = () => {
     requestKamAssist({ conversationId, listingTitle, party, partyId, partyName, topic, note, dealId: deal?.id ?? null })
     setOpen(false)
-    toast.success("An account manager has been asked to join")
+    toast.success("Invitation sent — a KAM will join this chat")
   }
 
   return (
     <>
       <Button size="sm" variant={assist ? "outline" : "default"} onClick={start}>
         <UserPlusIcon />
-        {assist ? "Ask KAM again" : "Ask KAM"}
+        {assist ? "Invite KAM again" : "Invite KAM"}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Bring in an account manager</DialogTitle>
-            <DialogDescription>An amama KAM joins this chat with you and the {party === "buyer" ? "seller" : "buyer"}.</DialogDescription>
+            <DialogTitle>Invite an account manager</DialogTitle>
+            <DialogDescription>You and the {party === "buyer" ? "seller" : "buyer"} keep talking — a KAM joins when you&apos;re ready to deal.</DialogDescription>
           </DialogHeader>
 
           <div role="radiogroup" aria-label="What do you need help with?" className="flex flex-col gap-1.5">
@@ -203,7 +206,7 @@ function RequestKamButton({
             </Button>
             <Button onClick={submit}>
               <UserPlusIcon />
-              Ask KAM
+              Send invitation
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -218,7 +221,13 @@ function KamAssistCard({ card, viewer }: { card: KamAssist; viewer: ChatParty })
   const when = new Date(card.requestedAt).toLocaleString("en", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
   if (card.joinedByName) {
     return (
-      <CardShell icon={ShieldCheckIcon} tone="success" title={`${card.joinedByName} is helping`} subtitle={`${topicLabel(card.topic)} · asked by ${card.requestedByName}`}>
+      <CardShell
+        icon={ShieldCheckIcon}
+        tone="success"
+        title={`${card.joinedByName} joined`}
+        subtitle={`${topicLabel(card.topic)} · invited by ${card.requestedByName}`}
+        footer={viewer === "kam" ? <StartContractRow card={card} /> : undefined}
+      >
         {card.note ? <p className="text-[13px] leading-relaxed text-foreground">&ldquo;{card.note}&rdquo;</p> : null}
       </CardShell>
     )
@@ -227,13 +236,32 @@ function KamAssistCard({ card, viewer }: { card: KamAssist; viewer: ChatParty })
     <CardShell
       icon={UserPlusIcon}
       tone="warning"
-      title="KAM assistance requested"
+      title="KAM invited"
       subtitle={`${card.requestedByName} · ${when}`}
-      footer={viewer === "kam" ? <JoinRow card={card} /> : <p className="text-[12px] text-muted-foreground">An account manager will join this chat shortly.</p>}
+      footer={viewer === "kam" ? <JoinRow card={card} /> : <p className="text-[12px] text-muted-foreground">An account manager will join this chat shortly — you can keep talking until then.</p>}
     >
       <p className="text-[13.5px] font-semibold text-foreground">{topicLabel(card.topic)}</p>
       {card.note ? <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">&ldquo;{card.note}&rdquo;</p> : null}
     </CardShell>
+  )
+}
+
+/** Once a KAM is in and the deal is agreed, they can open the contract
+ *  from here. Mounted only for the KAM viewer. */
+function StartContractRow({ card }: { card: KamAssist }) {
+  const admin = useCurrentAdmin()
+  const conversations = useConversations()
+  const deals = useDeals()
+  const contracts = useContracts()
+  if (!admin) return null
+  const conversation = conversations.find((entry) => entry.messages.some((message) => message.card?.kind === "kam-assist" && message.card.requestId === card.requestId))
+  const deal = conversation ? latestDealForConversation(deals, conversation.id) : null
+  if (!deal || deal.status !== "active" || contractForDeal(contracts, deal.id)) return null
+  return (
+    <Button size="sm" onClick={() => createContract(deal, { id: admin.user.id, name: admin.user.name })}>
+      <FileSignatureIcon />
+      Start the contract
+    </Button>
   )
 }
 

@@ -88,10 +88,10 @@ function GradeCard({ href, grade, listings, rank, total }: { href: string; grade
   return (
     <Link
       href={href}
-      className="group flex flex-col gap-5 rounded-[28px] bg-card p-6 outline-none transition-colors hover:bg-[#ededf1] focus-visible:ring-2 focus-visible:ring-amama-deep/40 dark:hover:bg-muted"
+      className="group flex flex-col gap-3 rounded-[22px] bg-card p-4 outline-none transition-colors hover:bg-[#ededf1] focus-visible:ring-2 focus-visible:ring-amama-deep/40 sm:gap-5 sm:rounded-[28px] sm:p-6 dark:hover:bg-muted"
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="inline-flex min-h-12 items-center rounded-2xl bg-amama px-4 text-[20px] font-semibold tracking-[-0.02em] text-white">
+        <span className="inline-flex min-h-10 items-center rounded-xl bg-amama px-3.5 text-[18px] font-semibold tracking-[-0.02em] text-white sm:min-h-12 sm:rounded-2xl sm:px-4 sm:text-[20px]">
           {grade}
         </span>
         {rank === 0 && total > 1 ? (
@@ -99,13 +99,23 @@ function GradeCard({ href, grade, listings, rank, total }: { href: string; grade
         ) : null}
       </div>
       <div>
-        <p className="text-[24px] font-semibold tracking-[-0.022em] tabular-nums">
+        <p className="text-[20px] font-semibold tracking-[-0.022em] tabular-nums sm:text-[24px]">
           {formatInr(min)}
           {max > min ? <span className="text-muted-foreground"> – {formatInr(max)}</span> : null}
           <span className="text-[14px] font-normal text-muted-foreground"> /t</span>
         </p>
       </div>
-      <dl className="grid grid-cols-3 gap-3 border-t border-border pt-4 text-[13px]">
+      <p className="flex flex-wrap items-center gap-x-2 text-[13px] text-muted-foreground tabular-nums sm:hidden">
+        <span className="font-medium text-foreground">{volume} MT</span>
+        <span aria-hidden>·</span>
+        <span>
+          {sellers} {sellers === 1 ? "seller" : "sellers"}
+        </span>
+        <span aria-hidden>·</span>
+        <span>{origins.map(countryCodeToFlag).join(" ")}</span>
+        <ChevronRightIcon aria-hidden className="ms-auto size-4" />
+      </p>
+      <dl className="hidden grid-cols-3 gap-3 border-t border-border pt-4 text-[13px] sm:grid">
         <div>
           <dt className="flex items-center gap-1 text-muted-foreground">
             <PackageIcon aria-hidden className="size-3.5" /> Volume
@@ -127,7 +137,7 @@ function GradeCard({ href, grade, listings, rank, total }: { href: string; grade
           </dd>
         </div>
       </dl>
-      <span className="inline-flex items-center gap-1 text-[14px] font-medium text-amama-deep">
+      <span className="hidden items-center gap-1 text-[14px] font-medium text-amama-deep sm:inline-flex">
         See sellers
         <ChevronRightIcon aria-hidden className="size-4 transition-transform group-hover:translate-x-0.5" />
       </span>
@@ -150,14 +160,14 @@ function SellerRow({ listing, href }: { listing: Listing; href: string }) {
     <li>
       <Link
         href={href}
-        className="chat-row group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 rounded-2xl px-3 py-3.5 outline-none transition-colors [--row-inset:4.75rem] hover:bg-card focus-visible:bg-card sm:grid-cols-[auto_minmax(0,1.4fr)_minmax(0,1fr)_auto_auto]"
+        className="chat-row group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-2xl px-2 py-3 outline-none transition-colors [--row-inset:3.75rem] hover:bg-card focus-visible:bg-card sm:gap-x-4 sm:gap-y-2 sm:px-3 sm:py-3.5 sm:grid-cols-[auto_minmax(0,1.4fr)_minmax(0,1fr)_auto_auto] sm:[--row-inset:4.75rem]"
       >
-        <span aria-hidden className="grid size-12 place-items-center rounded-full bg-graphite text-[15px] font-semibold text-white">
+        <span aria-hidden className="grid size-10 place-items-center rounded-full bg-graphite text-[14px] font-semibold text-white sm:size-12 sm:text-[15px]">
           {initials}
         </span>
         <span className="min-w-0">
           <span className="flex items-center gap-1.5">
-            <span className="truncate text-[16px] font-semibold tracking-[-0.016em]">{listing.sellerName}</span>
+            <span className="truncate text-[15px] font-semibold tracking-[-0.016em] sm:text-[16px]">{listing.sellerName}</span>
             {listing.moderationStatus === "verified" ? <BadgeCheckIcon aria-label="Verified listing" className="size-4 shrink-0 text-amama-deep" /> : null}
           </span>
           <span className="block truncate text-[13px] text-muted-foreground">
@@ -166,7 +176,7 @@ function SellerRow({ listing, href }: { listing: Listing; href: string }) {
             {country ? `, ${country.name}` : ""}
           </span>
         </span>
-        <span className="col-span-3 flex gap-4 text-[13px] sm:col-span-1">
+        <span className="col-span-2 col-start-2 row-start-2 flex gap-4 text-[12.5px] sm:col-span-1 sm:col-start-auto sm:text-[13px]">
           <span>
             <span className="block text-muted-foreground">Variety</span>
             <span className="font-medium">{listing.variety}</span>
@@ -176,8 +186,8 @@ function SellerRow({ listing, href }: { listing: Listing; href: string }) {
             <span className="font-medium tabular-nums">{listing.quantityMt} MT</span>
           </span>
         </span>
-        <span className="text-end sm:text-start">
-          <span className="block text-[18px] font-semibold tracking-[-0.02em] tabular-nums">{formatInr(listing.pricePerTonneUsd)}</span>
+        <span className="col-start-3 row-start-1 text-end sm:col-start-auto sm:row-start-auto sm:text-start">
+          <span className="block text-[16px] font-semibold tracking-[-0.02em] tabular-nums sm:text-[18px]">{formatInr(listing.pricePerTonneUsd)}</span>
           <span className="block text-[12px] text-muted-foreground">per tonne</span>
         </span>
         <span className="hidden h-9 items-center rounded-full border border-foreground/15 px-4 text-[14px] font-medium text-foreground transition-colors group-hover:bg-graphite group-hover:text-white sm:inline-flex">

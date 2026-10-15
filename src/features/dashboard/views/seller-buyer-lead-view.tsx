@@ -5,7 +5,7 @@ import Link from "next/link"
 import { ChevronLeftIcon, UserRoundSearchIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { ColumnCard, OnWhite } from "@/components/ui/column-card"
+import { ColumnCard, OnWhite, RecordCrumbs } from "@/components/ui/column-card"
 import { productLabel } from "@/features/marketplace/catalog"
 import { countries, countryCodeToFlag } from "@/features/onboarding/countries"
 import { BUYER_LEADS } from "@/features/marketplace/buyer-leads"
@@ -108,7 +108,8 @@ function SellerBuyerLeadView({ leadId }: { leadId: string }) {
               <ChevronLeftIcon aria-hidden className="size-5 rtl:-scale-x-100" />
             </Link>
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-[17px] leading-tight font-semibold tracking-[-0.02em]">{lead.name}</h1>
+              <RecordCrumbs crumbs={[{ label: "Buyers", href: "/seller/dashboard/buyers" }]} />
+              <h1 className="mt-1 truncate text-[17px] leading-tight font-semibold tracking-[-0.02em]">{lead.name}</h1>
               <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
                 {country ? `${countryCodeToFlag(country.code)} ${country.name}` : lead.country}
               </p>

@@ -8,7 +8,6 @@ import {
   ChevronDownIcon,
   CheckIcon,
   ClipboardCheckIcon,
-  ClipboardListIcon,
   ClockIcon,
   FileCheck2Icon,
   HandshakeIcon,
@@ -65,16 +64,14 @@ import {
   createContract,
   issuePurchaseOrder,
   raiseAmendment,
-  requestProgress,
   requestsForParty,
   signContract,
   useContracts,
   type ClauseKey,
   type ClauseStatus,
   type Contract,
-  type TermSheetRequest,
 } from "@/features/contracts/contract-store"
-import { TermSheetDialog } from "@/features/contracts/term-sheet-dialog"
+import { ContractRequirements } from "@/features/contracts/contract-requirements"
 import type { ChatParty } from "@/features/marketplace/conversation-store"
 import { formatInr } from "@/features/marketplace/currency"
 import { IncotermInfoButton } from "@/features/marketplace/incoterm-picker"
@@ -605,8 +602,6 @@ function ContractDetail({
 }) {
   const deals = useDeals()
   const deal = deals.find((entry) => entry.id === contract.dealId) ?? null
-  const isTrader = viewer === "buyer" || viewer === "seller"
-  const myRequests = isTrader ? requestsForParty(contract, viewer) : contract.requests
   const actionItems = actionItemsFor(contract, viewer)
 
   return (
@@ -673,26 +668,7 @@ function ContractDetail({
         <PaperworkSection contract={contract} viewer={viewer} viewerName={identity.name} />
       ) : null}
 
-      {myRequests.length > 0 ? (
-        <ReviewGroup
-          header={
-            <h3 className="flex items-center gap-2 text-[14px] font-semibold text-foreground">
-              <ClipboardListIcon className="size-4 text-muted-foreground" />
-              {isTrader ? "What you've been asked for" : "Details requested from both sides"}
-            </h3>
-          }
-        >
-          {myRequests.map((request) => (
-            <RequestRow
-              key={request.id}
-              contract={contract}
-              request={request}
-              viewer={viewer}
-              viewerName={identity.name}
-            />
-          ))}
-        </ReviewGroup>
-      ) : null}
+      <ContractRequirements contract={contract} viewer={viewer} viewerName={identity.name} />
 
       {/* Draft, its approvals or signatures, and any changes raised
           against it — again one story rather than a draft card followed
@@ -1049,70 +1025,6 @@ function RoundRow({ round }: { round: NegotiationRound }) {
         </span>
       ) : null}
     </li>
-  )
-}
-
-function RequestRow({
-  contract,
-  request,
-  viewer,
-  viewerName,
-}: {
-  contract: Contract
-  request: TermSheetRequest
-  viewer: ChatParty
-  viewerName: string
-}) {
-  const [open, setOpen] = React.useState(false)
-  const progress = requestProgress(request)
-  const isRecipient = viewer === request.party
-  const isSubmitted = request.status === "submitted"
-
-  return (
-    <>
-      <div className="flex items-center justify-between gap-4 px-4 py-3">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-semibold text-foreground">{request.title}</p>
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[12px] text-muted-foreground">
-            {viewer === "kam" ? (
-              <>
-                <span className="font-medium text-foreground/80">
-                  {request.party === "buyer" ? contract.buyerName : contract.sellerName}
-                </span>
-                <span aria-hidden>·</span>
-              </>
-            ) : null}
-            <span className="tabular-nums">
-              {progress.done}/{progress.total} fields
-            </span>
-          </p>
-        </div>
-        <StatusPill tone={isSubmitted ? "success" : "warning"} className="capitalize">
-          {request.status.replace("_", " ")}
-        </StatusPill>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className={cn(
-            "inline-flex h-8 shrink-0 items-center rounded-full px-3.5 text-[12.5px] font-semibold transition-colors",
-            isRecipient && !isSubmitted
-              ? "bg-foreground text-background hover:bg-foreground/85"
-              : "border border-border bg-background text-foreground hover:bg-muted"
-          )}
-        >
-          {isRecipient && !isSubmitted ? "Fill in" : "View"}
-        </button>
-      </div>
-
-      <TermSheetDialog
-        open={open}
-        onOpenChange={setOpen}
-        contractId={contract.id}
-        request={request}
-        partyName={viewerName}
-        readOnly={!isRecipient}
-      />
-    </>
   )
 }
 

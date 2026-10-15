@@ -22,8 +22,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { StatusPill } from "@/features/admin/review-ui"
 import {
   attachFile,
+  itemState,
+  type ItemState,
   removeFile,
   requestProgress,
   saveRequestDraft,
@@ -31,6 +34,27 @@ import {
   type TermSheetField,
   type TermSheetRequest,
 } from "@/features/contracts/contract-store"
+
+/** One item's review state as a chip. The other side only ever gets the
+ *  coarse version — a saved-but-unsent draft reads as "Not submitted". */
+function ItemStatusChip({ state, perspective = "owner" }: { state: ItemState; perspective?: "owner" | "other" | "kam" }) {
+  if (state === "approved") return <StatusPill tone="success">Approved</StatusPill>
+  if (state === "changes-requested") return <StatusPill tone="warning">Update requested</StatusPill>
+  if (state === "submitted") return <StatusPill tone="info">Submitted</StatusPill>
+  if (state === "draft" && perspective !== "other") return <StatusPill tone="neutral">Draft</StatusPill>
+  return <StatusPill tone={perspective === "owner" ? "warning" : "neutral"}>Not submitted</StatusPill>
+}
+
+/** The KAM's note on an item sent back, highlighted so it's the first thing seen. */
+function ReviewerNote({ review }: { review: TermSheetField["review"] }) {
+  if (review?.status !== "changes-requested") return null
+  return (
+    <p className="rounded-xl bg-status-warning/12 px-3 py-2 text-[12.5px] text-foreground">
+      <span className="font-semibold text-status-warning">{review.by ?? "Account manager"} asked for an update</span>
+      {review.note ? `: ${review.note}` : "."}
+    </p>
+  )
+}
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -143,8 +167,9 @@ function RequestFields({
               <FieldInput
                 key={field.id}
                 field={field}
+                state={itemState(request, field)}
                 value={values[field.id] ?? ""}
-                disabled={locked}
+                disabled={locked || field.review?.status === "approved"}
                 onChange={(value) => setValues((current) => ({ ...current, [field.id]: value }))}
               />
             ))}
@@ -153,23 +178,26 @@ function RequestFields({
 
         {request.documents.length > 0 ? (
           <section className="flex flex-col gap-2.5">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Documents
-            </p>
-            {request.documents.map((document) => (
-              <div key={document.id} className="rounded-2xl border border-border p-3">
+            <p className="text-[13px] font-semibold text-foreground">Documents</p>
+            {request.documents.map((document) => {
+              const docLocked = locked || document.review?.status === "approved"
+              return (
+              <div key={document.id} className="rounded-2xl bg-card p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-foreground">
-                      {document.label}
-                      {document.required ? <span className="text-destructive"> *</span> : null}
+                    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-semibold text-foreground">
+                      <span>
+                        {document.label}
+                        {document.required ? <span className="text-destructive"> *</span> : null}
+                      </span>
+                      <ItemStatusChip state={itemState(request, document)} />
                     </p>
                     {document.help ? (
                       <p className="mt-0.5 text-[12px] text-muted-foreground">{document.help}</p>
                     ) : null}
                   </div>
-                  {locked ? null : (
-                    <label className="shrink-0 cursor-pointer rounded-full bg-background px-3 py-1.5 text-[12px] font-semibold text-foreground transition-colors hover:bg-muted">
+                  {docLocked ? null : (
+                    <label className="shrink-0 cursor-pointer rounded-xl bg-background px-3 py-1.5 text-[12px] font-semibold text-foreground transition-colors hover:bg-muted">
                       <PaperclipIcon className="me-1 inline size-3.5" />
                       Add file
                       <input
@@ -191,22 +219,26 @@ function RequestFields({
                   )}
                 </div>
 
+                <div className="mt-2 empty:hidden">
+                  <ReviewerNote review={document.review} />
+                </div>
+
                 {document.files.length > 0 ? (
                   <ul className="mt-2.5 flex flex-col gap-1.5">
                     {document.files.map((file) => (
                       <li
                         key={file.id}
-                        className="flex items-center gap-2 rounded-xl bg-muted px-2.5 py-2 text-[12px]"
+                        className="flex items-center gap-2 rounded-xl bg-background px-2.5 py-2 text-[12px]"
                       >
                         <FileTextIcon className="size-3.5 shrink-0 text-muted-foreground" />
                         <span className="min-w-0 flex-1 truncate font-medium text-foreground">{file.name}</span>
                         <span className="shrink-0 text-muted-foreground">{formatBytes(file.size)}</span>
-                        {locked ? null : (
+                        {docLocked ? null : (
                           <button
                             type="button"
                             aria-label={`Remove ${file.name}`}
                             onClick={() => removeFile(contractId, request.id, document.id, file.id)}
-                            className="grid size-5 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-card hover:text-destructive"
+                            className="grid size-5 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-destructive"
                           >
                             <XIcon className="size-3.5" />
                           </button>
@@ -216,7 +248,8 @@ function RequestFields({
                   </ul>
                 ) : null}
               </div>
-            ))}
+              )
+            })}
           </section>
         ) : null}
       </div>
@@ -256,21 +289,27 @@ function RequestFields({
 
 function FieldInput({
   field,
+  state,
   value,
   disabled,
   onChange,
 }: {
   field: TermSheetField
+  state: ItemState
   value: string
   disabled: boolean
   onChange: (value: string) => void
 }) {
   return (
     <label className={cn("flex flex-col gap-1.5", disabled && "opacity-70")}>
-      <span className="text-[13px] font-medium text-foreground">
-        {field.label}
-        {field.required ? <span className="text-destructive"> *</span> : null}
+      <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-medium text-foreground">
+        <span>
+          {field.label}
+          {field.required ? <span className="text-destructive"> *</span> : null}
+        </span>
+        <ItemStatusChip state={state} />
       </span>
+      <ReviewerNote review={field.review} />
       {field.help ? <span className="-mt-1 text-[12px] text-muted-foreground">{field.help}</span> : null}
 
       {field.type === "select" ? (
@@ -305,4 +344,4 @@ function FieldInput({
   )
 }
 
-export { TermSheetDialog, formatBytes }
+export { ItemStatusChip, TermSheetDialog, formatBytes }

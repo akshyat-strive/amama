@@ -47,6 +47,10 @@ function ProductVariantsView({ categoryId, productId }: { categoryId: string; pr
     <DetailColumnCard
       backHref={`/buyer/dashboard/sourcing/${categoryId}`}
       backLabel={category.label}
+      crumbs={[
+        { label: "Marketplace", href: "/buyer/dashboard/sourcing" },
+        { label: category.label, href: `/buyer/dashboard/sourcing/${categoryId}` },
+      ]}
       title={name}
       meta={`${grades.length} ${grades.length === 1 ? "grade" : "grades"} · ${new Set(listings.map((listing) => listing.sellerId)).size} sellers${listings.length ? ` · from ${formatInr(minPrice)}/t` : ""}`}
     >

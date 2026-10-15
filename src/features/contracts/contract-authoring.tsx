@@ -255,6 +255,7 @@ function RequestBuilder({ contract }: { contract: Contract }) {
   }
 
   return (
+    <div id="request-builder" className="scroll-mt-4">
     <Section title="Ask a side for details & documents">
       <div className="flex flex-col gap-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -417,6 +418,7 @@ function RequestBuilder({ contract }: { contract: Contract }) {
         </Button>
       </div>
     </Section>
+    </div>
   )
 }
 

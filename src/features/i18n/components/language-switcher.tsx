@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckIcon } from "lucide-react"
+import { CheckIcon, ChevronDownIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
@@ -34,7 +34,10 @@ import { locales, nameFor } from "@/features/i18n/locales"
 function LanguageSwitcher({
   variant = "fixed",
 }: {
-  variant?: "fixed" | "inline"
+  /** `inline` sits in the topbar (hidden on a phone, where Settings
+   *  carries it); `field` is the same menu as a bordered control for a
+   *  settings row. */
+  variant?: "fixed" | "inline" | "field"
 }) {
   const { locale, setLocale, t } = useI18n()
 
@@ -49,10 +52,13 @@ function LanguageSwitcher({
                 buttonVariants({ variant: "outline", size: "sm" }),
                 "fixed end-3 top-3 z-50 border-border/60 bg-card/90 font-medium shadow-sm backdrop-blur-sm hover:bg-muted"
               )
-            : "inline-flex h-8 shrink-0 items-center rounded-full bg-muted/70 px-3 text-[13px] font-medium text-foreground/80 outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
+            : variant === "field"
+              ? "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-card px-3.5 text-[14px] font-medium text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/40"
+              : "hidden h-8 shrink-0 items-center rounded-full bg-muted/70 px-3 text-[13px] font-medium text-foreground/80 outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40 md:inline-flex"
         )}
       >
         {nameFor(locale, locale.code)}
+        {variant === "field" ? <ChevronDownIcon aria-hidden className="size-4 text-muted-foreground" /> : null}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-48 p-1">
         {locales.map((option) => {

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ChevronLeftIcon } from "lucide-react"
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -66,6 +66,28 @@ function ColumnCard({
   )
 }
 
+export type Crumb = { label: string; href: string }
+
+/** Where you are, in small type above the heading: Marketplace › Apple ›
+ *  Each step is a way back, and the trail ends in a chevron because the
+ *  heading beneath it is the next step. */
+function RecordCrumbs({ crumbs }: { crumbs: Crumb[] }) {
+  return (
+    <nav aria-label="Breadcrumb" className="min-w-0">
+      <ol className="flex items-center gap-1 overflow-hidden text-[11.5px] leading-none whitespace-nowrap text-muted-foreground">
+        {crumbs.map((crumb, index) => (
+          <li key={`${crumb.href}-${index}`} className="flex min-w-0 shrink-0 items-center gap-1 last:shrink">
+            <Link href={crumb.href} className="truncate transition-colors hover:text-foreground">
+              {crumb.label}
+            </Link>
+            <ChevronRightIcon aria-hidden className="size-3 shrink-0 text-muted-foreground/60 rtl:-scale-x-100" />
+          </li>
+        ))}
+      </ol>
+    </nav>
+  )
+}
+
 /**
  * One record's page in the same white column: back to the list, the
  * record's name and state, an inset hairline, then the record scrolling
@@ -77,6 +99,8 @@ function DetailColumnCard({
   title,
   meta,
   status,
+  crumbs,
+  action,
   children,
 }: {
   backHref: string
@@ -84,12 +108,17 @@ function DetailColumnCard({
   title: React.ReactNode
   meta?: React.ReactNode
   status?: React.ReactNode
+  /** The trail above the heading. */
+  crumbs?: Crumb[]
+  /** Controls that belong to the heading — a sort, a filter — kept above
+   *  the divider; on a phone they drop to their own row. */
+  action?: React.ReactNode
   children: React.ReactNode
 }) {
   return (
     <OnWhite>
       <section className={cn("flex min-w-0 flex-col overflow-hidden rounded-[24px] bg-background p-2", COLUMN_HEIGHT)}>
-        <header className="flex shrink-0 items-center gap-2.5 px-2 pt-1.5 pb-3">
+        <header className="flex shrink-0 flex-wrap items-center gap-x-2.5 gap-y-2.5 px-2 pt-1.5 pb-3">
           <Link
             href={backHref}
             aria-label={`Back to ${backLabel.toLowerCase()}`}
@@ -99,10 +128,12 @@ function DetailColumnCard({
             <ChevronLeftIcon aria-hidden className="size-5 rtl:-scale-x-100" />
           </Link>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-[17px] leading-tight font-semibold tracking-[-0.02em]">{title}</h1>
+            {crumbs?.length ? <RecordCrumbs crumbs={crumbs} /> : null}
+            <h1 className={cn("truncate text-[17px] leading-tight font-semibold tracking-[-0.02em]", crumbs?.length && "mt-1")}>{title}</h1>
             {meta ? <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">{meta}</p> : null}
           </div>
           {status ? <div className="shrink-0 ps-2">{status}</div> : null}
+          {action ? <div className="max-sm:order-last max-sm:w-full sm:shrink-0 sm:ps-2">{action}</div> : null}
         </header>
         <div aria-hidden className="mx-3 h-px shrink-0 bg-border" />
         <div data-scroll-root className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2 pt-3 pb-2">
@@ -113,4 +144,4 @@ function DetailColumnCard({
   )
 }
 
-export { COLUMN_HEIGHT, ColumnCard, DetailColumnCard, OnWhite, useBlockFill, useOnWhite }
+export { COLUMN_HEIGHT, ColumnCard, DetailColumnCard, OnWhite, RecordCrumbs, useBlockFill, useOnWhite }

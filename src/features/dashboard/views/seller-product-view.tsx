@@ -18,7 +18,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { ColumnCard, OnWhite } from "@/components/ui/column-card"
+import { ColumnCard, OnWhite, RecordCrumbs } from "@/components/ui/column-card"
 import {
   Dialog,
   DialogContent,
@@ -195,7 +195,8 @@ function SellerProductView({ listingId }: { listingId: string }) {
               <ChevronLeftIcon aria-hidden className="size-5 rtl:-scale-x-100" />
             </Link>
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-[17px] leading-tight font-semibold tracking-[-0.02em]">{cropLabel}</h1>
+              <RecordCrumbs crumbs={[{ label: "Listings", href: "/seller/dashboard/listings" }]} />
+              <h1 className="mt-1 truncate text-[17px] leading-tight font-semibold tracking-[-0.02em]">{cropLabel}</h1>
               <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">{listing.variety}</p>
             </div>
             <span

@@ -8,6 +8,7 @@ import { ColumnCard } from "@/components/ui/column-card"
 import { AdminPanel } from "@/features/admin/admin-ui"
 import { signOut } from "@/features/auth/local-auth"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
+import { LanguageSwitcher } from "@/features/i18n/components/language-switcher"
 import { resetDemoData } from "@/features/local-db/seed-version"
 
 /** Deliberately thin — there's no admin-wide preferences yet, just the one
@@ -26,7 +27,14 @@ function AdminSettingsView() {
 
   return (
     <ColumnCard title="Settings">
-      <AdminPanel title="Session">
+      <AdminPanel title="Preferences">
+        <div className="flex items-center justify-between gap-4 px-5 py-3">
+          <span className="text-[14px] text-muted-foreground">Language</span>
+          <LanguageSwitcher variant="field" />
+        </div>
+      </AdminPanel>
+
+      <AdminPanel title="Session" className="mt-2">
         <div className="flex items-center justify-between gap-4 px-5 py-4">
           <p className="text-[13px] text-muted-foreground">Sign out and clear this browser&apos;s session.</p>
           <Button variant="outline" size="sm" onClick={handleSignOut}>

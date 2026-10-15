@@ -78,7 +78,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-dvh bg-card">
-      <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center gap-4 bg-transparent ps-3 pe-4 sm:pe-6">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center gap-2 bg-transparent ps-3 pe-3 sm:gap-4 sm:pe-6">
         <SidebarToggle open={sidebarOpen} onToggle={toggleSidebar} />
         <TopbarBrand href="/internal" role={admin.role.name} />
         <TopbarSearch perspective="internal" email="" basePath="/internal/trade-desk" />

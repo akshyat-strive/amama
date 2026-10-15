@@ -55,6 +55,15 @@ export type ContractStageEntry = {
 
 export type TermSheetFieldType = "text" | "number" | "date" | "select" | "textarea"
 
+/** A KAM's verdict on one field or document. Absent means "not looked at
+ *  yet" — old data without it reads exactly that way. */
+export type ItemReview = {
+  status: "pending" | "approved" | "changes-requested"
+  note: string | null
+  by: string | null
+  at: string | null
+}
+
 export type TermSheetField = {
   id: string
   label: string
@@ -65,6 +74,7 @@ export type TermSheetField = {
   /** `null` until the party fills it in. Written on every keystroke-save,
    *  long before the request is submitted — see `saveRequestDraft`. */
   value: string | null
+  review?: ItemReview
 }
 
 /** Metadata only, never bytes — same deal as the onboarding document cards.
@@ -83,6 +93,7 @@ export type RequestedDocument = {
   required: boolean
   help: string | null
   files: UploadedFile[]
+  review?: ItemReview
 }
 
 /**
@@ -713,7 +724,7 @@ function saveRequestDraft(contractId: string, requestId: string, values: Record<
   patchRequest(contractId, requestId, (request) => ({
     ...request,
     fields: request.fields.map((field) =>
-      field.id in values ? { ...field, value: values[field.id] || null } : field
+      field.id in values && field.review?.status !== "approved" ? { ...field, value: values[field.id] || null } : field
     ),
   }))
 }
@@ -727,7 +738,7 @@ function attachFile(
   patchRequest(contractId, requestId, (request) => ({
     ...request,
     documents: request.documents.map((document) =>
-      document.id === documentId
+      document.id === documentId && document.review?.status !== "approved"
         ? {
             ...document,
             files: [
@@ -746,7 +757,7 @@ function removeFile(contractId: string, requestId: string, documentId: string, f
   patchRequest(contractId, requestId, (request) => ({
     ...request,
     documents: request.documents.map((document) =>
-      document.id === documentId
+      document.id === documentId && document.review?.status !== "approved"
         ? { ...document, files: document.files.filter((file) => file.id !== fileId) }
         : document
     ),
@@ -776,10 +787,163 @@ function submitRequest(contractId: string, requestId: string, byName: string) {
     ...entry,
     status: "submitted",
     submittedAt: new Date().toISOString(),
+    // Items sent back for changes go back to "waiting for review" once
+    // they've been filled in again.
+    fields: entry.fields.map((field) => (field.review?.status === "changes-requested" && field.value?.trim() ? { ...field, review: undefined } : field)),
+    documents: entry.documents.map((document) => (document.review?.status === "changes-requested" && document.files.length > 0 ? { ...document, review: undefined } : document)),
   }))
   logSystemMessageForConversation(
     contract.conversationId,
     `${byName} completed "${request.title}".`,
+    [request.party, "kam"]
+  )
+}
+
+/* ── review: what the KAM does with each thing asked for ───────────────── */
+
+export type ItemKind = "field" | "document"
+
+/** Where one asked-for item stands. `draft` is filled but not sent yet —
+ *  the other side only ever sees that as "not submitted". */
+export type ItemState = "empty" | "draft" | "submitted" | "approved" | "changes-requested"
+
+function itemState(request: TermSheetRequest, item: TermSheetField | RequestedDocument): ItemState {
+  if (item.review?.status === "approved") return "approved"
+  if (item.review?.status === "changes-requested") return "changes-requested"
+  const filled = "value" in item ? !!item.value?.trim() : item.files.length > 0
+  if (!filled) return "empty"
+  return request.status === "submitted" ? "submitted" : "draft"
+}
+
+/** Counts for a request, for progress lines and the contract bar. */
+function requestReview(request: TermSheetRequest) {
+  const items = [...request.fields, ...request.documents]
+  const states = items.map((item) => itemState(request, item))
+  return {
+    total: items.length,
+    approved: states.filter((state) => state === "approved").length,
+    submitted: states.filter((state) => state === "submitted").length,
+    changes: states.filter((state) => state === "changes-requested").length,
+    waiting: states.filter((state) => state === "empty" || state === "draft").length,
+  }
+}
+
+/** All of a contract's requests together — what the floating contract bar
+ *  in the chat shows as its little progress. */
+function contractRequirements(contract: Contract) {
+  return contract.requests.reduce(
+    (sum, request) => {
+      const review = requestReview(request)
+      return { total: sum.total + review.total, approved: sum.approved + review.approved }
+    },
+    { total: 0, approved: 0 }
+  )
+}
+
+function patchItem(
+  contractId: string,
+  requestId: string,
+  kind: ItemKind,
+  itemId: string,
+  patch: (item: TermSheetField | RequestedDocument) => TermSheetField | RequestedDocument,
+  reopen = false
+) {
+  patchRequest(contractId, requestId, (request) => ({
+    ...request,
+    ...(reopen ? { status: "open" as const, submittedAt: null } : {}),
+    fields: kind === "field" ? request.fields.map((field) => (field.id === itemId ? (patch(field) as TermSheetField) : field)) : request.fields,
+    documents: kind === "document" ? request.documents.map((document) => (document.id === itemId ? (patch(document) as RequestedDocument) : document)) : request.documents,
+  }))
+}
+
+function reviewOf(status: ItemReview["status"], by: string, note: string | null = null): ItemReview {
+  return { status, note, by, at: new Date().toISOString() }
+}
+
+function labelOf(request: TermSheetRequest, kind: ItemKind, itemId: string) {
+  return (kind === "field" ? request.fields.find((field) => field.id === itemId)?.label : request.documents.find((document) => document.id === itemId)?.label) ?? "an item"
+}
+
+/** Approves one filled-in field or document. */
+function approveItem(contractId: string, requestId: string, kind: ItemKind, itemId: string, byName: string) {
+  restoreOnce()
+  const contract = findContract(contractId)
+  const request = contract?.requests.find((entry) => entry.id === requestId)
+  if (!contract || !request) return
+  const item = kind === "field" ? request.fields.find((field) => field.id === itemId) : request.documents.find((document) => document.id === itemId)
+  if (!item || itemState(request, item) === "empty") return
+  patchItem(contractId, requestId, kind, itemId, (entry) => ({ ...entry, review: reviewOf("approved", byName) }))
+  logSystemMessageForConversation(contract.conversationId, `${byName} approved "${labelOf(request, kind, itemId)}" from ${request.party === "buyer" ? contract.buyerName : contract.sellerName}.`)
+}
+
+/** Takes an approval back — the item is open to edit again. */
+function unapproveItem(contractId: string, requestId: string, kind: ItemKind, itemId: string, byName: string) {
+  restoreOnce()
+  const contract = findContract(contractId)
+  const request = contract?.requests.find((entry) => entry.id === requestId)
+  if (!contract || !request) return
+  patchItem(contractId, requestId, kind, itemId, (entry) => ({ ...entry, review: undefined }), true)
+  logSystemMessageForConversation(contract.conversationId, `${byName} reopened "${labelOf(request, kind, itemId)}" for ${request.party === "buyer" ? contract.buyerName : contract.sellerName}.`, [request.party, "kam"])
+}
+
+/** Approves everything filled in, in one request or across the contract. */
+function approveAllItems(contractId: string, byName: string, requestId?: string) {
+  restoreOnce()
+  const contract = findContract(contractId)
+  if (!contract) return
+  let count = 0
+  updateContract(contractId, {
+    requests: contract.requests.map((request) => {
+      if (requestId && request.id !== requestId) return request
+      const mark = <T extends TermSheetField | RequestedDocument>(item: T): T => {
+        if (item.review?.status === "approved" || itemState(request, item) === "empty") return item
+        count += 1
+        return { ...item, review: reviewOf("approved", byName) }
+      }
+      return { ...request, fields: request.fields.map(mark), documents: request.documents.map(mark), updatedAt: new Date().toISOString() }
+    }),
+  })
+  if (count > 0) logSystemMessageForConversation(contract.conversationId, `${byName} approved ${count} ${count === 1 ? "item" : "items"}.`)
+}
+
+/** "Update this one": sends a field or document back with a note and opens
+ *  the request up again so its owner can change it. */
+function requestItemChange(contractId: string, requestId: string, kind: ItemKind, itemId: string, byName: string, note: string) {
+  restoreOnce()
+  const contract = findContract(contractId)
+  const request = contract?.requests.find((entry) => entry.id === requestId)
+  if (!contract || !request) return
+  patchItem(contractId, requestId, kind, itemId, (entry) => ({ ...entry, review: reviewOf("changes-requested", byName, note.trim() || null) }), true)
+  logSystemMessageForConversation(
+    contract.conversationId,
+    `${byName} asked ${request.party === "buyer" ? contract.buyerName : contract.sellerName} to update "${labelOf(request, kind, itemId)}"${note.trim() ? `: ${note.trim()}` : "."}`,
+    [request.party, "kam"]
+  )
+}
+
+/** Asks for one more thing on an existing request — a new document or a
+ *  new field — and reopens the request so it can be filled. */
+function addRequestItem(
+  contractId: string,
+  requestId: string,
+  byName: string,
+  input: { kind: ItemKind; label: string; required: boolean; help: string | null }
+) {
+  restoreOnce()
+  const contract = findContract(contractId)
+  const request = contract?.requests.find((entry) => entry.id === requestId)
+  if (!contract || !request || !input.label.trim()) return
+  const label = input.label.trim()
+  patchRequest(contractId, requestId, (entry) => ({
+    ...entry,
+    status: "open",
+    submittedAt: null,
+    fields: input.kind === "field" ? [...entry.fields, { id: generateId("field"), label, type: "text", required: input.required, help: input.help, value: null }] : entry.fields,
+    documents: input.kind === "document" ? [...entry.documents, { id: generateId("doc"), label, required: input.required, help: input.help, files: [] }] : entry.documents,
+  }))
+  logSystemMessageForConversation(
+    contract.conversationId,
+    `${byName} asked ${request.party === "buyer" ? contract.buyerName : contract.sellerName} for ${input.kind === "document" ? "a document" : "a detail"}: ${label}.`,
     [request.party, "kam"]
   )
 }
@@ -1085,6 +1249,14 @@ export {
   attachFile,
   removeFile,
   submitRequest,
+  itemState,
+  requestReview,
+  contractRequirements,
+  approveItem,
+  unapproveItem,
+  approveAllItems,
+  requestItemChange,
+  addRequestItem,
   issuePurchaseOrder,
   confirmPurchaseOrder,
   cancelPurchaseOrder,

@@ -29,9 +29,9 @@ function CatalogTile({
   return (
     <Link
       href={href}
-      className="group block rounded-[28px] bg-card p-2 transition-colors duration-200 outline-none hover:bg-[#ededf1] focus-visible:ring-2 focus-visible:ring-amama-deep/40 dark:hover:bg-muted"
+      className="group block rounded-[22px] bg-card p-1.5 transition-colors duration-200 sm:rounded-[28px] sm:p-2 outline-none hover:bg-[#ededf1] focus-visible:ring-2 focus-visible:ring-amama-deep/40 dark:hover:bg-muted"
     >
-      <div className="relative aspect-4/3 w-full overflow-hidden rounded-[22px] bg-amama-subtle">
+      <div className="relative aspect-4/3 w-full overflow-hidden rounded-[17px] bg-amama-subtle sm:rounded-[22px]">
         {photo ? (
           <CropImage
             photo={photo}
@@ -50,10 +50,10 @@ function CatalogTile({
           </span>
         ) : null}
       </div>
-      <div className="flex items-start justify-between gap-2 px-2 pt-3 pb-2">
+      <div className="flex items-start justify-between gap-2 px-1.5 pt-2 pb-1.5 sm:px-2 sm:pt-3 sm:pb-2">
         <div className="min-w-0">
-          <p className="truncate text-[16px] font-semibold tracking-[-0.016em] text-foreground">{title}</p>
-          {subtitle ? <p className="truncate text-[13px] text-muted-foreground">{subtitle}</p> : null}
+          <p className="truncate text-[14.5px] font-semibold tracking-[-0.016em] text-foreground sm:text-[16px]">{title}</p>
+          {subtitle ? <p className="truncate text-[12px] text-muted-foreground sm:text-[13px]">{subtitle}</p> : null}
         </div>
         <ArrowUpRightIcon aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
       </div>

@@ -24,7 +24,7 @@ import { ProposeDealDialog } from "@/features/marketplace/propose-deal-dialog"
 import { RfqDialog, type RfqCandidateSeller } from "@/features/marketplace/rfq-dialog"
 import { useOnboarding } from "@/features/onboarding/onboarding-context"
 import { Button } from "@/components/ui/button"
-import { ColumnCard, OnWhite } from "@/components/ui/column-card"
+import { ColumnCard, OnWhite, RecordCrumbs } from "@/components/ui/column-card"
 
 /** Same viewport-relative height on every full-height chat surface in the
  *  dashboard — the topbar offset (80px) plus the content wrapper's own
@@ -173,9 +173,16 @@ function BuyerProductView({ listingId }: { listingId: string }) {
               <ChevronLeftIcon aria-hidden className="size-5 rtl:-scale-x-100" />
             </Link>
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-[17px] leading-tight font-semibold tracking-[-0.02em]">{cropLabel}</h1>
+              <RecordCrumbs
+                crumbs={[
+                  { label: "Marketplace", href: "/buyer/dashboard/sourcing" },
+                  { label: cropLabel, href: `/buyer/dashboard/sourcing/${listing.categoryId}/${listing.cropId}` },
+                  { label: listing.grade || "Ungraded", href: `/buyer/dashboard/sourcing/${listing.categoryId}/${listing.cropId}/${gradeSlug(listing.grade)}` },
+                ]}
+              />
+              <h1 className="mt-1 truncate text-[17px] leading-tight font-semibold tracking-[-0.02em]">{listing.sellerName}</h1>
               <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
-                {catalogCategory(listing.categoryId).label} · {listing.grade || "Ungraded"} · {listing.variety}
+                {cropLabel} · {listing.variety}
               </p>
             </div>
             {/* A buyer only ever sees a positive verdict here, never

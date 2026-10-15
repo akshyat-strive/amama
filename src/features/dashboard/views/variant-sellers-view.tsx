@@ -6,7 +6,7 @@ import { PackageSearchIcon } from "lucide-react"
 
 import { ButtonGroup } from "@/components/ui/button-group"
 import { DetailColumnCard } from "@/components/ui/column-card"
-import { productLabel, gradeSlug } from "@/features/marketplace/catalog"
+import { catalogCategory, productLabel, gradeSlug } from "@/features/marketplace/catalog"
 import { formatInr } from "@/features/marketplace/currency"
 import { useListings } from "@/features/marketplace/listing-store"
 import { SellerRow } from "@/features/marketplace/marketplace-ui"
@@ -39,11 +39,17 @@ function VariantSellersView({ categoryId, productId, variantSlug }: { categoryId
   )
 
   const product = productLabel(productId)
+  const category = catalogCategory(categoryId)
   const grade = listings[0]?.grade || "Ungraded"
+  const crumbs = [
+    { label: "Marketplace", href: "/buyer/dashboard/sourcing" },
+    { label: category.label, href: `/buyer/dashboard/sourcing/${categoryId}` },
+    { label: product, href: `/buyer/dashboard/sourcing/${categoryId}/${productId}` },
+  ]
 
   if (listings.length === 0) {
     return (
-      <DetailColumnCard backHref={`/buyer/dashboard/sourcing/${categoryId}/${productId}`} backLabel={product} title={product}>
+      <DetailColumnCard backHref={`/buyer/dashboard/sourcing/${categoryId}/${productId}`} backLabel={product} crumbs={crumbs} title="Grade unavailable">
         <div className="flex flex-col items-center gap-3 rounded-[20px] bg-card py-16 text-center">
           <PackageSearchIcon className="size-6 text-muted-foreground" />
           <p className="text-[15px] font-semibold">Nobody offers this grade any more</p>
@@ -61,11 +67,10 @@ function VariantSellersView({ categoryId, productId, variantSlug }: { categoryId
     <DetailColumnCard
       backHref={`/buyer/dashboard/sourcing/${categoryId}/${productId}`}
       backLabel={product}
-      title={product}
+      crumbs={crumbs}
+      title={grade}
       meta={`${listings.length} ${listings.length === 1 ? "seller" : "sellers"} · ${formatInr(Math.min(...prices))}${Math.max(...prices) > Math.min(...prices) ? ` – ${formatInr(Math.max(...prices))}` : ""}/t`}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3 px-1 pb-2">
-        <span className="inline-flex h-9 items-center rounded-xl bg-amama px-3.5 text-[16px] font-semibold tracking-[-0.016em] text-white">{grade}</span>
+      action={
         <ButtonGroup
           label="Sort sellers"
           size="sm"
@@ -76,8 +81,8 @@ function VariantSellersView({ categoryId, productId, variantSlug }: { categoryId
             { value: "volume", label: "Most available" },
           ]}
         />
-      </div>
-
+      }
+    >
       <ul className="flex flex-col">
         {listings.map((listing) => (
           <SellerRow key={listing.id} listing={listing} href={`/buyer/dashboard/sourcing/listing/${listing.id}`} />

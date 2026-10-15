@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils"
 import { ColumnCard } from "@/components/ui/column-card"
 import { DetailPage, useDetailRoute } from "@/components/ui/detail-page"
+import { FilterSheet, ListHeading, SheetChoice, StickyBar } from "@/components/ui/list-header"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -37,7 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { PAGE_TABS_SPACE, PageTabs } from "@/features/dashboard/page-tabs"
+import { CategoryTabs } from "@/features/marketplace/marketplace-ui"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import {
   ApproveButton,
@@ -174,6 +175,10 @@ function ContractsWorkspace({
   }
   const setTab = (next: ContractsTab) => setParams({ tab: next === "requests" ? null : next, contract: null })
   const openContract = detail.open
+  const [query, setQuery] = React.useState("")
+  const [filtersOpen, setFiltersOpen] = React.useState(false)
+  const stageParam = searchParams.get("stage")
+  const stageFilter: string = stageParam && CONTRACT_STAGE_ORDER.includes(stageParam as Contract["stage"]) ? stageParam : "any"
 
   if (selected) {
     return (
@@ -189,70 +194,110 @@ function ContractsWorkspace({
     )
   }
 
-  return (
-    <ColumnCard title="Contracts">
-      <div className={PAGE_TABS_SPACE}>
-        <PageTabs
-          label="Contract lists"
-          className="px-1.5"
-          value={tab}
-          onChange={setTab}
-          tabs={[
-            { value: "requests", label: "Requests", count: requests.length },
-            { value: "prepared", label: "Prepared", count: prepared.length },
-          ]}
-        />
+  const needle = query.trim().toLowerCase()
+  const matches = (text: string[]) => !needle || text.join(" ").toLowerCase().includes(needle)
+  const shownRequests = requests.filter((deal) => matches([deal.listingTitle, deal.buyerName, deal.sellerName]))
+  const shownPrepared = prepared.filter(
+    (contract) => (stageFilter === "any" || contract.stage === stageFilter) && matches([contract.listingTitle, contract.reference, contract.buyerName, contract.sellerName, contract.kamName])
+  )
+  const setStage = (next: string) => setParams({ stage: next === "any" ? null : next })
 
-        {tab === "requests" ? (
-          requests.length === 0 ? (
-            <p className="mt-4 rounded-2xl bg-card px-5 py-10 text-center text-[13px] text-muted-foreground">
-              {viewer === "kam"
-                ? "No agreed deals are waiting on a term sheet right now."
-                : "Once you and your counterparty agree a deal, request a term sheet and it'll show up here."}
+  return (
+    <>
+      <ColumnCard
+        title="Contracts"
+        heading={
+          <ListHeading
+            title="Contracts"
+            query={query}
+            onQueryChange={setQuery}
+            placeholder="Product, reference or party"
+            filterCount={stageFilter === "any" ? 0 : 1}
+            onFilters={() => setFiltersOpen(true)}
+          />
+        }
+      >
+        <StickyBar>
+          <CategoryTabs
+            label="Contract lists"
+            items={[
+              { id: "requests", label: "Requests", count: shownRequests.length },
+              { id: "prepared", label: "Prepared", count: shownPrepared.length },
+            ]}
+            selectedId={tab}
+            onSelect={(next) => setTab(next as ContractsTab)}
+          />
+        </StickyBar>
+
+        <div className="pt-2">
+          {tab === "requests" ? (
+            shownRequests.length === 0 ? (
+              <p className="rounded-2xl bg-card px-5 py-10 text-center text-[13px] text-muted-foreground">
+                {needle
+                  ? `Nothing matches "${query.trim()}".`
+                  : viewer === "kam"
+                    ? "No agreed deals are waiting on a term sheet right now."
+                    : "Once you and your counterparty agree a deal, request a term sheet and it'll show up here."}
+              </p>
+            ) : (
+              <div className="divide-inset">
+                {shownRequests.map((deal) =>
+                  viewer === "kam" ? (
+                    <KamRequestRow key={deal.id} deal={deal} contracts={contracts} me={identity} />
+                  ) : (
+                    <TraderRequestRow key={deal.id} deal={deal} viewer={viewer as "buyer" | "seller"} identity={identity} />
+                  )
+                )}
+              </div>
+            )
+          ) : shownPrepared.length === 0 ? (
+            <p className="rounded-2xl bg-card px-5 py-10 text-center text-[13px] text-muted-foreground">
+              {needle || stageFilter !== "any"
+                ? "No contracts match these filters."
+                : viewer === "kam"
+                  ? "Open a contract from an agreed deal on the Deals page and it'll appear here."
+                  : "Once your account manager opens a contract, it shows up here."}
             </p>
           ) : (
-            <ReviewGroup
-              className="mt-4"
-              header={
-                <ListHeader
-                  count={requests.length}
-                  noun={viewer === "kam" ? "deal waiting on a term sheet" : "agreed deal"}
-                  nounPlural={viewer === "kam" ? "deals waiting on a term sheet" : "agreed deals"}
-                />
-              }
-            >
-              {requests.map((deal) =>
-                viewer === "kam" ? (
-                  <KamRequestRow key={deal.id} deal={deal} contracts={contracts} me={identity} />
-                ) : (
-                  <TraderRequestRow key={deal.id} deal={deal} viewer={viewer as "buyer" | "seller"} identity={identity} />
-                )
-              )}
-            </ReviewGroup>
-          )
-        ) : prepared.length === 0 ? (
-          <p className="mt-4 rounded-2xl bg-card px-5 py-10 text-center text-[13px] text-muted-foreground">
-            {viewer === "kam"
-              ? "Open a contract from an agreed deal on the Deals page and it'll appear here."
-              : "Once your account manager opens a contract, it shows up here."}
-          </p>
-        ) : (
-          <ReviewGroup className="mt-4" header={<ListHeader count={prepared.length} noun="contract" nounPlural="contracts" />}>
-            {prepared.map((contract) => (
-              <ContractRow key={contract.id} contract={contract} viewer={viewer} onSelect={() => openContract(contract.id)} />
-            ))}
-          </ReviewGroup>
-        )}
-      </div>
-    </ColumnCard>
-  )
-}
+            <div className="divide-inset">
+              {shownPrepared.map((contract) => (
+                <ContractRow key={contract.id} contract={contract} viewer={viewer} onSelect={() => openContract(contract.id)} />
+              ))}
+            </div>
+          )}
+        </div>
+      </ColumnCard>
 
-function ListHeader({ count, noun, nounPlural }: { count: number; noun: string; nounPlural: string }) {
-  return (
-    <p className="text-[12.5px] text-muted-foreground">
-      <span className="font-semibold text-foreground tabular-nums">{count}</span> {count === 1 ? noun : nounPlural}
-    </p>
+      <FilterSheet
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
+        footer={
+          <>
+            {stageFilter !== "any" ? (
+              <Button variant="outline" className="flex-1" onClick={() => setStage("any")}>
+                Clear
+              </Button>
+            ) : null}
+            <Button
+              className="flex-1"
+              onClick={() => {
+                setFiltersOpen(false)
+                if (stageFilter !== "any") setTab("prepared")
+              }}
+            >
+              Show {shownPrepared.length} contract{shownPrepared.length === 1 ? "" : "s"}
+            </Button>
+          </>
+        }
+      >
+        <SheetChoice
+          legend="Stage"
+          value={stageFilter}
+          onChange={setStage}
+          options={[{ value: "any", label: "Any stage" }, ...CONTRACT_STAGE_ORDER.map((stage) => ({ value: stage, label: CONTRACT_STAGE_LABELS[stage] }))]}
+        />
+      </FilterSheet>
+    </>
   )
 }
 
@@ -581,8 +626,7 @@ function ContractStagePill({ contract }: { contract: Contract }) {
   return (
     <span
       className={cn(
-        "flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
-        disputed ? "bg-destructive/10 text-destructive" : "bg-amama-subtle text-amama-deep"
+        "flex shrink-0 items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-[11.5px] font-medium text-foreground"
       )}
     >
       <span aria-hidden className={cn("size-1.5 rounded-full", disputed ? "bg-destructive" : "bg-amama-deep")} />

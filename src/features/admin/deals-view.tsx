@@ -2,11 +2,11 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   ArrowLeftRightIcon,
   ArrowRightIcon,
-  ChevronDownIcon,
+  ChevronRightIcon,
   ClockIcon,
   FileSignatureIcon,
   HandIcon,
@@ -21,8 +21,10 @@ import {
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ColumnCard, useBlockFill } from "@/components/ui/column-card"
+import { ColumnCard } from "@/components/ui/column-card"
+import { DetailPage, useDetailRoute } from "@/components/ui/detail-page"
 import { Input } from "@/components/ui/input"
+import { FilterSheet, ListHeading, SheetChoice, StickyBar } from "@/components/ui/list-header"
 import {
   Select,
   SelectContent,
@@ -32,13 +34,14 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { GateBar } from "@/features/dashboard/dashboard-ui"
-import { AdminEmptyState, AdminPanel, AdminStatCard } from "@/features/admin/admin-ui"
+import { AdminEmptyState, AdminPanel } from "@/features/admin/admin-ui"
 import { useCurrentAdmin } from "@/features/admin/current-admin"
 import { Initials, ReviewGroup, RowNote, StatusPill, type Tone } from "@/features/admin/review-ui"
 import { useUsers, type AdminUser } from "@/features/admin/user-store"
 import { contractForDeal, createContract, useContracts } from "@/features/contracts/contract-store"
 import { formatInr } from "@/features/marketplace/currency"
 import { IncotermInfoButton, IncotermSelect } from "@/features/marketplace/incoterm-picker"
+import { CategoryTabs } from "@/features/marketplace/marketplace-ui"
 import { ShipmentTracker } from "@/features/marketplace/shipment-tracker"
 import { OrderJourney } from "@/features/orders/order-journey"
 import {
@@ -95,201 +98,225 @@ function counterpartyName(deal: Deal) {
   return deal.proposedBy === "buyer" ? deal.sellerName : deal.buyerName
 }
 
+type Scope = "mine" | "needs-a-team-member" | DealStatus
+type Sort = "newest" | "value" | "stuck"
+
+const SCOPE_LABELS: Record<Scope, string> = {
+  mine: "Mine",
+  "needs-a-team-member": "Unassigned",
+  active: "Active",
+  proposed: "Proposed",
+  declined: "Declined",
+}
+
+const statusStyles: Record<DealStatus, { label: string; tone: Tone }> = {
+  proposed: { label: "Proposed", tone: "warning" },
+  active: { label: "Active", tone: "success" },
+  declined: { label: "Declined", tone: "danger" },
+}
+
+function inScope(deal: Deal, scope: Scope, myId: string) {
+  if (scope === "mine") return deal.status === "active" && deal.assignedKamId === myId
+  if (scope === "needs-a-team-member") return deal.status === "active" && deal.assignedKamId === null
+  return deal.status === scope
+}
+
 /**
- * One page now, not two — which of its two sections render is decided by
- * permission, not by which of the old two consoles you were in.
- * `deals.viewAll` (+ `deals.assign` for the reassign control itself) gets
- * the cross-team oversight section; `deals.work` gets "my deals." Someone
- * with both (Master Admin holds every permission) sees both — including,
- * now, the ability to personally drive a deal's own stage forward if one's
- * ever assigned to them. That's a real behavior change from the old hard
- * split, and an intentional one: permissions decide capability, not which
- * fixed identity you happen to be.
+ * Every deal this role can see, as one list. Which scopes show is
+ * decided by permission: `deals.work` gets "Mine" — the deals on your
+ * desk — and `deals.viewAll` gets the oversight scopes (unassigned,
+ * active, proposed, declined). A deal opens as its own page, where it's
+ * assigned and, by its owner, driven forward.
  */
 function DealsView() {
-  const admin = useCurrentAdmin()
-  if (!admin) return null
-
-  const canViewAll = admin.can("deals.viewAll")
-  const canWork = admin.can("deals.work")
-
+  // `useSearchParams` (deep links like `?filter=active` and `?deal=`)
+  // needs a boundary to keep the route statically renderable.
   return (
-    <ColumnCard title="Deals">
-      <div className="flex flex-col gap-8">
-        {canViewAll ? (
-          // `EveryDealSection` reads `useSearchParams` (for the Home page's
-          // deep-linked filter) — that opts the route out of static
-          // rendering unless it sits under a boundary.
-          <React.Suspense fallback={<div className="h-40 animate-pulse rounded-3xl bg-muted" />}>
-            <EveryDealSection
-              canAssign={admin.can("deals.assign")}
-              canWork={canWork}
-              me={{ id: admin.user.id, name: admin.user.name }}
-              assignedBy={admin.user.name}
-            />
-          </React.Suspense>
-        ) : null}
-        {canWork ? <MyDealsSection myUserId={admin.user.id} myUserName={admin.user.name} /> : null}
-        {!canViewAll && !canWork ? (
-          <AdminEmptyState icon={HandshakeIcon} title="No deal permissions on your role" />
-        ) : null}
-      </div>
-    </ColumnCard>
+    <React.Suspense fallback={null}>
+      <DealsWorkspace />
+    </React.Suspense>
   )
 }
 
-type Filter = "needs-a-team-member" | DealStatus
-
-const filters: { id: Filter; label: string }[] = [
-  { id: "needs-a-team-member", label: "Assign a team member" },
-  { id: "active", label: "Active" },
-  { id: "proposed", label: "Proposed" },
-  { id: "declined", label: "Declined" },
-]
-
-const statusStyles: Record<DealStatus, { label: string; className: string; tone: Tone }> = {
-  proposed: { label: "Proposed", className: "bg-status-warning/15 text-status-warning", tone: "warning" },
-  active: { label: "Active", className: "bg-amama-subtle text-amama-deep", tone: "success" },
-  declined: { label: "Declined", className: "bg-destructive/10 text-destructive", tone: "danger" },
-}
-
-/** Oversight, and the pool work gets claimed from. Reassigning someone
- *  else is gated on `deals.assign` (the Master KAM's job); claiming an
- *  unassigned deal for yourself only needs `deals.work`, so any KAM can
- *  pick up work without waiting to be handed it. */
-function EveryDealSection({
-  canAssign,
-  canWork,
-  me,
-  assignedBy,
-}: {
-  canAssign: boolean
-  canWork: boolean
-  me: { id: string; name: string }
-  assignedBy: string
-}) {
+function DealsWorkspace() {
+  const admin = useCurrentAdmin()
   const deals = useDeals()
   const users = useUsers()
-  // Lets a link (the Home page's own deal preview cards, say) land
-  // straight on a specific filter — `?filter=active` — rather than
-  // always opening on the default "needs a team member" one. `?deal=`
-  // (the Logistics board's own shipment links) goes one step further:
-  // it opens on whichever filter actually contains that deal and starts
-  // it already expanded, so a link to a specific shipment doesn't dump
-  // someone on a list they still have to search.
   const searchParams = useSearchParams()
-  const requestedFilter = searchParams.get("filter")
-  const requestedDealId = searchParams.get("deal")
-  const requestedDeal = requestedDealId ? deals.find((deal) => deal.id === requestedDealId) : null
-  const [filter, setFilter] = React.useState<Filter>(() => {
-    if (requestedDeal) {
-      return requestedDeal.status === "active" && requestedDeal.assignedKamId === null
-        ? "needs-a-team-member"
-        : (requestedDeal.status as Filter)
-    }
-    return filters.some((entry) => entry.id === requestedFilter) ? (requestedFilter as Filter) : "needs-a-team-member"
-  })
-  const [expandedId, setExpandedId] = React.useState<string | null>(requestedDealId)
+  const router = useRouter()
+  const pathname = usePathname()
+  const detail = useDetailRoute({ query: "deal" })
+  const [query, setQuery] = React.useState("")
+  const [filtersOpen, setFiltersOpen] = React.useState(false)
+  const [sort, setSort] = React.useState<Sort>("newest")
 
-  const activeDeals = deals.filter((deal) => deal.status === "active")
-  const needsTeamMember = activeDeals.filter((deal) => deal.assignedKamId === null)
-  const proposedDeals = deals.filter((deal) => deal.status === "proposed")
-  const declinedDeals = deals.filter((deal) => deal.status === "declined")
-  const pipelineValue = activeDeals.reduce((sum, deal) => sum + dealValue(deal), 0)
+  if (!admin) return null
+  const canViewAll = admin.can("deals.viewAll")
+  const canWork = admin.can("deals.work")
+  const me = { id: admin.user.id, name: admin.user.name }
 
-  const counts: Record<Filter, number> = {
-    "needs-a-team-member": needsTeamMember.length,
-    active: activeDeals.length,
-    proposed: proposedDeals.length,
-    declined: declinedDeals.length,
+  if (!canViewAll && !canWork) {
+    return (
+      <ColumnCard title="Deals">
+        <AdminEmptyState icon={HandshakeIcon} title="No deal permissions on your role" />
+      </ColumnCard>
+    )
   }
 
-  const visible = deals.filter((deal) =>
-    filter === "needs-a-team-member"
-      ? deal.status === "active" && deal.assignedKamId === null
-      : deal.status === filter
-  )
+  const scopes: Scope[] = [...(canWork ? (["mine"] as const) : []), ...(canViewAll ? (["needs-a-team-member", "active", "proposed", "declined"] as const) : [])]
+  const requested = searchParams.get("filter") as Scope | null
+  const scope: Scope = requested && scopes.includes(requested) ? requested : scopes[0]
+  const setScope = (next: Scope) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (next === scopes[0]) params.delete("filter")
+    else params.set("filter", next)
+    const text = params.toString()
+    router.replace(text ? `${pathname}?${text}` : pathname, { scroll: false })
+  }
+
+  const selected = detail.selectedId ? (deals.find((deal) => deal.id === detail.selectedId) ?? null) : null
+  if (selected) {
+    const status = statusStyles[selected.status]
+    const drives = canWork && selected.status === "active" && selected.assignedKamId === me.id
+    return (
+      <DetailPage
+        backLabel="Deals"
+        onBack={detail.close}
+        trail={["Deals", selected.listingTitle]}
+        status={<StatusPill tone={status.tone}>{status.label}</StatusPill>}
+      >
+        <div className="flex flex-col gap-3">
+          <DealOverview deal={selected} users={users} canAssign={admin.can("deals.assign")} canWork={canWork} me={me} assignedBy={admin.user.name} />
+          {drives ? <DealDetail deal={selected} myUserName={admin.user.name} /> : null}
+        </div>
+      </DetailPage>
+    )
+  }
+
+  const needle = query.trim().toLowerCase()
+  const matching = deals
+    .filter((deal) => !needle || [deal.listingTitle, deal.buyerName, deal.sellerName, deal.assignedKamName ?? ""].join(" ").toLowerCase().includes(needle))
+    .sort((a, b) => (sort === "value" ? dealValue(b) - dealValue(a) : sort === "stuck" ? daysInStage(b) - daysInStage(a) : b.createdAt.localeCompare(a.createdAt)))
+  const visible = matching.filter((deal) => inScope(deal, scope, me.id))
 
   return (
-    <div>
-      <h2 className="px-1.5 text-[17px] font-semibold tracking-[-0.02em] text-foreground">Every deal</h2>
-      <p className="mt-0.5 px-1.5 text-[13px] text-muted-foreground">Across every team member — assign who&apos;s driving each one.</p>
-
-      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <AdminStatCard
-          label="Active deals"
-          value={String(activeDeals.length)}
-          caption={`${proposedDeals.length} proposed, awaiting response`}
-        />
-        <AdminStatCard
-          label="Pipeline value"
-          value={formatInr(pipelineValue)}
-          tone="brand"
-          caption="Across every active deal"
-        />
-        <AdminStatCard
-          label="Assign a team member"
-          value={String(needsTeamMember.length)}
-          tone={needsTeamMember.length > 0 ? "warning" : "plain"}
-          caption={needsTeamMember.length > 0 ? "Waiting to be assigned" : "Nothing waiting"}
-        />
-        <AdminStatCard
-          label="Declined"
-          value={String(declinedDeals.length)}
-          caption="Didn't make it past proposal"
-        />
-      </div>
-
-      <div
-        role="tablist"
-        aria-label="Filter deals"
-        className="mt-5 flex w-fit max-w-full gap-0.5 overflow-x-auto rounded-full bg-card p-1 [scrollbar-width:none]"
+    <>
+      <ColumnCard
+        title="Deals"
+        heading={
+          <ListHeading
+            title="Deals"
+            query={query}
+            onQueryChange={setQuery}
+            placeholder="Product, buyer, seller or KAM"
+            filterCount={sort !== "newest" ? 1 : 0}
+            onFilters={() => setFiltersOpen(true)}
+          />
+        }
       >
-        {filters.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={filter === id}
-            onClick={() => setFilter(id)}
-            className={cn(
-              "flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-semibold whitespace-nowrap transition-colors",
-              filter === id ? "bg-foreground text-background" : "text-foreground/70 hover:bg-background hover:text-foreground"
-            )}
-          >
-            {label}
-            <span
-              className={cn(
-                "rounded-full px-1.5 text-[11px] tabular-nums",
-                filter === id ? "bg-background/20 text-background" : "bg-background text-muted-foreground"
-              )}
-            >
-              {counts[id]}
-            </span>
-          </button>
-        ))}
-      </div>
+        <StickyBar>
+          <CategoryTabs
+            label="Deal scope"
+            items={scopes.map((id) => ({ id, label: SCOPE_LABELS[id], count: matching.filter((deal) => inScope(deal, id, me.id)).length }))}
+            selectedId={scope}
+            onSelect={(next) => setScope(next as Scope)}
+          />
+        </StickyBar>
 
-      {visible.length === 0 ? (
-        <AdminEmptyState icon={HandshakeIcon} title="Nothing here" />
-      ) : (
-        <div className="mt-4 flex flex-col gap-2">
-          {visible.map((deal) => (
-            <DealCard
-              key={deal.id}
-              deal={deal}
-              users={users}
-              canAssign={canAssign}
-              canWork={canWork}
-              me={me}
-              assignedBy={assignedBy}
-              expanded={expandedId === deal.id}
-              onToggle={() => setExpandedId((id) => (id === deal.id ? null : deal.id))}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+        {visible.length === 0 ? (
+          <AdminEmptyState
+            icon={HandshakeIcon}
+            title={needle ? "No deals match" : scope === "mine" ? "No deals assigned to you yet" : "Nothing here"}
+            description={!needle && scope === "mine" ? "Claim an agreed deal from Unassigned, or wait to be given one." : undefined}
+          />
+        ) : (
+          <ul className="divide-inset pt-1">
+            {visible.map((deal) => (
+              <li key={deal.id}>
+                <DealListRow deal={deal} onOpen={() => detail.open(deal.id)} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </ColumnCard>
+
+      <FilterSheet
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
+        footer={
+          <Button className="flex-1" onClick={() => setFiltersOpen(false)}>
+            Show {visible.length} deal{visible.length === 1 ? "" : "s"}
+          </Button>
+        }
+      >
+        <SheetChoice
+          legend="Sort by"
+          value={sort}
+          onChange={setSort}
+          options={[
+            { value: "newest", label: "Newest" },
+            { value: "value", label: "Value" },
+            { value: "stuck", label: "Longest in stage" },
+          ]}
+        />
+      </FilterSheet>
+    </>
+  )
+}
+
+/** One deal in the list: what and who, where it stands, who owns it, and
+ *  what it's worth. */
+function DealListRow({ deal, onOpen }: { deal: Deal; onOpen: () => void }) {
+  const status = statusStyles[deal.status]
+  const progress = deal.status === "active" ? dealStageProgress(deal) : null
+  const days = daysInStage(deal)
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 rounded-xl px-3 py-3 text-start transition-colors hover:bg-card/70 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_8rem_7.5rem_auto_1rem]"
+    >
+      <span className="min-w-0">
+        <span className="block truncate text-[14px] font-semibold text-foreground">{deal.listingTitle}</span>
+        <span className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
+          <span className="truncate">{deal.buyerName}</span>
+          <ArrowLeftRightIcon aria-hidden className="size-3 shrink-0" />
+          <span className="truncate">{deal.sellerName}</span>
+        </span>
+      </span>
+      <span className="text-end tabular-nums md:hidden">
+        <span className="block text-[14px] font-semibold text-foreground">{formatInr(dealValue(deal))}</span>
+        <span className="block text-[11.5px] text-muted-foreground">{deal.agreedQuantityMt} MT</span>
+      </span>
+      <span className="col-span-2 min-w-0 md:col-span-1">
+        {progress ? (
+          <>
+            <span className="flex items-center justify-between gap-2 text-[12px]">
+              <span className="truncate font-medium text-foreground">{deal.stage ? DEAL_STAGE_LABELS[deal.stage] : "Starting"}</span>
+              <span className="shrink-0 text-muted-foreground tabular-nums">{days === 0 ? "Today" : `${days}d`}</span>
+            </span>
+            <span className="mt-1 block">
+              <GateBar cleared={progress.cleared} total={progress.total} status={progress.status} />
+            </span>
+          </>
+        ) : (
+          <span className="text-[12.5px] text-muted-foreground">
+            {deal.status === "proposed" ? `Awaiting ${counterpartyName(deal)}` : `Declined ${formatDate(deal.respondedAt)}`}
+          </span>
+        )}
+      </span>
+      <span className={cn("hidden truncate text-[12.5px] md:block", deal.assignedKamName ? "text-foreground" : "text-muted-foreground")}>
+        {deal.status === "active" ? (deal.assignedKamName ?? "Unassigned") : "—"}
+      </span>
+      <span className="hidden text-end tabular-nums md:block">
+        <span className="block text-[14px] font-semibold text-foreground">{formatInr(dealValue(deal))}</span>
+        <span className="block text-[11.5px] text-muted-foreground">{deal.agreedQuantityMt} MT</span>
+      </span>
+      <span className="hidden md:block">
+        <StatusPill tone={status.tone}>{status.label}</StatusPill>
+      </span>
+      <ChevronRightIcon aria-hidden className="hidden size-4 text-muted-foreground md:block rtl:-scale-x-100" />
+    </button>
   )
 }
 
@@ -322,15 +349,15 @@ function DealContractAction({ deal, me }: { deal: Deal; me: { id: string; name: 
   )
 }
 
-function DealCard({
+/** A deal's standing, at the top of its page: the terms, where it is,
+ *  who owns it (and the controls to change that), and its history. */
+function DealOverview({
   deal,
   users,
   canAssign,
   canWork,
   me,
   assignedBy,
-  expanded,
-  onToggle,
 }: {
   deal: Deal
   users: AdminUser[]
@@ -338,10 +365,7 @@ function DealCard({
   canWork: boolean
   me: { id: string; name: string }
   assignedBy: string
-  expanded: boolean
-  onToggle: () => void
 }) {
-  const status = statusStyles[deal.status]
   const progress = deal.status === "active" ? dealStageProgress(deal) : null
   const hasHistory = deal.stageHistory.length > 0 || deal.assignmentHistory.length > 0 || deal.shipments.length > 0
   const days = daysInStage(deal)
@@ -350,22 +374,13 @@ function DealCard({
     <ReviewGroup
       header={
         <div className="flex items-start gap-3">
-          <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-background text-muted-foreground">
-            <HandshakeIcon className="size-4" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <h2 className="truncate text-[15px] font-semibold tracking-tight text-foreground">{deal.listingTitle}</h2>
-              <StatusPill tone={status.tone}>{status.label}</StatusPill>
-            </div>
-            <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
-              <span className="truncate font-medium text-foreground/80">{deal.buyerName}</span>
-              <ArrowLeftRightIcon aria-hidden className="size-3 shrink-0" />
-              <span className="truncate font-medium text-foreground/80">{deal.sellerName}</span>
-            </p>
-          </div>
+          <p className="flex min-w-0 flex-1 items-center gap-1.5 text-[14px]">
+            <span className="truncate font-semibold text-foreground">{deal.buyerName}</span>
+            <ArrowLeftRightIcon aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
+            <span className="truncate font-semibold text-foreground">{deal.sellerName}</span>
+          </p>
           <div className="shrink-0 text-end tabular-nums">
-            <p className="text-[16px] leading-tight font-bold tracking-tight text-foreground">{formatInr(dealValue(deal))}</p>
+            <p className="text-[16px] leading-tight font-semibold tracking-tight text-foreground">{formatInr(dealValue(deal))}</p>
             <p className="text-[11.5px] text-muted-foreground">
               {formatInr(deal.agreedPricePerTonneUsd)}/t × {deal.agreedQuantityMt} MT
             </p>
@@ -475,24 +490,7 @@ function DealCard({
       ) : null}
 
       {hasHistory ? (
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={expanded}
-          className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-[12.5px] font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-        >
-          <span>
-            History
-            <span className="ms-1.5 text-muted-foreground/70 tabular-nums">
-              {deal.stageHistory.length + deal.assignmentHistory.length + deal.shipments.length}
-            </span>
-          </span>
-          <ChevronDownIcon aria-hidden className={cn("size-4 transition-transform", expanded && "rotate-180")} />
-        </button>
-      ) : null}
-
-      {expanded && hasHistory ? (
-        <div className="grid gap-4 bg-muted/30 px-4 py-3.5 sm:grid-cols-3">
+        <div className="grid gap-4 px-4 py-3.5 sm:grid-cols-3">
           <HistoryList
             title="Stage"
             items={deal.stageHistory.map((entry) => ({
@@ -543,7 +541,7 @@ function HistoryList({
   if (items.length === 0) return null
   return (
     <div className="min-w-0">
-      <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{title}</p>
+      <p className="text-[12px] font-medium text-muted-foreground">{title}</p>
       <ol className="mt-2 flex flex-col gap-2 border-s border-border ps-3">
         {items.map((item) => (
           <li key={item.key} className="relative min-w-0">
@@ -599,91 +597,7 @@ const statusForEvent: Partial<Record<ShipmentEventType, ShipmentStatus>> = {
   delayed: "delayed",
 }
 
-/** The signed-in team member's own queue — every active deal assigned to
- *  *them*, and nothing else. Assignment itself happens in `EveryDealSection`
- *  above; this is where a deal actually gets driven forward once it lands
- *  on someone's desk. */
-function MyDealsSection({ myUserId, myUserName }: { myUserId: string; myUserName: string }) {
-  const deals = useDeals()
-  const [selectedId, setSelectedId] = React.useState<string | null>(null)
-
-  const myDeals = React.useMemo(
-    () => deals.filter((deal) => deal.status === "active" && deal.assignedKamId === myUserId),
-    [deals, myUserId]
-  )
-  const selected = myDeals.find((deal) => deal.id === selectedId) ?? null
-
-  return (
-    <div>
-      {myDeals.length === 0 ? (
-        <AdminEmptyState
-          icon={HandshakeIcon}
-          title="No deals assigned to you yet"
-          description="Claim an agreed deal from Every deal above, or wait to be given one — either way it shows up here."
-        />
-      ) : (
-        <div className="grid gap-2 lg:grid-cols-[320px_1fr]">
-          <ReviewGroup
-            className="self-start"
-            header={
-              <p className="flex items-center justify-between text-[13px] font-semibold text-foreground">
-                My deals
-                <span className="rounded-full bg-background px-2 py-0.5 text-[11px] text-muted-foreground tabular-nums">{myDeals.length}</span>
-              </p>
-            }
-          >
-            {myDeals.map((deal) => {
-              const progress = dealStageProgress(deal)
-              const active = deal.id === selectedId
-              const days = daysInStage(deal)
-              return (
-                <button
-                  key={deal.id}
-                  type="button"
-                  onClick={() => setSelectedId(deal.id)}
-                  aria-current={active || undefined}
-                  className={cn(
-                    "relative block w-full px-4 py-3 text-start transition-colors",
-                    active ? "bg-amama-subtle/70" : "hover:bg-muted/50"
-                  )}
-                >
-                  {active ? <span aria-hidden className="absolute inset-y-2 start-0 w-[3px] rounded-e-full bg-amama-deep" /> : null}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-[13px] font-semibold text-foreground">{deal.listingTitle}</p>
-                      <p className="truncate text-[12px] text-muted-foreground">
-                        {deal.buyerName} ↔ {deal.sellerName}
-                      </p>
-                    </div>
-                    <p className="shrink-0 text-[12.5px] font-bold text-foreground tabular-nums">{formatInr(dealValue(deal))}</p>
-                  </div>
-                  <p className="mt-2 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
-                    <span className="truncate">{deal.stage ? DEAL_STAGE_LABELS[deal.stage] : "Starting"}</span>
-                    <span className="shrink-0">{days === 0 ? "Moved today" : `${days}d`}</span>
-                  </p>
-                  <div className="mt-1.5">
-                    <GateBar cleared={progress.cleared} total={progress.total} status={progress.status} />
-                  </div>
-                </button>
-              )
-            })}
-          </ReviewGroup>
-
-          {selected ? (
-            <DealDetail deal={selected} myUserName={myUserName} />
-          ) : (
-            <div className="flex items-center justify-center rounded-[20px] bg-card py-16 text-center text-[13px] text-muted-foreground">
-              Pick a deal to manage it.
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
 function DealDetail({ deal, myUserName }: { deal: Deal; myUserName: string }) {
-  const progress = dealStageProgress(deal)
   const [advancing, setAdvancing] = React.useState(false)
   const [note, setNote] = React.useState("")
 
@@ -694,41 +608,9 @@ function DealDetail({ deal, myUserName }: { deal: Deal; myUserName: string }) {
   }
 
   const isLastStage = deal.stage === DEAL_STAGE_ORDER[DEAL_STAGE_ORDER.length - 1]
-  const fill = useBlockFill()
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className={cn("rounded-[20px] p-5", fill)}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="truncate text-[16px] font-semibold tracking-tight">{deal.listingTitle}</h2>
-            <p className="mt-0.5 text-[13px] text-muted-foreground">
-              {deal.buyerName} (buyer) ↔ {deal.sellerName} (seller)
-            </p>
-          </div>
-          <div className="shrink-0 text-end">
-            <p className="text-[15px] font-extrabold tabular-nums text-foreground">
-              {formatInr(deal.agreedPricePerTonneUsd)}/t × {deal.agreedQuantityMt} MT
-            </p>
-            <p className="mt-0.5 text-[13px] font-semibold tabular-nums text-amama-deep">
-              {formatInr(dealValue(deal))} total
-            </p>
-          </div>
-        </div>
-        <div className="mt-4">
-          <div className="flex items-center justify-between text-[12px] font-medium text-muted-foreground">
-            <span>{deal.stage ? DEAL_STAGE_LABELS[deal.stage] : "Starting"}</span>
-            <span className="flex items-center gap-1">
-              <ClockIcon className="size-3" aria-hidden />
-              {daysInStage(deal) === 0 ? "Moved today" : `${daysInStage(deal)}d in this stage`}
-            </span>
-          </div>
-          <div className="mt-1.5">
-            <GateBar cleared={progress.cleared} total={progress.total} status={progress.status} />
-          </div>
-        </div>
-      </div>
-
+    <div className="flex flex-col gap-3">
       <OrderJourneyPanel deal={deal} myUserName={myUserName} />
 
       {deal.stage === "costing" ? <CostingForm deal={deal} /> : null}

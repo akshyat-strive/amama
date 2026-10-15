@@ -2,14 +2,13 @@
 
 import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { ChevronDownIcon, Columns3Icon, Inbox, ListIcon, SearchIcon, SlidersHorizontalIcon, XIcon } from "lucide-react"
+import { ChevronDownIcon, Columns3Icon, Inbox, ListIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
-import { ButtonGroup } from "@/components/ui/button-group"
 import { Button } from "@/components/ui/button"
 import { ColumnCard } from "@/components/ui/column-card"
-import { Sheet, SheetClose, SheetContent } from "@/components/ui/sheet"
+import { FilterSheet, FiltersButton, ListHeading, SheetChoice, SheetToggle, StickyBar } from "@/components/ui/list-header"
 import { DetailPage, useDetailRoute } from "@/components/ui/detail-page"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { AdminEmptyState, AdminListSkeleton } from "@/features/admin/admin-ui"
@@ -226,9 +225,9 @@ function TicketsWorkspace() {
   const canKyc = admin.can("onboarding.review") || seesAll
   const type: "kyc" | "requests" = searchParams.get("type") === "requests" || !canKyc ? "requests" : "kyc"
   const setType = (value: "kyc" | "requests") => setParams({ type: value === "kyc" ? null : value, status: null, tag: null, view: null, owner: null })
-  const typeSwitch = canKyc ? (
-    <ButtonGroup
-      label="Ticket type"
+  const typeChoice = canKyc ? (
+    <SheetChoice
+      legend="Tickets"
       value={type}
       onChange={setType}
       options={[
@@ -238,7 +237,16 @@ function TicketsWorkspace() {
     />
   ) : null
 
-  if (type === "requests") return <RequestsPanel action={typeSwitch} />
+  if (type === "requests") {
+    return (
+      <>
+        <RequestsPanel action={canKyc ? <FiltersButton count={0} onClick={() => setFiltersOpen(true)} /> : null} />
+        <FilterSheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+          {typeChoice}
+        </FilterSheet>
+      </>
+    )
+  }
 
   const ownerName = (ticket: KycTicket) => (ticket.assignee ? (users.find((user) => user.id === ticket.assignee!.id)?.name ?? ticket.assignee.name) : "Unassigned")
   const filterCount = activeTags.length + (mineOnly ? 1 : 0)
@@ -249,66 +257,38 @@ function TicketsWorkspace() {
       <ColumnCard
         title="Tickets"
         heading={
-          <div className="flex items-center gap-2">
-            <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl bg-card px-3 text-muted-foreground focus-within:ring-2 focus-within:ring-ring/30 sm:max-w-sm">
-              <SearchIcon aria-hidden className="size-4 shrink-0" />
-              <input
-                type="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search tickets, names, emails"
-                aria-label="Search tickets"
-                className="min-w-0 flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
-              />
-              {query ? (
-                <button type="button" onClick={() => setQuery("")} aria-label="Clear search" className="grid size-6 shrink-0 place-items-center rounded-full hover:bg-muted">
-                  <XIcon className="size-3.5" />
-                </button>
-              ) : null}
-            </label>
-            {/* On a phone every switch and filter lives in one bottom sheet. */}
-            <FiltersButton count={filterCount || (type !== "kyc" || view !== "list" ? 1 : 0)} onClick={() => setFiltersOpen(true)} className="sm:hidden" />
-          </div>
-        }
-        action={
-          <div className="flex items-center gap-2">
-            {typeSwitch}
-            <ButtonGroup
-              label="View"
-              value={view}
-              onChange={(value) => setParams({ view: value === "list" ? null : value })}
-              options={VIEWS.map((option) => ({ value: option.value, label: option.label, icon: option.icon }))}
-            />
-            <FiltersButton count={filterCount} onClick={() => setFiltersOpen(true)} labelled />
-          </div>
+          <ListHeading
+            title="Tickets"
+            query={query}
+            onQueryChange={setQuery}
+            placeholder="Ticket, name or email"
+            filterCount={filterCount + (view === "board" ? 1 : 0)}
+            onFilters={() => setFiltersOpen(true)}
+          />
         }
       >
         {view === "list" ? (
-          // The status pills sit just under the header's divider and stay
-          // put while the tickets scroll beneath.
-          <div className="sticky -top-1.5 z-20 -mx-1.5 -mt-1.5 bg-background px-3 pt-2">
-            <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1">
-                <CategoryTabs
-                  label="Ticket status"
-                  items={[
-                    { id: "open", label: "Open", count: count("open") },
-                    { id: "waiting", label: "Waiting", count: count("waiting") },
-                    { id: "resolved", label: "Resolved", count: count("resolved") },
-                    { id: "all", label: "All", count: count("all") },
-                  ]}
-                  selectedId={filter}
-                  onSelect={(next) => setParams({ status: next === "open" ? null : next })}
-                />
-              </div>
-              {filterCount ? (
-                <button type="button" onClick={clearFilters} className="shrink-0 text-[12.5px] font-medium text-muted-foreground transition-colors hover:text-foreground">
+          <StickyBar
+            trailing={
+              filterCount ? (
+                <button type="button" onClick={clearFilters} className="text-[12.5px] font-medium text-muted-foreground transition-colors hover:text-foreground">
                   Clear {filterCount} filter{filterCount === 1 ? "" : "s"}
                 </button>
-              ) : null}
-            </div>
-            <div aria-hidden className="mt-2 h-px bg-border" />
-          </div>
+              ) : null
+            }
+          >
+            <CategoryTabs
+              label="Ticket status"
+              items={[
+                { id: "open", label: "Open", count: count("open") },
+                { id: "waiting", label: "Waiting", count: count("waiting") },
+                { id: "resolved", label: "Resolved", count: count("resolved") },
+                { id: "all", label: "All", count: count("all") },
+              ]}
+              selectedId={filter}
+              onSelect={(next) => setParams({ status: next === "open" ? null : next })}
+            />
+          </StickyBar>
         ) : null}
 
         {!loaded ? (
@@ -365,136 +345,48 @@ function TicketsWorkspace() {
         )}
       </ColumnCard>
 
-      <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-        <SheetContent side="responsive" className="overflow-y-auto sm:max-w-sm">
-          <div className="flex flex-col gap-6 pb-2">
-            <div className="flex items-center justify-between">
-              <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Filters</h2>
-              <SheetClose aria-label="Close filters" className="grid size-9 place-items-center rounded-full bg-card text-foreground/75 transition-colors hover:bg-muted">
-                <XIcon aria-hidden className="size-4" />
-              </SheetClose>
-            </div>
-
-            {/* The header's switches, for phones where the header has no room. */}
-            <div className="flex flex-col gap-6 sm:hidden">
-              {canKyc ? (
-                <SheetChoice
-                  legend="Tickets"
-                  value={type}
-                  onChange={setType}
-                  options={[
-                    { value: "kyc", label: "KYC" },
-                    { value: "requests", label: "Requests" },
-                  ]}
-                />
-              ) : null}
-              <SheetChoice legend="View" value={view} onChange={(value) => setParams({ view: value === "list" ? null : value })} options={VIEWS.map((option) => ({ value: option.value, label: option.label }))} />
-            </div>
-
-            {admin.can("onboarding.review") ? (
-              <button
-                type="button"
-                role="switch"
-                aria-checked={mineOnly}
-                onClick={() => setParams({ owner: mineOnly ? null : "me" })}
-                className="flex items-center justify-between gap-4 rounded-2xl bg-card px-4 py-3 text-start"
-              >
-                <span>
-                  <span className="block text-[15px] font-medium">Only mine</span>
-                  <span className="block text-[12.5px] text-muted-foreground">Tickets assigned to you</span>
-                </span>
-                <span aria-hidden className={cn("relative h-6 w-10 shrink-0 rounded-full transition-colors", mineOnly ? "bg-amama-deep" : "bg-foreground/15")}>
-                  <span className={cn("absolute top-0.5 size-5 rounded-full bg-white transition-[inset-inline-start]", mineOnly ? "start-[18px]" : "start-0.5")} />
-                </span>
-              </button>
-            ) : null}
-
-            <fieldset className="flex flex-col gap-2">
-              <legend className="mb-2 text-[13px] font-medium text-muted-foreground">Tags</legend>
-              <div className="flex flex-wrap gap-1.5">
-                {FILTER_TAGS.map((tag) => {
-                  const on = activeTags.includes(tag.id)
-                  return (
-                    <button
-                      key={tag.id}
-                      type="button"
-                      aria-pressed={on}
-                      onClick={() => toggleTag(tag.id)}
-                      className={cn("h-9 rounded-full px-3.5 text-[13.5px] font-medium transition-colors", on ? "bg-graphite text-white" : "bg-card text-foreground hover:bg-muted")}
-                    >
-                      {tag.label}
-                    </button>
-                  )
-                })}
-              </div>
-            </fieldset>
-
-            <div className="flex gap-2">
-              {filterCount ? (
-                <Button variant="outline" className="flex-1" onClick={clearFilters}>
-                  Clear
-                </Button>
-              ) : null}
-              <Button className="flex-1" onClick={() => setFiltersOpen(false)}>
-                Show {view === "list" ? visible.length : tagged.length} ticket{(view === "list" ? visible.length : tagged.length) === 1 ? "" : "s"}
+      <FilterSheet
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
+        footer={
+          <>
+            {filterCount ? (
+              <Button variant="outline" className="flex-1" onClick={clearFilters}>
+                Clear
               </Button>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
-    </>
-  )
-}
-
-/** Opens the filter sheet. A dot (or, labelled, a count) shows when
- *  something is filtered. */
-function FiltersButton({ count, onClick, labelled = false, className }: { count: number; onClick: () => void; labelled?: boolean; className?: string }) {
-  if (labelled) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn("inline-flex h-9 items-center gap-1.5 rounded-xl bg-card px-3 text-[13.5px] font-medium text-foreground transition-colors hover:bg-muted", className)}
+            ) : null}
+            <Button className="flex-1" onClick={() => setFiltersOpen(false)}>
+              Show {(view === "list" ? visible.length : tagged.length)} ticket{(view === "list" ? visible.length : tagged.length) === 1 ? "" : "s"}
+            </Button>
+          </>
+        }
       >
-        <SlidersHorizontalIcon aria-hidden className="size-4 text-muted-foreground" />
-        Filters
-        {count ? <span className="grid h-5 min-w-5 place-items-center rounded-full bg-graphite px-1.5 text-[11px] text-white tabular-nums">{count}</span> : null}
-      </button>
-    )
-  }
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label="Filters"
-      className={cn("relative grid size-10 shrink-0 place-items-center rounded-xl bg-card text-foreground transition-colors hover:bg-muted", className)}
-    >
-      <SlidersHorizontalIcon aria-hidden className="size-[18px]" />
-      {count ? <span aria-hidden className="absolute end-2 top-2 size-2 rounded-full bg-amama-deep ring-2 ring-card" /> : null}
-    </button>
-  )
-}
-
-/** One choice in the filter sheet, as full-width radio rows. */
-function SheetChoice<T extends string>({ legend, value, onChange, options }: { legend: string; value: T; onChange: (value: T) => void; options: { value: T; label: string }[] }) {
-  return (
-    <fieldset className="flex flex-col gap-2">
-      <legend className="mb-2 text-[13px] font-medium text-muted-foreground">{legend}</legend>
-      <div className="flex gap-2">
-        {options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={value === option.value}
-            onClick={() => onChange(option.value)}
-            className={cn("h-11 flex-1 rounded-2xl text-[14.5px] font-medium transition-colors", value === option.value ? "bg-graphite text-white" : "bg-card text-foreground")}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </fieldset>
+        {typeChoice}
+        <SheetChoice legend="View" value={view} onChange={(value) => setParams({ view: value === "list" ? null : value })} options={VIEWS.map((option) => ({ value: option.value, label: option.label }))} />
+        {admin.can("onboarding.review") ? (
+          <SheetToggle label="Only mine" hint="Tickets assigned to you" checked={mineOnly} onChange={(checked) => setParams({ owner: checked ? "me" : null })} />
+        ) : null}
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-2 text-[13px] font-medium text-muted-foreground">Tags</legend>
+          <div className="flex flex-wrap gap-1.5">
+            {FILTER_TAGS.map((tag) => {
+              const on = activeTags.includes(tag.id)
+              return (
+                <button
+                  key={tag.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => toggleTag(tag.id)}
+                  className={cn("h-9 rounded-full px-3.5 text-[13.5px] font-medium transition-colors", on ? "bg-graphite text-white" : "bg-card text-foreground hover:bg-muted")}
+                >
+                  {tag.label}
+                </button>
+              )
+            })}
+          </div>
+        </fieldset>
+      </FilterSheet>
+    </>
   )
 }
 
